@@ -1,0 +1,135 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Google Fonts Import */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Custom CSS Variables */
+:root {
+    /* Primary Colors */
+    --color-primary: #4F46E5; /* indigo-600 */
+    --color-primary-light: #6366F1; /* indigo-500 */
+    --color-primary-dark: #4338CA; /* indigo-700 */
+    
+    /* Neutral Colors */
+    --color-background: #F8FAFC; /* slate-50 */
+    --color-surface: #FFFFFF; /* white */
+    --color-border: #E2E8F0; /* slate-200 */
+    --color-divider: #F1F5F9; /* slate-100 */
+    --color-text-primary: #0F172A; /* slate-900 */
+    --color-text-secondary: #475569; /* slate-600 */
+    --color-text-tertiary: #94A3B8; /* slate-400 */
+    
+    /* Semantic Colors */
+    --color-success: #10B981; /* emerald-500 */
+    --color-warning: #F59E0B; /* amber-500 */
+    --color-error: #F43F5E; /* rose-500 */
+    --color-info: #0EA5E9; /* sky-500 */
+    --color-leetcode: #FACC15; /* yellow-400 */
+    --color-codeforces: #EF4444; /* red-500 */
+    
+    /* Extended Primary Colors */
+    --color-primary-50: #ECEDFB;
+    --color-primary-100: #D9DBF8;
+    --color-primary-200: #B3B7F0;
+    --color-primary-300: #8D93E9;
+    --color-primary-400: #676FE1;
+    --color-primary-500: #4F46E5;
+    --color-primary-600: #2A21D6;
+    --color-primary-700: #211AA6;
+    --color-primary-800: #181376;
+    --color-primary-900: #0F0C46;
+}
+
+/* Custom Animation Classes */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-fade-out {
+    animation: fadeOut 0.3s ease-in-out;
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 0.4s ease-out;
+}
+
+.animate-slide-in-left {
+    animation: slideInLeft 0.4s ease-out;
+}
+
+.animate-scale-in {
+    animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Custom Component Classes */
+@layer components {
+    .btn {
+        @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    }
+
+    .btn-primary {
+        @apply bg-primary text-white hover:bg-primary-dark;
+    }
+
+    .btn-secondary {
+        @apply bg-white text-text-primary border border-border hover:bg-background;
+    }
+
+    .btn-outline {
+        @apply border border-primary text-primary hover:bg-primary hover:text-white;
+    }
+
+    .btn-ghost {
+        @apply bg-transparent text-text-primary hover:bg-background;
+    }
+
+    .btn-link {
+        @apply text-primary underline-offset-4 hover:underline;
+    }
+
+    .btn-destructive {
+        @apply bg-error text-white hover:bg-rose-600;
+    }
+
+    .card {
+        @apply rounded-lg border border-border bg-surface shadow-sm;
+    }
+
+    .input {
+        @apply flex h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50;
+    }
+}
