@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes as RouterRoutes, Route } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
-import Dashboard from "./pages/dashboard";
+import Dashboard from "./pages/dashboard/index";
 import PlatformConnection from "./pages/platform-connection";
 import Onboarding from "./pages/onboarding";
 import TopicAnalysis from "./pages/topic-analysis";
