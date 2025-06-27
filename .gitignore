@@ -6,6 +6,6 @@ package-lock.json
 .vscode/
 .idea/
 .env
-.env.local
+src/.env.local
 backend/.env
 backend/node_modules/
