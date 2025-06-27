@@ -38,20 +38,84 @@ A modern React-based project utilizing the latest frontend technologies and tool
 ## 📁 Project Structure
 
 ```
-react_app/
-├── public/             # Static assets
-├── src/
-│   ├── components/     # Reusable UI components
-│   ├── pages/          # Page components
-│   ├── styles/         # Global styles and Tailwind configuration
-│   ├── App.jsx         # Main application component
-│   ├── Routes.jsx      # Application routes
-│   └── index.jsx       # Application entry point
-├── .env                # Environment variables
-├── index.html          # HTML template
-├── package.json        # Project dependencies and scripts
-├── tailwind.config.js  # Tailwind CSS configuration
-└── vite.config.js      # Vite configuration
+code_tracker/
+├── backend/                 # Node.js backend (Express + MongoDB)
+│   ├── config/
+│   │   └── db.js            # MongoDB connection
+│   ├── controllers/         # All route handlers
+│   │   ├── authController.js
+│   │   ├── platformController.js
+│   │   ├── problemController.js
+│   │   └── userController.js
+│   ├── middleware/
+│   │   └── auth.js          # JWT middleware
+│   ├── models/              # Mongoose models
+│   │   ├── PlatformAccount.js
+│   │   ├── Problem.js
+│   │   └── User.js
+│   ├── routes/              # Express route definitions
+│   │   ├── auth.js
+│   │   ├── platform.js
+│   │   ├── problem.js
+│   │   └── user.js
+│   ├── services/            # External API fetch logic
+│   │   ├── leetcode.js
+│   │   └── codeforces.js
+│   ├── utils/
+│   │   └── errorHandler.js
+│   ├── .env                 # Backend environment variables
+│   ├── package.json
+│   └── server.js            # Entry point
+│
+├── public/                  # Static files for frontend
+│   └── index.html
+│
+├── src/                     # React frontend
+│   ├── assets/              # Static images/icons/fonts
+│   ├── components/          # Shared components
+│   │   ├── AppIcon.jsx
+│   │   ├── ErrorBoundary.jsx
+│   │   ├── ScrollToTop.jsx
+│   │   └── ui/              # Reusable UI atoms/molecules
+│   │       ├── Header.jsx
+│   │       ├── ActionButton.jsx
+│   │       ├── FormInput.jsx
+│   │       └── PrivateRoute.jsx
+│   ├── pages/
+│   │   ├── auth/
+│   │   │   ├── Login.jsx
+│   │   │   └── Register.jsx
+│   │   ├── dashboard/
+│   │   │   ├── index.jsx
+│   │   │   └── components/
+│   │   │       ├── BarChart.jsx
+│   │   │       ├── LineChart.jsx
+│   │   │       ├── MetricCard.jsx
+│   │   │       ├── PlatformStatus.jsx
+│   │   │       ├── RadarChart.jsx
+│   │   │       └── SkeletonCard.jsx
+│   │   ├── onboarding/
+│   │   │   └── index.jsx
+│   │   ├── platform-connection/
+│   │   │   ├── index.jsx
+│   │   │   └── components/
+│   │   │       ├── PlatformCard.jsx
+│   │   │       ├── ConnectionModal.jsx
+│   │   │       └── ActionButton.jsx
+│   │   ├── topic-analysis/
+│   │   │   └── index.jsx
+│   │   └── NotFound.jsx
+│   ├── App.jsx              # Axios config + main layout
+│   ├── Routes.jsx           # React Router setup
+│   ├── index.jsx            # App root render
+│   └── styles/              # Tailwind or CSS setup (if separated)
+│
+├── .env.local               # Frontend environment variables
+├── tailwind.config.js       # Tailwind config
+├── vite.config.mjs          # Vite config
+├── package.json             # Frontend dependencies
+└── README.md
+
 ```
 
 ## 🧩 Adding Routes
