@@ -1,106 +1,105 @@
-// backend/services/leetcode.js
 import axios from 'axios';
 
-const REST_BASE = 'https://leetcode.com/api';
-const GQL_URL   = 'https://leetcode.com/graphql';
+const GQL_URL = 'https://leetcode.com/graphql';
 
-/**
- * 1) Page through LeetCode’s REST submissions endpoint.
- *    Returns a flat list of all submissions (up to maxPages * pageSize).
- */
-async function fetchAllLeetCodeSubmissions(username, maxPages = 10, pageSize = 50) {
-  let offset = 0;
-  const allSubs = [];
-
-  for (let page = 0; page < maxPages; page++, offset += pageSize) {
-    const url = `${REST_BASE}/submissions/${encodeURIComponent(username)}/?offset=${offset}&limit=${pageSize}`;
-    const { data } = await axios.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Node.js)' }
-    });
-
-    if (!Array.isArray(data.submissions_dump) || data.submissions_dump.length === 0) {
-      break; // no more data
-    }
-
-    allSubs.push(...data.submissions_dump);
-    if (data.submissions_dump.length < pageSize) {
-      break; // last page reached
-    }
-  }
-
-  return allSubs;
-}
-
-/**
- * 2) Given a batch of titleSlugs, fetch each one's difficulty + tags.
- */
-const QUESTION_QUERY = `
-  query getQuestions($slugs: [String!]!) {
-    questionData(slugs: $slugs) {
+// GraphQL query to get recent submissions
+const RECENT_SUBMISSIONS_QUERY = `
+  query recentSubmissions($username: String!) {
+    recentSubmissionList(username: $username) {
+      title
       titleSlug
-      difficulty
-      topicTags { name }
+      timestamp
+      statusDisplay
     }
   }
 `;
 
-async function fetchProblemDetails(slugs) {
+// GraphQL query to get metadata for one problem
+const QUESTION_DETAIL_QUERY = `
+  query getQuestionDetail($titleSlug: String!) {
+    question(titleSlug: $titleSlug) {
+      titleSlug
+      difficulty
+      topicTags {
+        name
+      }
+    }
+  }
+`;
+
+// 🔁 Fetch only Accepted submissions from recent 20
+async function fetchAcceptedSubmissions(username) {
   const { data } = await axios.post(
     GQL_URL,
-    { query: QUESTION_QUERY, variables: { slugs } },
+    {
+      query: RECENT_SUBMISSIONS_QUERY,
+      variables: { username }
+    },
     { headers: { 'Content-Type': 'application/json' } }
   );
 
-  const list = data.data?.questionData;
-  if (!Array.isArray(list)) {
-    throw new Error('LeetCode GraphQL returned unexpected shape');
-  }
-
-  // build a lookup map: slug → { difficulty, tags }
-  return list.reduce((map, q) => {
-    map[q.titleSlug] = {
-      difficulty: q.difficulty,
-      tags:       q.topicTags.map(t => t.name)
-    };
-    return map;
-  }, {});
+  const submissions = data?.data?.recentSubmissionList || [];
+  return submissions.filter((s) => s.statusDisplay === 'Accepted');
 }
 
-/**
- * 3) Main export: fetch + filter + dedupe + enrich.
- */
-export async function fetchLeetCodeProblems(username) {
-  // a) pull all submissions
-  const submissions = await fetchAllLeetCodeSubmissions(username);
+// 📘 Fetch metadata for each problem one by one
+async function fetchProblemDetails(slugs) {
+  const result = {};
 
-  // b) keep only Accepted ones, and dedupe by slug (most recent only)
-  const latestBySlug = submissions
-    .filter(s => s.status_display === 'Accepted')
-    .reduce((map, s) => {
-      const slug = s.title_slug;
-      if (!map[slug] || s.timestamp > map[slug].timestamp) {
-        map[slug] = s;
+  for (const slug of slugs) {
+    try {
+      const { data } = await axios.post(
+        GQL_URL,
+        {
+          query: QUESTION_DETAIL_QUERY,
+          variables: { titleSlug: slug }
+        },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+
+      const q = data.data?.question;
+      if (q) {
+        result[slug] = {
+          difficulty: q.difficulty || 'Unknown',
+          tags: q.topicTags.map((t) => t.name) || []
+        };
       }
-      return map;
-    }, {});
+    } catch (err) {
+      console.error(`❌ Failed to fetch metadata for ${slug}:`, err.message);
+      result[slug] = { difficulty: 'Unknown', tags: [] };
+    }
+  }
 
-  const slugs = Object.keys(latestBySlug);
+  return result;
+}
+
+// ✅ Final exported function
+export async function fetchLeetCodeProblems(username) {
+  const submissions = await fetchAcceptedSubmissions(username);
+
+  // Deduplicate by latest timestamp
+  const uniqueBySlug = {};
+  for (const s of submissions) {
+    if (!uniqueBySlug[s.titleSlug] || s.timestamp > uniqueBySlug[s.titleSlug].timestamp) {
+      uniqueBySlug[s.titleSlug] = s;
+    }
+  }
+
+  const slugs = Object.keys(uniqueBySlug);
   if (slugs.length === 0) return [];
 
-  // c) fetch each problem’s difficulty + tags
-  const details = await fetchProblemDetails(slugs);
+  const detailsMap = await fetchProblemDetails(slugs);
 
-  // d) assemble final list
-  return slugs.map(slug => {
-    const sub  = latestBySlug[slug];
-    const meta = details[slug] || { difficulty: 'Unknown', tags: [] };
+  return slugs.map((slug) => {
+    const { title, timestamp } = uniqueBySlug[slug];
+    const meta = detailsMap[slug] || { difficulty: 'Unknown', tags: [] };
 
     return {
-      id:         slug,
-      title:      sub.title,
+      id: slug,
+      title,
       difficulty: meta.difficulty,
-      tags:       meta.tags,
-      solvedAt:   new Date(sub.timestamp * 1000)
+      tags: meta.tags,
+      solvedAt: new Date(timestamp * 1000)
     };
   });
 }

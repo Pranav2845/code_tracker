@@ -1,71 +1,79 @@
-// backend/controllers/platformController.js
 import PlatformAccount from '../models/PlatformAccount.js';
-import Problem         from '../models/Problem.js';
-import User            from '../models/User.js';
+import Problem from '../models/Problem.js';
+import User from '../models/User.js';
 import { fetchLeetCodeProblems } from '../services/leetcode.js';
-import { fetchCFProblems }      from '../services/codeforces.js';
+import { fetchCFProblems } from '../services/codeforces.js';
 
 export const syncPlatform = async (req, res) => {
-  const { platform } = req.params;     // "leetcode" or "codeforces"
-  const { handle }   = req.body;       // e.g. "pranav_pandey02"
-  const userId       = req.user._id;   // injected by your auth middleware
+  const { platform } = req.params;     // e.g. 'leetcode'
+  const { handle } = req.body;         // e.g. 'pranav_pandey02'
+  const userId = req.user._id;
 
   try {
-    // 1) Save or update the PlatformAccount record
+    // 1. Save or update the PlatformAccount
     let account = await PlatformAccount.findOne({ user: userId, platform });
     if (account) {
-      account.handle   = handle;
-      account.syncedAt = Date.now();
+      account.handle = handle;
+      account.syncedAt = new Date();
       await account.save();
     } else {
       account = await PlatformAccount.create({
-        user:     userId,
+        user: userId,
         platform,
         handle,
-        syncedAt: Date.now(),
+        syncedAt: new Date(),
       });
     }
 
-    // 1b) Mirror that handle into the User.platforms sub-document
+    // 2. Update user profile for platform handle
     await User.findByIdAndUpdate(userId, {
       $set: { [`platforms.${platform}.handle`]: handle }
     });
 
-    // 2) Fetch their solved problems from the external API
-    let submissions = [];
-    if (platform === 'codeforces') {
-      submissions = await fetchCFProblems(handle);
-    } else if (platform === 'leetcode') {
-      submissions = await fetchLeetCodeProblems(handle);
+    // 3. Fetch problems based on platform
+    let problems = [];
+    if (platform === 'leetcode') {
+      problems = await fetchLeetCodeProblems(handle);
+    } else if (platform === 'codeforces') {
+      problems = await fetchCFProblems(handle);
     } else {
       return res.status(400).json({ message: `Unsupported platform: ${platform}` });
     }
 
-    // 3) Persist into your Problem collection (clear out old ones first)
+    if (!Array.isArray(problems) || problems.length === 0) {
+      return res.status(200).json({
+        message: '⚠️ No problems imported. Double-check your handle & make sure your submissions are public.',
+        account,
+        importedCount: 0
+      });
+    }
+
+    // 4. Clear old problems
     await Problem.deleteMany({ user: userId, platform });
+
+    // 5. Save new problems
     const created = await Promise.all(
-      submissions.map(p =>
+      problems.map(p =>
         Problem.create({
-          user:       userId,
-          platform:   platform,
-          problemId:  p.id,
-          title:      p.title,
+          user: userId,
+          platform,
+          problemId: p.id,
+          title: p.title,
           difficulty: p.difficulty,
-          tags:       p.tags,
-          solvedAt:   p.solvedAt,
+          tags: p.tags,
+          solvedAt: p.solvedAt,
         })
       )
     );
 
-    // 4) Return the updated account + how many were imported
     res.json({
+      message: '✅ Platform synced successfully!',
       account,
-      importedCount: created.length
+      importedCount: created.length,
     });
 
   } catch (err) {
-    console.error('Error in syncPlatform:', err);
-    // Distinguish external-fetch errors vs. db errors if you like
+    console.error('❌ Error in syncPlatform:', err);
     res.status(500).json({ message: 'Sync failed', error: err.message });
   }
 };
