@@ -5,3 +5,7 @@ package-lock.json
 /build
 .vscode/
 .idea/
+.env
+.env.local
+backend/.env
+backend/node_modules/
