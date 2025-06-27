@@ -1,3 +1,4 @@
+// File: src/pages/dashboard/components/SkeletonCard.jsx
 import React from "react";
 
 const SkeletonCard = () => {

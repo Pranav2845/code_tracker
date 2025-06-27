@@ -1,3 +1,4 @@
+// src/components/ui/Header.jsx
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Icon from '../AppIcon';
@@ -86,11 +87,11 @@ function Header({ variant = 'default' }) {
               >
                 <span className="sr-only">Open user menu</span>
                 <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary font-medium">
-                  JD
+                  PP
                 </div>
                 {variant !== 'compact' && (
                   <>
-                    <span className="text-sm font-medium text-text-primary hidden lg:block">John Doe</span>
+                    <span className="text-sm font-medium text-text-primary hidden lg:block">Pranav Pandey</span>
                     <Icon name="ChevronDown" size={16} className="hidden lg:block" />
                   </>
                 )}

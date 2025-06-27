@@ -1,3 +1,4 @@
+// src/pages/onboarding/components/ActionButton.jsx
 import React from "react";
 import Icon from "../../../components/AppIcon";
 

@@ -1,3 +1,4 @@
+// src/components/ui/Input.jsx
 import React, { forwardRef } from 'react';
 import Icon from '../AppIcon';
 

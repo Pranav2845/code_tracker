@@ -1,3 +1,4 @@
+// File: src/pages/onboarding/components/SuccessAnimation.jsx
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";

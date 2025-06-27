@@ -1,3 +1,4 @@
+// File: src/pages/onboarding/components/ValidationMessage.jsx
 import React from "react";
 import Icon from "../../../components/AppIcon";
 

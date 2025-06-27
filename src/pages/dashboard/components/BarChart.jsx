@@ -1,3 +1,4 @@
+// src/pages/dashboard/components/BarChart.jsx
 import React from "react";
 import { ResponsiveContainer, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 

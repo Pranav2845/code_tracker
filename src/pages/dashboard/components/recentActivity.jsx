@@ -1,3 +1,4 @@
+// File: src/pages/dashboard/components/recentActivity.jsx
 import React from "react";
 import Icon from "../../../components/AppIcon";
 

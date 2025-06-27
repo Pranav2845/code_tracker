@@ -1,3 +1,4 @@
+// File: src/pages/dashboard/components/PlatformStatus.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 import Icon from "../../../components/AppIcon";

@@ -1,3 +1,4 @@
+// File: src/pages/onboarding/index.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/AppIcon";

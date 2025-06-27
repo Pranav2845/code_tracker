@@ -1,3 +1,4 @@
+// File: src/pages/onboarding/components/FormInput.jsx
 import React from "react";
 import ValidationMessage from './ValidationMessage';
 

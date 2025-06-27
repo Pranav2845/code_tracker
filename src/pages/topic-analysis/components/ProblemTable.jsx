@@ -1,3 +1,4 @@
+// File: src/pages/topic-analysis/components/ProblemTable.jsx
 import React, { useState, useMemo } from "react";
 import Icon from "../../../components/AppIcon";
 

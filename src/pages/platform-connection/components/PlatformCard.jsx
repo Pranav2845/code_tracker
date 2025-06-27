@@ -1,3 +1,4 @@
+// File: src/pages/platform-connection/components/PlatformCard.jsx
 import React from "react";
 import Icon from "../../../components/AppIcon";
 

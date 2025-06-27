@@ -1,3 +1,4 @@
+// File: src/pages/dashboard/components/MetricCard.jsx
 import React from "react";
 import Icon from "../../../components/AppIcon";
 

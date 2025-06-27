@@ -1,3 +1,4 @@
+// File: src/pages/topic-analysis/components/DifficultyChart.jsx
 import React, { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 

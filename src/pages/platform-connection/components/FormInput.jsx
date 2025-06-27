@@ -1,3 +1,4 @@
+// File: src/pages/platform-connection/components/FormInput.jsx
 import React, { forwardRef } from "react";
 import Icon from "../../../components/AppIcon";
 

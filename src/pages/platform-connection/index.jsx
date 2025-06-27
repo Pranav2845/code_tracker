@@ -1,167 +1,119 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/ui/Header";
 import PlatformCard from "./components/PlatformCard";
 import ConnectionModal from "./components/ConnectionModal";
 import ActionButton from "./components/ActionButton";
-import Icon from "../../components/AppIcon";
 
-const PlatformConnection = () => {
+export default function PlatformConnection() {
   const navigate = useNavigate();
-  const [platforms, setPlatforms] = useState([
-    {
-      id: "leetcode",
-      name: "LeetCode",
-      icon: "Code",
-      color: "var(--color-leetcode)",
-      description: "Connect your LeetCode account to track your problem-solving progress.",
-      isConnected: false,
-      username: "",
-    },
-    {
-      id: "codeforces",
-      name: "Codeforces",
-      icon: "Terminal",
-      color: "var(--color-codeforces)",
-      description: "Link your Codeforces profile to analyze your competitive programming skills.",
-      isConnected: false,
-      username: "",
-    },
-    {
-      id: "hackerrank",
-      name: "HackerRank",
-      icon: "Code2",
-      color: "var(--color-success)",
-      description: "Connect HackerRank to include your challenges and competitions in your analysis.",
-      isConnected: false,
-      username: "",
-    },
-  ]);
-
+  const [platforms, setPlatforms] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPlatform, setCurrentPlatform] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
 
-  const handleOpenModal = (platform) => {
-    setCurrentPlatform(platform);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    // Return focus to the platform card after modal closes
-    const platformCard = document.getElementById(`platform-card-${currentPlatform?.id}`);
-    if (platformCard) {
-      platformCard.focus();
-    }
-  };
-
-  const handleConnect = async (platformId, credentials) => {
-    setIsConnecting(true);
-    
-    // Simulate API connection verification with a timeout
+  // 1️⃣ Fetch the user’s current handles
+  async function fetchPlatforms() {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      
-      // Update the platform connection status
-      setPlatforms(platforms.map(platform => {
-        if (platform.id === platformId) {
-          return {
-            ...platform,
-            isConnected: true,
-            username: credentials.username
-          };
-        }
-        return platform;
-      }));
-      
-      setIsConnecting(false);
-      handleCloseModal();
-    } catch (error) {
-      setIsConnecting(false);
-      console.error("Connection failed:", error);
-    }
-  };
-
-  const handleDisconnect = (platformId) => {
-    setPlatforms(platforms.map(platform => {
-      if (platform.id === platformId) {
+      const { data } = await axios.get("/user/profile");
+      const model = [
+        { id: "leetcode",   name: "LeetCode",   icon: "Code",    color: "#F0C02D" },
+        { id: "codeforces", name: "Codeforces", icon: "Terminal",color: "#339AF0" },
+        { id: "hackerrank", name: "HackerRank", icon: "Code2",   color: "#2EC866" }
+      ].map(p => {
+        const handle = data.platforms?.[p.id]?.handle || "";
         return {
-          ...platform,
-          isConnected: false,
-          username: ""
+          ...p,
+          description: `Connect your ${p.name} account`,
+          isConnected: Boolean(handle),
+          username: handle
         };
-      }
-      return platform;
-    }));
-  };
+      });
+      setPlatforms(model);
+    } catch (err) {
+      console.error("❌ fetchPlatforms error:", err);
+    }
+  }
 
-  const handleSaveAndContinue = () => {
-    const hasConnectedPlatform = platforms.some(platform => platform.isConnected);
-    
-    if (hasConnectedPlatform) {
+  useEffect(() => {
+    fetchPlatforms();
+  }, []);
+
+  // 2️⃣ Open/close the “enter your handle” modal
+  const openModal  = (p) => { setCurrentPlatform(p); setIsModalOpen(true); };
+  const closeModal = () => setIsModalOpen(false);
+
+  // 3️⃣ Connect (sync) a platform
+  async function handleConnect(platformId, { username }) {
+    setIsConnecting(true);
+    try {
+      const { data } = await axios.post(`/platform/sync/${platformId}`, { handle: username });
+      if (data.importedCount === 0) {
+        alert("⚠️ No problems imported. Double-check your handle & that your LeetCode submissions are public.");
+      }
+      await fetchPlatforms();
+      closeModal();
+    } catch (err) {
+      console.error("❌ sync failed:", err);
+      alert("Sync failed—check console for details.");
+    } finally {
+      setIsConnecting(false);
+    }
+  }
+
+  // 4️⃣ Disconnect a platform
+  async function handleDisconnect(platformId) {
+    try {
+      await axios.patch("/user/platforms", { platforms: { [platformId]: "" } });
+      await fetchPlatforms();
+    } catch (err) {
+      console.error("❌ disconnect failed:", err);
+      alert("Disconnect failed—check console for details.");
+    }
+  }
+
+  // 5️⃣ Save & Continue
+  function saveAndContinue() {
+    if (platforms.some(p => p.isConnected)) {
       navigate("/dashboard");
     } else {
-      setShowTooltip(true);
-      setTimeout(() => setShowTooltip(false), 3000);
+      alert("Please connect at least one platform to continue.");
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      
-      <main id="main-content" className="flex-1 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text-primary mb-2">Connect Your Coding Platforms</h1>
-          <p className="text-text-secondary max-w-3xl">
-            Link your accounts from popular coding platforms to track your progress, analyze your performance, 
-            and get personalized recommendations to improve your skills.
-          </p>
-        </div>
-        
+
+      <main className="flex-1 py-8 px-4 max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold mb-2">Connect Your Coding Platforms</h1>
+        <p className="text-text-secondary mb-8">Link your accounts to track your progress.</p>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {platforms.map((platform) => (
+          {platforms.map(p => (
             <PlatformCard
-              key={platform.id}
-              id={`platform-card-${platform.id}`}
-              platform={platform}
-              onConnect={() => handleOpenModal(platform)}
-              onDisconnect={() => handleDisconnect(platform.id)}
+              key={p.id}
+              platform={p}
+              onConnect={() => openModal(p)}
+              onDisconnect={() => handleDisconnect(p.id)}
             />
           ))}
         </div>
-        
-        <div className="flex justify-end relative">
-          <ActionButton 
-            onClick={handleSaveAndContinue}
-            label="Save & Continue"
-            icon="ArrowRight"
-          />
-          
-          {showTooltip && (
-            <div className="absolute bottom-full right-0 mb-2 p-3 bg-surface border border-border rounded-lg shadow-lg text-text-primary text-sm animate-fade-in z-10">
-              <div className="flex items-start">
-                <Icon name="AlertCircle" size={16} className="text-warning mr-2 mt-0.5" />
-                <p>Please connect at least one platform to continue</p>
-              </div>
-              <div className="absolute bottom-0 right-4 transform translate-y-1/2 rotate-45 w-2 h-2 bg-surface border-r border-b border-border"></div>
-            </div>
-          )}
+
+        <div className="flex justify-end">
+          <ActionButton onClick={saveAndContinue} label="Save & Continue" icon="ArrowRight" />
         </div>
       </main>
-      
+
       {isModalOpen && currentPlatform && (
         <ConnectionModal
           platform={currentPlatform}
-          onClose={handleCloseModal}
-          onConnect={(credentials) => handleConnect(currentPlatform.id, credentials)}
+          onClose={closeModal}
+          onConnect={creds => handleConnect(currentPlatform.id, creds)}
           isConnecting={isConnecting}
         />
       )}
     </div>
   );
-};
-
-export default PlatformConnection;
+}
