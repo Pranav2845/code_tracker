@@ -21,7 +21,7 @@ function Header({ variant = 'default' }) {
 
   function handleSignOut() {
     // 1) clear token
-    localStorage.removeItem('token');
+     sessionStorage.removeItem('token');
     // 2) close the dropdown
     setIsProfileMenuOpen(false);
     // 3) send them back to login

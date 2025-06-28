@@ -1,6 +1,7 @@
 // backend/controllers/userController.js
 import User from '../models/User.js';
 import Problem from '../models/Problem.js'; // ← ensure we can query the Problem collection
+import bcrypt from 'bcryptjs';
 
 /**
  * GET /api/user/profile
@@ -27,6 +28,67 @@ export const updatePlatforms = async (req, res) => {
   await user.save();
   res.json(user.platforms);
 };
+
+/**
+ * PATCH /api/user/profile
+ * Update the user's name and email
+ */
+export const updateUserProfile = async (req, res) => {
+  const { name, email } = req.body;
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (email && email !== user.email) {
+      const existing = await User.findOne({ email });
+      if (existing && existing._id.toString() !== user._id.toString()) {
+        return res.status(400).json({ message: 'Email already in use' });
+      }
+      user.email = email;
+    }
+
+    if (typeof name === 'string') {
+      user.name = name;
+    }
+
+    await user.save();
+    const { createdAt, platforms } = user;
+    res.json({ name: user.name, email: user.email, createdAt, platforms });
+  } catch (err) {
+    console.error('❌ updateUserProfile error:', err);
+    res.status(500).json({ message: 'Failed to update profile' });
+  }
+};
+
+/**
+ * POST /api/user/change-password
+ * Change the user's password
+ */
+export const changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ message: 'Password updated' });
+  } catch (err) {
+    console.error('❌ changePassword error:', err);
+    res.status(500).json({ message: 'Failed to change password' });
+  }
+};
+
 
 /**
  * GET /api/user/stats

@@ -70,7 +70,7 @@ export default function Settings() {
 
   // 5️⃣ Sign out
   const signOut = () => {
-    localStorage.removeItem('token');
+     sessionStorage.removeItem('token');
     navigate('/login');
   };
 

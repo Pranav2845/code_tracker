@@ -4,7 +4,8 @@ import axios from "axios";
 import Routes from "./Routes";
 
 // 1️⃣ All requests to “/api/…” will be forwarded by Vite to your backend on :4028
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL; 
+axios.defaults.baseURL =
+  import.meta.env.VITE_API_BASE_URL || "/api"; 
 
 // 2️⃣ Inject the JWT token on every request if present
 axios.interceptors.request.use(
