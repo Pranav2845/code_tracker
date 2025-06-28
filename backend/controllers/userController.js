@@ -1,6 +1,7 @@
 // backend/controllers/userController.js
 import User from '../models/User.js';
 import Problem from '../models/Problem.js'; // ← ensure we can query the Problem collection
+import PlatformAccount from '../models/PlatformAccount.js';
 import bcrypt from 'bcryptjs';
 import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
 
@@ -21,12 +22,26 @@ export const getUserProfile = async (req, res) => {
 export const updatePlatforms = async (req, res) => {
   const { platforms } = req.body;
   const user = req.user;
+  const disconnected = [];
 
   Object.entries(platforms).forEach(([platform, handle]) => {
-    user.platforms[platform].handle = handle || '';
+    const sanitized = handle || '';
+    user.platforms[platform].handle = sanitized;
+    if (!sanitized) disconnected.push(platform);
   });
 
   await user.save();
+   if (disconnected.length) {
+    await Problem.deleteMany({
+      user: user._id,
+      platform: { $in: disconnected },
+    });
+    await PlatformAccount.deleteMany({
+      user: user._id,
+      platform: { $in: disconnected },
+    });
+  }
+
   res.json(user.platforms);
 };
 
