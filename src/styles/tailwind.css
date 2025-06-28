@@ -43,6 +43,19 @@
     --color-primary-900: #0F0C46;
 }
 
+
+/* Dark mode variable overrides */
+.dark {
+    --color-background: #0F172A; /* slate-900 */
+    --color-surface: #1E293B; /* slate-800 */
+    --color-border: #334155; /* slate-700 */
+    --color-divider: #1E293B; /* slate-800 */
+    --color-text-primary: #F8FAFC; /* slate-50 */
+    --color-text-secondary: #E2E8F0; /* slate-200 */
+    --color-text-tertiary: #94A3B8; /* slate-400 */
+}
+
+
 /* Custom Animation Classes */
 @keyframes fadeIn {
     from { opacity: 0; }
