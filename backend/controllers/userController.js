@@ -2,6 +2,7 @@
 import User from '../models/User.js';
 import Problem from '../models/Problem.js'; // ← ensure we can query the Problem collection
 import bcrypt from 'bcryptjs';
+import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
 
 /**
  * GET /api/user/profile
@@ -98,11 +99,34 @@ export const getUserStats = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const totalSolved = await Problem.countDocuments({ user: userId });
-    const byPlatform = await Problem.aggregate([
+     const byPlatformDB = await Problem.aggregate([
       { $match: { user: userId } },
       { $group: { _id: '$platform', count: { $sum: 1 } } }
     ]);
+
+ // Convert aggregation result to map for easier updates
+    const platformMap = {};
+    byPlatformDB.forEach((p) => {
+      platformMap[p._id] = p.count;
+    });
+
+    // If user connected LeetCode, fetch total solved count directly
+    const leetcodeHandle = req.user.platforms?.leetcode?.handle;
+    if (leetcodeHandle) {
+      try {
+        platformMap.leetcode = await fetchLeetCodeSolvedCount(leetcodeHandle);
+      } catch (err) {
+        console.error('❌ fetchLeetCodeSolvedCount error:', err);
+      }
+    }
+
+    const byPlatform = Object.entries(platformMap).map(([id, count]) => ({
+      _id: id,
+      count,
+    }));
+
+    const totalSolved = byPlatform.reduce((sum, p) => sum + p.count, 0);
+
 
     res.json({ totalSolved, byPlatform });
   } catch (error) {
