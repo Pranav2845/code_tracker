@@ -5,6 +5,7 @@ import Icon from '../AppIcon';
 const Input = forwardRef(({
   type = 'text',
   label,
+  labelClassName = '',
   placeholder,
   value,
   onChange,
@@ -35,9 +36,9 @@ const Input = forwardRef(({
   return (
     <div className="w-full">
       {label && (
-        <label 
-          htmlFor={inputId} 
-          className="block text-sm font-medium text-text-primary mb-1"
+        <label
+          htmlFor={inputId}
+          className={`block text-sm font-medium text-text-primary mb-1 ${labelClassName}`}
         >
           {label}
           {required && <span className="text-error ml-1">*</span>}

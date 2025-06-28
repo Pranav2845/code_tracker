@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 // Simple toggle switch if you don't have one in your ui
 const ToggleSwitch = ({ label, checked, onChange }) => (
-  <label className="flex items-center space-x-2 mb-4">
+  <label className="flex items-center space-x-2 mb-4 dark:text-text-primary">
     <input
       type="checkbox"
       checked={checked}
@@ -107,6 +107,7 @@ export default function Settings() {
             name="currentPassword"
             type="password"
             label="Current Password"
+            labelClassName="dark:text-text-primary"
             value={passForm.currentPassword}
             onChange={e => setPassForm(f => ({ ...f, currentPassword: e.target.value }))}
           />
@@ -115,6 +116,7 @@ export default function Settings() {
             name="newPassword"
             type="password"
             label="New Password"
+            labelClassName="dark:text-text-primary"
             value={passForm.newPassword}
             onChange={e => setPassForm(f => ({ ...f, newPassword: e.target.value }))}
           />
@@ -123,6 +125,7 @@ export default function Settings() {
             name="confirm"
             type="password"
             label="Confirm New Password"
+            labelClassName="dark:text-text-primary"
             value={passForm.confirm}
             onChange={e => setPassForm(f => ({ ...f, confirm: e.target.value }))}
           />

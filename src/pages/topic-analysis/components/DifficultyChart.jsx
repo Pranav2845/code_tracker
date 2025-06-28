@@ -60,7 +60,7 @@ const DifficultyChart = ({ difficultyData }) => {
             <YAxis 
               dataKey="name" 
               type="category" 
-              tick={{ fill: '#475569' }} 
+              tick={{ fill: 'var(--color-text-secondary)' }} 
               axisLine={false}
               tickLine={false}
             />
