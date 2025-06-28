@@ -3,7 +3,8 @@ import express from 'express';
 import {
   getUserProfile,
   updatePlatforms,
-  getUserStats
+  getUserStats,
+  getDashboardAnalytics
 } from '../controllers/userController.js';
 
 const router = express.Router();
@@ -12,5 +13,5 @@ const router = express.Router();
 router.get   ('/profile',   getUserProfile);
 router.patch ('/platforms', updatePlatforms);
 router.get   ('/stats',     getUserStats);
-
+router.get   ('/analytics', getDashboardAnalytics);
 export default router;

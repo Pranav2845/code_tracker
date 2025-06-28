@@ -28,11 +28,13 @@ const Dashboard = () => {
       const connections = profileRes.data.platforms || {};
 
       // 2️⃣ Fetch stats & all problems
-      const statsRes    = await axios.get("/user/stats");
-      const problemsRes = await axios.get("/problems");
+      const statsRes     = await axios.get("/user/stats");
+      const problemsRes  = await axios.get("/problems");
+      const analyticsRes = await axios.get("/user/analytics");
       const { totalSolved, byPlatform } = statsRes.data;
       const allProblems  = problemsRes.data;
-
+      const { progressData, platformActivity, topicStrength } = analyticsRes.data;
+      
       // 3️⃣ Build the platforms array
       const platforms = [
         { id: "leetcode",   name: "LeetCode",   color: "var(--color-leetcode)" },
@@ -64,7 +66,7 @@ const Dashboard = () => {
           url:         p.url || "#"    // if you have a problem URL
         }));
 
-      // 5️⃣ Stub out the charts data arrays
+       // 5️⃣ Dashboard analytics
       setDashboardData({
         userStats: {
           totalProblemsSolved: totalSolved,
@@ -73,9 +75,9 @@ const Dashboard = () => {
           longestStreak: 0,
         },
         platforms,
-        progressData:      [],  // ← LINE CHART: guarded in LineChart.jsx
-        topicStrength:     [],  // ← RADAR CHART: guarded in RadarChart.jsx
-        platformActivity:  [],  // you can guard BarChart the same way
+        progressData,
+        topicStrength,
+        platformActivity,  
         recentActivity,
       });
 
