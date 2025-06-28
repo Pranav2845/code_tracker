@@ -149,10 +149,15 @@ This project uses Tailwind CSS for styling. The configuration includes:
 - Fluid typography for responsive text
 - Animation utilities
 
+
 ## 📱 Responsive Design
 
 The app is built with responsive design using Tailwind CSS breakpoints.
 
+## ℹ️ Environment Variables
+
+Create `.env` and `.env.local` files before running the project. Sample
+configurations are provided as `.env.example` and `.env.local.example`.
 
 ## 📦 Deployment
 
@@ -160,4 +165,19 @@ Build the application for production:
 
 ```bash
 npm run build
+```
 
+Run the backend in development mode:
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Run the frontend development server:
+
+```bash
+npm install
+npm run dev
+```
