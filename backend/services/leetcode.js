@@ -132,6 +132,12 @@ export async function fetchLeetCodeSolvedCount(username) {
 
   const stats =
     data?.data?.matchedUser?.submitStatsGlobal?.acSubmissionNum || [];
-
+  // The "acSubmissionNum" array includes an entry with difficulty "All"
+  // which already represents the user's total solved count. Prefer that
+  // value when available to avoid double counting.
+  const totalEntry = stats.find((s) => s.difficulty === 'All');
+  if (totalEntry) {
+    return totalEntry.count || 0;
+  }
   return stats.reduce((sum, s) => sum + (s.count || 0), 0);
 }
