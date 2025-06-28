@@ -4,12 +4,12 @@ import Problem from '../models/Problem.js'; // ← ensure we can query the Probl
 
 /**
  * GET /api/user/profile
- * Returns the current user’s name & email.
+ * Returns the current user's profile information.
  */
 export const getUserProfile = async (req, res) => {
   // req.user is populated by authMiddleware
-  const { name, email } = req.user;
-  res.json({ name, email });
+   const { name, email, createdAt, platforms } = req.user;
+  res.json({ name, email, createdAt, platforms });
 };
 
 /**

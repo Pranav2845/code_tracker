@@ -11,4 +11,7 @@ const problemSchema = new mongoose.Schema({
   solvedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
+// Ensure we don't store duplicates for the same problem
+problemSchema.index({ user: 1, platform: 1, problemId: 1 }, { unique: true });
+
 export default mongoose.model('Problem', problemSchema);
