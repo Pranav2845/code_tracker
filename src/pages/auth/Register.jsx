@@ -1,4 +1,3 @@
-// src/pages/auth/Login.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -34,7 +33,7 @@ const Register = () => {
     try {
       setIsSubmitting(true);
       const { data } = await axios.post('/auth/register', formData);
-      localStorage.setItem('token', data.token);
+      sessionStorage.setItem('token', data.token);
       navigate('/dashboard');
     } catch (err) {
       setServerError(err.response?.data?.message || 'Registration failed');
@@ -49,7 +48,9 @@ const Register = () => {
         onSubmit={handleSubmit}
         className="w-full max-w-sm bg-surface p-6 rounded-lg shadow-md"
       >
-        <h2 className="text-2xl font-bold text-text-primary mb-4 text-center">Register</h2>
+        <h2 className="text-2xl font-bold text-text-primary mb-4 text-center">
+          Register
+        </h2>
 
         {serverError && (
           <p className="text-error text-sm mb-4 text-center">{serverError}</p>

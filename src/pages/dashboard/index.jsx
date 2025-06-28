@@ -24,7 +24,8 @@ const Dashboard = () => {
     try {
       // 1️⃣ Fetch connection info
       const profileRes  = await axios.get("/user/profile");
-      const connections = profileRes.data.platforms;
+      // ← if platforms is missing, default to {}
+      const connections = profileRes.data.platforms || {};
 
       // 2️⃣ Fetch stats & all problems
       const statsRes    = await axios.get("/user/stats");
@@ -40,7 +41,8 @@ const Dashboard = () => {
       ].map((p) => {
         const entry  = byPlatform.find(({ _id }) => _id === p.id);
         const solved = entry ? entry.count : 0;
-        const handle = connections[p.id]?.handle;
+        // ← default handle to empty string
+        const handle = connections[p.id]?.handle || "";
         return {
           ...p,
           isConnected: !!handle,
@@ -216,7 +218,6 @@ const Dashboard = () => {
                   <Icon name="AlertTriangle" size={24} /> Failed to load
                 </div>
               ) : (
-                /* only renders when progressData.length > 0 */
                 <LineChart data={dashboardData.progressData} />
               )}
             </div>
@@ -233,7 +234,6 @@ const Dashboard = () => {
                   <Icon name="AlertTriangle" size={24} /> Failed to load
                 </div>
               ) : (
-                /* only renders when topicStrength.length > 0 */
                 <RadarChart data={dashboardData.topicStrength} />
               )}
             </div>
@@ -260,7 +260,6 @@ const Dashboard = () => {
                 <Icon name="AlertTriangle" size={24} /> Failed to load
               </div>
             ) : (
-              /* you can guard BarChart in the same way */
               <BarChart data={dashboardData.platformActivity} />
             )}
           </div>

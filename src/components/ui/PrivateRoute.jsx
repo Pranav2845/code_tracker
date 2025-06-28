@@ -1,10 +1,13 @@
-// src/components/ui/PrivateRoute.jsx
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
 
 export default function PrivateRoute({ children }) {
-  const token = localStorage.getItem('token');
-  return token
-    ? children
-    : <Navigate to="/login" replace />;
+  const token = sessionStorage.getItem("token");
+  const location = useLocation();
+
+  if (!token) {
+    // redirect to /login, but save current location so we can come back
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  return children;
 }

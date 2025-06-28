@@ -1,41 +1,42 @@
 // src/components/ui/Header.jsx
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from '../AppIcon';
-
 
 function Header({ variant = 'default' }) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const location = useLocation();
-  
+  const navigate = useNavigate();
+
   const navigation = [
     { name: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard' },
     { name: 'Platform Connection', path: '/platform-connection', icon: 'Link' },
     { name: 'Topic Analysis', path: '/topic-analysis', icon: 'BarChart2' },
   ];
-  
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-  
-  const toggleProfileMenu = () => {
-    setIsProfileMenuOpen(!isProfileMenuOpen);
-  };
-  
-  const closeProfileMenu = () => {
+
+  const isActive = (path) => location.pathname === path;
+
+  const toggleProfileMenu = () => setIsProfileMenuOpen(o => !o);
+  const closeProfileMenu = () => setIsProfileMenuOpen(false);
+
+  function handleSignOut() {
+    // 1) clear token
+    localStorage.removeItem('token');
+    // 2) close the dropdown
     setIsProfileMenuOpen(false);
-  };
-  
+    // 3) send them back to login
+    navigate('/login', { replace: true });
+  }
+
   return (
     <header className="bg-surface border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className={`flex items-center justify-between ${variant === 'compact' ? 'h-14' : 'h-16'}`}>
-          {/* Skip to content link for accessibility */}
           <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:p-2 focus:bg-primary focus:text-white focus:z-50">
             Skip to content
           </a>
-          
-          {/* Logo and brand */}
+
+          {/* Logo */}
           <div className="flex items-center">
             <Link to="/dashboard" className="flex items-center">
               <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary text-white mr-2">
@@ -46,16 +47,17 @@ function Header({ variant = 'default' }) {
               </span>
             </Link>
           </div>
-          
-          {/* Navigation - Desktop */}
+
+          {/* Desktop nav */}
           <nav className="hidden md:flex items-center space-x-4">
-            {navigation.map((item) => (
+            {navigation.map(item => (
               <Link
                 key={item.name}
                 to={item.path}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   isActive(item.path)
-                    ? 'bg-primary-50 text-primary' :'text-text-secondary hover:text-text-primary hover:bg-background'
+                    ? 'bg-primary-50 text-primary'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-background'
                 }`}
                 aria-current={isActive(item.path) ? 'page' : undefined}
               >
@@ -63,8 +65,8 @@ function Header({ variant = 'default' }) {
               </Link>
             ))}
           </nav>
-          
-          {/* Right section - User profile and actions */}
+
+          {/* Right side */}
           <div className="flex items-center">
             {/* Notifications */}
             <button
@@ -74,15 +76,14 @@ function Header({ variant = 'default' }) {
             >
               <Icon name="Bell" size={20} />
             </button>
-            
+
             {/* Profile dropdown */}
             <div className="relative ml-3">
               <button
                 type="button"
                 className="flex items-center space-x-2 p-2 rounded-md text-text-secondary hover:text-text-primary hover:bg-background"
-                id="user-menu-button"
-                aria-expanded={isProfileMenuOpen}
                 aria-haspopup="true"
+                aria-expanded={isProfileMenuOpen}
                 onClick={toggleProfileMenu}
               >
                 <span className="sr-only">Open user menu</span>
@@ -96,21 +97,17 @@ function Header({ variant = 'default' }) {
                   </>
                 )}
               </button>
-              
-              {/* Profile dropdown menu */}
+
               {isProfileMenuOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-surface border border-border ring-1 ring-black ring-opacity-5 focus:outline-none z-10 animate-scale-in"
+                  className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-surface border border-border ring-1 ring-black ring-opacity-5 z-10 animate-scale-in"
                   role="menu"
                   aria-orientation="vertical"
-                  aria-labelledby="user-menu-button"
-                  tabIndex="-1"
                 >
                   <Link
                     to="/profile"
                     className="block px-4 py-2 text-sm text-text-primary hover:bg-background"
                     role="menuitem"
-                    tabIndex="-1"
                     onClick={closeProfileMenu}
                   >
                     Your Profile
@@ -119,23 +116,21 @@ function Header({ variant = 'default' }) {
                     to="/settings"
                     className="block px-4 py-2 text-sm text-text-primary hover:bg-background"
                     role="menuitem"
-                    tabIndex="-1"
                     onClick={closeProfileMenu}
                   >
                     Settings
                   </Link>
                   <button
+                    onClick={handleSignOut}
                     className="block w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-background"
                     role="menuitem"
-                    tabIndex="-1"
-                    onClick={closeProfileMenu}
                   >
                     Sign out
                   </button>
                 </div>
               )}
             </div>
-            
+
             {/* Mobile menu button */}
             <div className="flex md:hidden ml-3">
               <button
@@ -151,17 +146,18 @@ function Header({ variant = 'default' }) {
           </div>
         </div>
       </div>
-      
-      {/* Mobile menu, show/hide based on menu state */}
+
+      {/* Mobile nav */}
       <div className="md:hidden" id="mobile-menu">
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          {navigation.map((item) => (
+          {navigation.map(item => (
             <Link
               key={item.name}
               to={item.path}
               className={`block px-3 py-2 rounded-md text-base font-medium ${
                 isActive(item.path)
-                  ? 'bg-primary-50 text-primary' :'text-text-secondary hover:text-text-primary hover:bg-background'
+                  ? 'bg-primary-50 text-primary'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-background'
               }`}
               aria-current={isActive(item.path) ? 'page' : undefined}
             >

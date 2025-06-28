@@ -9,7 +9,7 @@ axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 // 2️⃣ Inject the JWT token on every request if present
 axios.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -21,7 +21,7 @@ axios.interceptors.request.use(
 function App() {
   // Quick health-check (only run if we have a token)
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (!token) return;
 
     axios
