@@ -11,6 +11,47 @@ import BarChart from "./components/BarChart";
 import PlatformStatus from "./components/PlatformStatus";
 import SkeletonCard from "./components/SkeletonCard";
 
+function computeActivityStats(problems) {
+  if (!Array.isArray(problems) || problems.length === 0) {
+    return { activeDays: 0, currentStreak: 0, longestStreak: 0 };
+  }
+
+  const dayStrings = problems.map((p) => new Date(p.solvedAt).toISOString().split("T")[0]);
+  const uniqueDays = Array.from(new Set(dayStrings)).sort();
+
+  let longestStreak = 0;
+  let streak = 0;
+  let prevDate = null;
+
+  uniqueDays.forEach((d) => {
+    const cur = new Date(d);
+    if (prevDate && cur - prevDate === 86_400_000) {
+      streak += 1;
+    } else {
+      streak = 1;
+    }
+    if (streak > longestStreak) longestStreak = streak;
+    prevDate = cur;
+  });
+
+  let currentStreak = 0;
+  prevDate = null;
+  for (let i = uniqueDays.length - 1; i >= 0; i--) {
+    const cur = new Date(uniqueDays[i]);
+    if (!prevDate) {
+      currentStreak = 1;
+    } else if (prevDate - cur === 86_400_000) {
+      currentStreak += 1;
+    } else {
+      break;
+    }
+    prevDate = cur;
+  }
+
+  return { activeDays: uniqueDays.length, currentStreak, longestStreak };
+}
+
+
 const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError]   = useState(false);
@@ -54,10 +95,10 @@ const Dashboard = () => {
 
       // 4️⃣ Recent activity (last 5 solved)
       const recentActivity = allProblems
-        .sort((a,b) => new Date(b.solvedAt) - new Date(a.solvedAt))
-        .slice(0,5)
+        .sort((a, b) => new Date(b.solvedAt) - new Date(a.solvedAt))
+        .slice(0, 5)
         .map((p) => ({
-          id:          p._id,
+           id:         p._id,
           platform:    p.platform,
           problemName: p.title,
           difficulty:  p.difficulty,
@@ -66,13 +107,16 @@ const Dashboard = () => {
           url:         p.url || "#"    // if you have a problem URL
         }));
 
+        const { activeDays, currentStreak, longestStreak } =
+        computeActivityStats(allProblems);
+
        // 5️⃣ Dashboard analytics
       setDashboardData({
         userStats: {
           totalProblemsSolved: totalSolved,
-          activeDays: 0,
-          currentStreak: 0,
-          longestStreak: 0,
+          activeDays,
+          currentStreak,
+          longestStreak,
         },
         platforms,
         progressData,
