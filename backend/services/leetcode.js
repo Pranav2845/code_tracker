@@ -27,6 +27,21 @@ const QUESTION_DETAIL_QUERY = `
   }
 `;
 
+// GraphQL query to get total solved counts per difficulty
+const USER_STATS_QUERY = `
+  query getUserSolved($username: String!) {
+    matchedUser(username: $username) {
+      submitStatsGlobal {
+        acSubmissionNum {
+          difficulty
+          count
+        }
+      }
+    }
+  }
+`;
+
+
 // 🔁 Fetch only Accepted submissions from recent 20
 async function fetchAcceptedSubmissions(username) {
   const { data } = await axios.post(
@@ -102,4 +117,21 @@ export async function fetchLeetCodeProblems(username) {
       solvedAt: new Date(timestamp * 1000)
     };
   });
+}
+
+// ➕ Fetch total solved count for the user
+export async function fetchLeetCodeSolvedCount(username) {
+  const { data } = await axios.post(
+    GQL_URL,
+    {
+      query: USER_STATS_QUERY,
+      variables: { username },
+    },
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+
+  const stats =
+    data?.data?.matchedUser?.submitStatsGlobal?.acSubmissionNum || [];
+
+  return stats.reduce((sum, s) => sum + (s.count || 0), 0);
 }
