@@ -5,7 +5,7 @@ import PlatformAccount from '../models/PlatformAccount.js';
 import bcrypt from 'bcryptjs';
 import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
 import { fetchCSESCount } from '../services/cses.js';
-
+import { fetchGFGSolvedCount } from '../services/gfg.js';
 /**
  * GET /api/user/profile
  * Returns the current user's profile information.
@@ -144,6 +144,17 @@ export const getUserStats = async (req, res) => {
         console.error('❌ fetchCSESCount error:', err);
       }
     }
+
+// If user connected GeeksforGeeks, fetch solved count
+    const gfgHandle = req.user.platforms?.gfg?.handle;
+    if (gfgHandle) {
+      try {
+        platformMap.gfg = await fetchGFGSolvedCount(gfgHandle);
+      } catch (err) {
+        console.error('❌ fetchGFGSolvedCount error:', err);
+      }
+    }
+
 
     const byPlatform = Object.entries(platformMap).map(([id, count]) => ({
       _id: id,
