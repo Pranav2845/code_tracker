@@ -25,3 +25,23 @@ export async function fetchCFProblems(handle) {
       solvedAt:   new Date(s.creationTimeSeconds * 1000),
     }));
 }
+
+// Fetch total solved count for a user from Codeforces
+export async function fetchCFSolvedCount(handle) {
+  const res = await axios.get(
+    `https://codeforces.com/api/user.status?handle=${encodeURIComponent(handle)}`
+  );
+
+  if (res.data.status !== 'OK') {
+    throw new Error(`Codeforces API error: ${res.data.comment || res.data.status}`);
+  }
+
+  const solved = new Set();
+  for (const s of res.data.result) {
+    if (s.verdict === 'OK') {
+      solved.add(`${s.problem.contestId}_${s.problem.index}`);
+    }
+  }
+
+  return solved.size;
+}

@@ -7,7 +7,7 @@ import { fetchGFGProblems } from '../services/gfg.js';
 import { fetchCodingNinjasProblems } from '../services/codingninjas.js';
 import { fetchCSESProblems } from '../services/cses.js';
 import { fetchCodeChefProblems } from '../services/codechef.js';
-
+import { fetchHackerRankProblems } from '../services/hackerrank.js';
 
 export const syncPlatform = async (req, res) => {
   const { platform } = req.params;     // e.g. 'leetcode'
@@ -51,7 +51,7 @@ export const syncPlatform = async (req, res) => {
     } else if (platform === 'codechef') {
       problems = await fetchCodeChefProblems(handle);
     } else if (platform === 'hackerrank') {
-      problems = [];
+      problems = await fetchHackerRankProblems(handle);
     }
     else {
       return res.status(400).json({ message: `Unsupported platform: ${platform}` });
