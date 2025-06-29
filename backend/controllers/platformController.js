@@ -3,6 +3,11 @@ import Problem from '../models/Problem.js';
 import User from '../models/User.js';
 import { fetchLeetCodeProblems } from '../services/leetcode.js';
 import { fetchCFProblems } from '../services/codeforces.js';
+import { fetchGFGProblems } from '../services/gfg.js';
+import { fetchCodingNinjasProblems } from '../services/codingninjas.js';
+import { fetchCSESProblems } from '../services/cses.js';
+import { fetchCodeChefProblems } from '../services/codechef.js';
+
 
 export const syncPlatform = async (req, res) => {
   const { platform } = req.params;     // e.g. 'leetcode'
@@ -36,7 +41,19 @@ export const syncPlatform = async (req, res) => {
       problems = await fetchLeetCodeProblems(handle);
     } else if (platform === 'codeforces') {
       problems = await fetchCFProblems(handle);
-    } else {
+    } 
+     else if (platform === 'gfg') {
+      problems = await fetchGFGProblems(handle);
+    } else if (platform === 'codingninjas') {
+      problems = await fetchCodingNinjasProblems(handle);
+    } else if (platform === 'cses') {
+      problems = await fetchCSESProblems(handle);
+    } else if (platform === 'codechef') {
+      problems = await fetchCodeChefProblems(handle);
+    } else if (platform === 'hackerrank') {
+      problems = [];
+    }
+    else {
       return res.status(400).json({ message: `Unsupported platform: ${platform}` });
     }
 

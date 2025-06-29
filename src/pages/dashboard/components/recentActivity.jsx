@@ -32,7 +32,20 @@ const RecentActivity = ({ activities, isLoading, hasError, onRefresh }) => {
     <div className="divide-y divide-border">
       {activities.map((activity) => (
         <div key={activity.id} className="py-3 flex items-center">
-          <div className={`w-2 h-2 rounded-full mr-3 ${activity.platform === 'leetcode' ? 'bg-leetcode' : 'bg-codeforces'}`}></div>
+           <div
+            className={`w-2 h-2 rounded-full mr-3 ${
+              {
+                leetcode: 'bg-leetcode',
+                codeforces: 'bg-codeforces',
+                hackerrank: 'bg-success',
+                gfg: 'bg-gfg',
+                codingninjas: 'bg-codingninjas',
+                cses: 'bg-cses',
+                codechef: 'bg-codechef'
+              }[activity.platform] || 'bg-primary'
+            }`}
+          ></div>
+          
           <div className="flex-1">
             <div className="flex items-center">
               <h3 className="text-sm font-medium text-text-primary">{activity.problemName}</h3>

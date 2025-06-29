@@ -15,22 +15,16 @@ function computeActivityStats(problems) {
   if (!Array.isArray(problems) || problems.length === 0) {
     return { currentStreak: 0, longestStreak: 0 };
   }
-
-  const dayStrings = problems.map((p) => new Date(p.solvedAt).toISOString().split("T")[0]);
+  const dayStrings = problems
+    .map((p) => new Date(p.solvedAt).toISOString().split("T")[0]);
   const uniqueDays = Array.from(new Set(dayStrings)).sort();
 
-  let longestStreak = 0;
-  let streak = 0;
-  let prevDate = null;
-
+  let longestStreak = 0, streak = 0, prevDate = null;
   uniqueDays.forEach((d) => {
     const cur = new Date(d);
-    if (prevDate && cur - prevDate === 86_400_000) {
-      streak += 1;
-    } else {
-      streak = 1;
-    }
-    if (streak > longestStreak) longestStreak = streak;
+    if (prevDate && cur - prevDate === 86_400_000) streak += 1;
+    else streak = 1;
+    longestStreak = Math.max(longestStreak, streak);
     prevDate = cur;
   });
 
@@ -38,93 +32,81 @@ function computeActivityStats(problems) {
   prevDate = null;
   for (let i = uniqueDays.length - 1; i >= 0; i--) {
     const cur = new Date(uniqueDays[i]);
-    if (!prevDate) {
-      currentStreak = 1;
-    } else if (prevDate - cur === 86_400_000) {
-      currentStreak += 1;
-    } else {
-      break;
-    }
+    if (!prevDate) currentStreak = 1;
+    else if (prevDate - cur === 86_400_000) currentStreak += 1;
+    else break;
     prevDate = cur;
   }
 
   return { currentStreak, longestStreak };
 }
 
-
 const Dashboard = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError]   = useState(false);
+  const [isLoading, setIsLoading]       = useState(true);
+  const [hasError, setHasError]         = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
-  const [lastUpdated, setLastUpdated]     = useState(new Date());
+  const [lastUpdated, setLastUpdated]   = useState(new Date());
 
   const fetchData = async () => {
     setIsLoading(true);
     setHasError(false);
-
     try {
-      // 1️⃣ Fetch connection info
       const profileRes  = await axios.get("/user/profile");
-      // ← if platforms is missing, default to {}
       const connections = profileRes.data.platforms || {};
 
-      // 2️⃣ Fetch stats & all problems
       const statsRes     = await axios.get("/user/stats");
       const problemsRes  = await axios.get("/problems");
       const analyticsRes = await axios.get("/user/analytics");
       const { totalSolved, byPlatform, activeDays } = statsRes.data;
       const allProblems  = problemsRes.data;
       const { progressData, platformActivity, topicStrength } = analyticsRes.data;
-      
-      // 3️⃣ Build the platforms array
+
+      // 3️⃣ Build the platforms array (now includes GFG, Coding Ninjas, CSES, CodeChef)
       const platforms = [
-        { id: "leetcode",   name: "LeetCode",   color: "var(--color-leetcode)" },
-        { id: "codeforces", name: "Codeforces", color: "var(--color-codeforces)" },
-        { id: "hackerrank", name: "HackerRank", color: "var(--color-success)" }
+        { id: "leetcode",     name: "LeetCode",      color: "var(--color-leetcode)" },
+        { id: "codeforces",   name: "Codeforces",    color: "var(--color-codeforces)" },
+        { id: "hackerrank",   name: "HackerRank",    color: "var(--color-success)" },
+        { id: "gfg",          name: "GeeksforGeeks", color: "var(--color-gfg)" },
+        { id: "codingninjas", name: "Coding Ninjas", color: "var(--color-codingninjas)" },
+        { id: "cses",         name: "CSES",          color: "var(--color-cses)" },
+        { id: "codechef",     name: "CodeChef",      color: "var(--color-codechef)" }
       ].map((p) => {
         const entry  = byPlatform.find(({ _id }) => _id === p.id);
         const solved = entry ? entry.count : 0;
-        // ← default handle to empty string
         const handle = connections[p.id]?.handle || "";
-        return {
-          ...p,
-          isConnected: !!handle,
-          problemsSolved: solved,
-        };
+        return { ...p, isConnected: !!handle, problemsSolved: solved };
       });
 
-      // 4️⃣ Recent activity (last 5 solved)
+      // 4️⃣ Recent activity (last 5 solves)
       const recentActivity = allProblems
         .sort((a, b) => new Date(b.solvedAt) - new Date(a.solvedAt))
         .slice(0, 5)
         .map((p) => ({
-           id:         p._id,
+          id:          p._id,
           platform:    p.platform,
           problemName: p.title,
           difficulty:  p.difficulty,
           timestamp:   p.solvedAt,
           topics:      p.tags,
-          url:         p.url || "#"    // if you have a problem URL
+          url:         p.url || "#"
         }));
 
-        const { currentStreak, longestStreak } =
-        computeActivityStats(allProblems);
+      const { currentStreak, longestStreak } = computeActivityStats(allProblems);
 
-       // 5️⃣ Dashboard analytics
+      // 5️⃣ Dashboard analytics
       setDashboardData({
         userStats: {
           totalProblemsSolved: totalSolved,
           activeDays,
           currentStreak,
-          longestStreak,
+          longestStreak
         },
         platforms,
         progressData,
         topicStrength,
-        platformActivity,  
-        recentActivity,
+        platformActivity,
+        recentActivity
       });
-
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
@@ -143,13 +125,14 @@ const Dashboard = () => {
   const handleRefresh = () => fetchData();
   const formatTime = (d) =>
     new Intl.DateTimeFormat("en-US", {
-      hour: "numeric", minute: "numeric", hour12: true
+      hour:   "numeric",
+      minute: "numeric",
+      hour12: true
     }).format(d);
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Dashboard Header */}
         <div className="flex justify-between items-center mb-6">
@@ -202,40 +185,39 @@ const Dashboard = () => {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {isLoading
-            ? [0,1,2,3].map((_,i) => <SkeletonCard key={i} />)
-            : hasError
-            ? (
-              <div className="col-span-full p-4 bg-surface border rounded text-center">
-                Failed to load stats
-              </div>
-            ) : (
-              <>
-                <MetricCard
-                  title="Total Problems Solved"
-                  value={dashboardData.userStats.totalProblemsSolved}
-                  icon="CheckCircle"
-                  trend="+12 this week"
-                  trendUp
-                />
-                <MetricCard
-                  title="Active Days"
-                  value={dashboardData.userStats.activeDays}
-                  icon="Calendar"
-                  trend="+3 this week"
-                  trendUp
-                />
-                <MetricCard
-                  title="Current Streak"
-                  value={dashboardData.userStats.currentStreak}
-                  icon="Flame"
-                />
-                <MetricCard
-                  title="Longest Streak"
-                  value={dashboardData.userStats.longestStreak}
-                  icon="Award"
-                />
-              </>
+          {isLoading ? (
+            [0,1,2,3].map((_,i) => <SkeletonCard key={i} />)
+          ) : hasError ? (
+            <div className="col-span-full p-4 bg-surface border rounded text-center">
+              Failed to load stats
+            </div>
+          ) : (
+            <>
+              <MetricCard
+                title="Total Problems Solved"
+                value={dashboardData.userStats.totalProblemsSolved}
+                icon="CheckCircle"
+                trend="+12 this week"
+                trendUp
+              />
+              <MetricCard
+                title="Active Days"
+                value={dashboardData.userStats.activeDays}
+                icon="Calendar"
+                trend="+3 this week"
+                trendUp
+              />
+              <MetricCard
+                title="Current Streak"
+                value={dashboardData.userStats.currentStreak}
+                icon="Flame"
+              />
+              <MetricCard
+                title="Longest Streak"
+                value={dashboardData.userStats.longestStreak}
+                icon="Award"
+              />
+            </>
           )}
         </div>
 
@@ -245,14 +227,27 @@ const Dashboard = () => {
           <div className="bg-surface border rounded p-4 shadow-sm">
             <div className="flex justify-between mb-4">
               <h2 className="font-semibold">Problem Solving Progress</h2>
-              <div className="flex space-x-2 text-xs text-text-secondary">
+              <div className="flex flex-wrap gap-2 text-xs text-text-secondary">
                 <span className="flex items-center">
-                  <span className="w-2 h-2 bg-leetcode rounded-full mr-1" />
-                  LeetCode
+                  <span className="w-2 h-2 bg-leetcode rounded-full mr-1" />LeetCode
                 </span>
                 <span className="flex items-center">
-                  <span className="w-2 h-2 bg-codeforces rounded-full mr-1" />
-                  Codeforces
+                  <span className="w-2 h-2 bg-codeforces rounded-full mr-1" />Codeforces
+                </span>
+                <span className="flex items-center">
+                  <span className="w-2 h-2 bg-success rounded-full mr-1" />HackerRank
+                </span>
+                <span className="flex items-center">
+                  <span className="w-2 h-2 bg-gfg rounded-full mr-1" />GFG
+                </span>
+                <span className="flex items-center">
+                  <span className="w-2 h-2 bg-codingninjas rounded-full mr-1" />Coding Ninjas
+                </span>
+                <span className="flex items-center">
+                  <span className="w-2 h-2 bg-cses rounded-full mr-1" />CSES
+                </span>
+                <span className="flex items-center">
+                  <span className="w-2 h-2 bg-codechef rounded-full mr-1" />CodeChef
                 </span>
               </div>
             </div>
@@ -284,10 +279,7 @@ const Dashboard = () => {
               )}
             </div>
             <div className="text-right mt-2">
-              <Link
-                to="/topic-analysis"
-                className="text-sm text-primary flex items-center justify-end"
-              >
+              <Link to="/topic-analysis" className="text-sm text-primary flex items-center justify-end">
                 View detailed analysis
                 <Icon name="ArrowRight" size={14} className="ml-1" />
               </Link>
@@ -318,7 +310,7 @@ const Dashboard = () => {
             <button className="text-sm text-primary hover:underline">View all</button>
           </div>
           {isLoading ? (
-            Array.from({ length: 5 }).map((_,i) => (
+            Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="h-16 bg-background animate-pulse rounded mb-2" />
             ))
           ) : hasError ? (
@@ -331,7 +323,15 @@ const Dashboard = () => {
                 <div key={act.id} className="py-3 flex items-center">
                   <div
                     className={`w-2 h-2 rounded-full mr-3 ${
-                      act.platform === "leetcode" ? "bg-leetcode" : "bg-codeforces"
+                      ({
+                        leetcode:    "bg-leetcode",
+                        codeforces:  "bg-codeforces",
+                        hackerrank:  "bg-success",
+                        gfg:         "bg-gfg",
+                        codingninjas:"bg-codingninjas",
+                        cses:        "bg-cses",
+                        codechef:    "bg-codechef"
+                      }[act.platform] || "bg-primary")
                     }`}
                   />
                   <div className="flex-1">
@@ -352,7 +352,7 @@ const Dashboard = () => {
                     <div className="text-xs text-text-secondary mt-1">
                       {new Date(act.timestamp).toLocaleDateString("en-US", {
                         month: "short",
-                        day: "numeric"
+                        day:   "numeric"
                       })}
                     </div>
                   </div>

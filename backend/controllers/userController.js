@@ -11,7 +11,7 @@ import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
  */
 export const getUserProfile = async (req, res) => {
   // req.user is populated by authMiddleware
-   const { name, email, createdAt, platforms } = req.user;
+  const { name, email, createdAt, platforms } = req.user;
   res.json({ name, email, createdAt, platforms });
 };
 
@@ -31,7 +31,7 @@ export const updatePlatforms = async (req, res) => {
   });
 
   await user.save();
-   if (disconnected.length) {
+  if (disconnected.length) {
     await Problem.deleteMany({
       user: user._id,
       platform: { $in: disconnected },
@@ -105,7 +105,6 @@ export const changePassword = async (req, res) => {
   }
 };
 
-
 /**
  * GET /api/user/stats
  * Returns `{ totalSolved, byPlatform }`.
@@ -114,12 +113,12 @@ export const getUserStats = async (req, res) => {
   try {
     const userId = req.user._id;
 
-     const byPlatformDB = await Problem.aggregate([
+    const byPlatformDB = await Problem.aggregate([
       { $match: { user: userId } },
       { $group: { _id: '$platform', count: { $sum: 1 } } }
     ]);
 
- // Convert aggregation result to map for easier updates
+    // Convert aggregation result to map for easier updates
     const platformMap = {};
     byPlatformDB.forEach((p) => {
       platformMap[p._id] = p.count;
@@ -142,7 +141,6 @@ export const getUserStats = async (req, res) => {
 
     const totalSolved = byPlatform.reduce((sum, p) => sum + p.count, 0);
 
-
     res.json({ totalSolved, byPlatform });
   } catch (error) {
     console.error('❌ getUserStats error:', error);
@@ -161,8 +159,7 @@ export const getDashboardAnalytics = async (req, res) => {
     // 1️⃣ Aggregate solved problems by month & platform
     const monthly = await Problem.aggregate([
       { $match: { user: userId } },
-      {
-        $group: {
+      { $group: {
           _id: {
             month: { $dateToString: { format: '%Y-%m-01', date: '$solvedAt' } },
             platform: '$platform'
@@ -173,44 +170,56 @@ export const getDashboardAnalytics = async (req, res) => {
       { $sort: { '_id.month': 1 } }
     ]);
 
-    // Build a map of month -> { platform: count }
+    // Determine connected platforms and build a map of month -> { platform: count }
+    let connectedPlatforms = Object.entries(req.user.platforms || {})
+      .filter(([, val]) => val && val.handle)
+      .map(([key]) => key);
+
+    if (connectedPlatforms.length === 0) {
+      connectedPlatforms = Array.from(new Set(monthly.map((m) => m._id.platform)));
+    }
+
     const monthCounts = {};
     const monthSet = new Set();
     monthly.forEach((m) => {
       const { month, platform } = m._id;
       monthSet.add(month);
       if (!monthCounts[month]) {
-        monthCounts[month] = { leetcode: 0, codeforces: 0, hackerrank: 0 };
+        monthCounts[month] = {};
+        connectedPlatforms.forEach((p) => {
+          monthCounts[month][p] = 0;
+        });
       }
-      monthCounts[month][platform] = m.count;
+      if (connectedPlatforms.includes(platform)) {
+        monthCounts[month][platform] = m.count;
+      }
     });
 
     const months = Array.from(monthSet).sort();
-    const cumulative = { leetcode: 0, codeforces: 0, hackerrank: 0 };
+    const cumulative = {};
+    connectedPlatforms.forEach((p) => (cumulative[p] = 0));
     const progressData = [];
     const platformActivity = [];
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     months.forEach((month) => {
       const counts = monthCounts[month] || {};
-      cumulative.leetcode += counts.leetcode || 0;
-      cumulative.codeforces += counts.codeforces || 0;
-      cumulative.hackerrank += counts.hackerrank || 0;
-
-      progressData.push({
-        date: month,
-        leetcode: cumulative.leetcode,
-        codeforces: cumulative.codeforces,
-        hackerrank: cumulative.hackerrank
+      connectedPlatforms.forEach((p) => {
+        cumulative[p] += counts[p] || 0;
       });
+
+      const progressEntry = { date: month };
+      connectedPlatforms.forEach((p) => {
+        progressEntry[p] = cumulative[p];
+      });
+      progressData.push(progressEntry);
 
       const label = monthNames[new Date(month).getUTCMonth()];
-      platformActivity.push({
-        month: label,
-        leetcode: counts.leetcode || 0,
-        codeforces: counts.codeforces || 0,
-        hackerrank: counts.hackerrank || 0
+      const activityEntry = { month: label };
+      connectedPlatforms.forEach((p) => {
+        activityEntry[p] = counts[p] || 0;
       });
+      platformActivity.push(activityEntry);
     });
 
     // 2️⃣ Aggregate by tags for topic strength

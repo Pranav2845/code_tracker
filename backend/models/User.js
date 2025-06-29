@@ -8,7 +8,11 @@ const userSchema = new mongoose.Schema({
   platforms: {
     leetcode: { handle: String },
     codeforces: { handle: String },
-    hackerrank: { handle: String }
+    hackerrank: { handle: String },
+    gfg: { handle: String },
+    codingninjas: { handle: String },
+    cses: { handle: String },
+    codechef: { handle: String }
   }
 }, { timestamps: true });
 

@@ -34,6 +34,10 @@ module.exports = {
         info: 'var(--color-info)',
         leetcode: 'var(--color-leetcode)',
         codeforces: 'var(--color-codeforces)',
+        gfg: 'var(--color-gfg)',
+        codingninjas: 'var(--color-codingninjas)',
+        cses: 'var(--color-cses)',
+        codechef: 'var(--color-codechef)',
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui'],

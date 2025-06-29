@@ -3,7 +3,19 @@ import mongoose from 'mongoose';
 
 const problemSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  platform: { type: String, enum: ['leetcode','codeforces','hackerrank'], required: true },
+  platform: {
+    type: String,
+    enum: [
+      'leetcode',
+      'codeforces',
+      'hackerrank',
+      'gfg',
+      'codingninjas',
+      'cses',
+      'codechef'
+    ],
+    required: true
+  },
   problemId: { type: String, required: true },
   title: { type: String, required: true },
   difficulty: { type: String },

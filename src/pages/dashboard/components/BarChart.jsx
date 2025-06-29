@@ -49,13 +49,18 @@ const BarChart = ({ data }) => {
           fill="var(--color-leetcode)" 
           radius={[4, 4, 0, 0]}
         />
-        <Bar 
-          dataKey="codeforces" 
-          name="Codeforces" 
-          stackId="a" 
+       <Bar
+          dataKey="codeforces"
+          name="Codeforces"
+          stackId="a"
           fill="var(--color-codeforces)" 
           radius={[4, 4, 0, 0]}
         />
+         <Bar dataKey="hackerrank" name="HackerRank" stackId="a" fill="var(--color-success)" radius={[4,4,0,0]} />
+        <Bar dataKey="gfg" name="GFG" stackId="a" fill="var(--color-gfg)" radius={[4,4,0,0]} />
+        <Bar dataKey="codingninjas" name="Coding Ninjas" stackId="a" fill="var(--color-codingninjas)" radius={[4,4,0,0]} />
+        <Bar dataKey="cses" name="CSES" stackId="a" fill="var(--color-cses)" radius={[4,4,0,0]} />
+        <Bar dataKey="codechef" name="CodeChef" stackId="a" fill="var(--color-codechef)" radius={[4,4,0,0]} />
       </RechartsBarChart>
     </ResponsiveContainer>
   );
