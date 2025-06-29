@@ -31,8 +31,8 @@ const ProblemTable = ({ problems }) => {
   const filteredProblems = React.useMemo(() => {
     if (!searchTerm) return sortedProblems;
     
-    return sortedProblems.filter(problem => 
-      problem.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    return sortedProblems.filter(problem =>
+      problem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       problem.platform.toLowerCase().includes(searchTerm.toLowerCase()) ||
       problem.difficulty.toLowerCase().includes(searchTerm.toLowerCase()) ||
       problem.status.toLowerCase().includes(searchTerm.toLowerCase())
@@ -182,7 +182,7 @@ const ProblemTable = ({ problems }) => {
                 return (
                   <tr key={problem.id} className="hover:bg-background transition-colors duration-150">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-text-primary">{problem.name}</div>
+                      <div className="text-sm font-medium text-text-primary">{problem.title}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-text-secondary">
@@ -219,7 +219,7 @@ const ProblemTable = ({ problems }) => {
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-primary hover:text-primary-dark"
-                        aria-label={`View ${problem.name} on ${problem.platform}`}
+                         aria-label={`View ${problem.title} on ${problem.platform}`}
                       >
                         <Icon name="ExternalLink" size={16} />
                       </a>
