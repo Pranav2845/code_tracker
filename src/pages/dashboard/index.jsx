@@ -13,7 +13,7 @@ import SkeletonCard from "./components/SkeletonCard";
 
 function computeActivityStats(problems) {
   if (!Array.isArray(problems) || problems.length === 0) {
-    return { activeDays: 0, currentStreak: 0, longestStreak: 0 };
+    return { currentStreak: 0, longestStreak: 0 };
   }
 
   const dayStrings = problems.map((p) => new Date(p.solvedAt).toISOString().split("T")[0]);
@@ -48,7 +48,7 @@ function computeActivityStats(problems) {
     prevDate = cur;
   }
 
-  return { activeDays: uniqueDays.length, currentStreak, longestStreak };
+  return { currentStreak, longestStreak };
 }
 
 
@@ -72,7 +72,7 @@ const Dashboard = () => {
       const statsRes     = await axios.get("/user/stats");
       const problemsRes  = await axios.get("/problems");
       const analyticsRes = await axios.get("/user/analytics");
-      const { totalSolved, byPlatform } = statsRes.data;
+      const { totalSolved, byPlatform, activeDays } = statsRes.data;
       const allProblems  = problemsRes.data;
       const { progressData, platformActivity, topicStrength } = analyticsRes.data;
       
@@ -107,7 +107,7 @@ const Dashboard = () => {
           url:         p.url || "#"    // if you have a problem URL
         }));
 
-        const { activeDays, currentStreak, longestStreak } =
+        const { currentStreak, longestStreak } =
         computeActivityStats(allProblems);
 
        // 5️⃣ Dashboard analytics

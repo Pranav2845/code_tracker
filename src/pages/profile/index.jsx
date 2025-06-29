@@ -16,7 +16,7 @@ export default function Profile() {
   if (!profile) return <p className="p-4">Loading…</p>;
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+     <div className="max-w-3xl mx-auto p-6 min-h-screen bg-background">
       <h1 className="text-2xl font-bold mb-4">Your Profile</h1>
       <div className="space-y-2">
         <p><strong>Name:</strong> {profile.name}</p>
