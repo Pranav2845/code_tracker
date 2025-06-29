@@ -1,12 +1,12 @@
 // backend/services/cses.js
 
 import axios from 'axios';
-import cheerio from 'cheerio';
+import { load } from 'cheerio';
 export async function fetchCSESProblems(username) {
   const url = `https://cses.fi/user/${encodeURIComponent(username)}`;
   const { data: html } = await axios.get(url);
 
-  const $ = cheerio.load(html);
+  const $ = load(html);
   const problems = [];
 
   $('a[href^="/problemset/task/"]').each((_, el) => {

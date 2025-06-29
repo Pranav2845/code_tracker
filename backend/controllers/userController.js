@@ -3,15 +3,8 @@ import User from '../models/User.js';
 import Problem from '../models/Problem.js'; // ← ensure we can query the Problem collection
 import PlatformAccount from '../models/PlatformAccount.js';
 import bcrypt from 'bcryptjs';
-import {
-  fetchLeetCodeSolvedCount,
-} from '../services/leetcode.js';
-import { fetchCFSolvedCount } from '../services/codeforces.js';
-import { fetchHackerRankSolvedCount } from '../services/hackerrank.js';
-import { fetchGFGSolvedCount } from '../services/gfg.js';
-import { fetchCodingNinjasSolvedCount } from '../services/codingninjas.js';
-import { fetchCSESSolvedCount } from '../services/cses.js';
-import { fetchCodeChefSolvedCount } from '../services/codechef.js';
+import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
+import { fetchCSESCount } from '../services/cses.js';
 
 /**
  * GET /api/user/profile
@@ -133,61 +126,22 @@ export const getUserStats = async (req, res) => {
     });
 
     // If user connected LeetCode, fetch total solved count directly
-     const { platforms = {} } = req.user;
-
-    if (platforms.leetcode?.handle) {
+    const leetcodeHandle = req.user.platforms?.leetcode?.handle;
+    if (leetcodeHandle) {
       try {
-        platformMap.leetcode = await fetchLeetCodeSolvedCount(platforms.leetcode.handle);
+        platformMap.leetcode = await fetchLeetCodeSolvedCount(leetcodeHandle);
       } catch (err) {
         console.error('❌ fetchLeetCodeSolvedCount error:', err);
       }
     }
 
-    if (platforms.codeforces?.handle) {
+    // If user connected CSES, fetch solved count via scraper
+    const csesHandle = req.user.platforms?.cses?.handle;
+    if (csesHandle) {
       try {
-        platformMap.codeforces = await fetchCFSolvedCount(platforms.codeforces.handle);
+        platformMap.cses = await fetchCSESCount(csesHandle);
       } catch (err) {
-        console.error('❌ fetchCFSolvedCount error:', err);
-      }
-    }
-
-    if (platforms.hackerrank?.handle) {
-      try {
-        platformMap.hackerrank = await fetchHackerRankSolvedCount(platforms.hackerrank.handle);
-      } catch (err) {
-        console.error('❌ fetchHackerRankSolvedCount error:', err);
-      }
-    }
-
-    if (platforms.gfg?.handle) {
-      try {
-        platformMap.gfg = await fetchGFGSolvedCount(platforms.gfg.handle);
-      } catch (err) {
-        console.error('❌ fetchGFGSolvedCount error:', err);
-      }
-    }
-
-    if (platforms.codingninjas?.handle) {
-      try {
-        platformMap.codingninjas = await fetchCodingNinjasSolvedCount(platforms.codingninjas.handle);
-      } catch (err) {
-        console.error('❌ fetchCodingNinjasSolvedCount error:', err);
-      }
-    }
-
-    if (platforms.cses?.handle) {
-      try {
-        platformMap.cses = await fetchCSESSolvedCount(platforms.cses.handle);
-      } catch (err) {
-        console.error('❌ fetchCSESSolvedCount error:', err);
-      }
-    }
-
-    if (platforms.codechef?.handle) {
-      try {
-        platformMap.codechef = await fetchCodeChefSolvedCount(platforms.codechef.handle);
-      } catch (err) {
-        console.error('❌ fetchCodeChefSolvedCount error:', err);
+        console.error('❌ fetchCSESCount error:', err);
       }
     }
 
