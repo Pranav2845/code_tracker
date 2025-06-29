@@ -55,7 +55,10 @@ export default function PlatformConnection() {
     try {
       const { data } = await axios.post(`/platform/sync/${platformId}`, { handle: username });
       if (data.importedCount === 0) {
-alert("⚠️ No problems imported. Double-check your handle and that your submissions are public.");      }
+        // Surface warning from server if no problems were imported
+        alert(data.message ||
+          "⚠️ No problems imported. Double-check your handle and that your submissions are public.");
+      }
       await fetchPlatforms();
       closeModal();
     } catch (err) {
