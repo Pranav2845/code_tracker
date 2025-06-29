@@ -75,9 +75,61 @@ export async function fetchGFGProblems(username) {
 }
 
 /**
+ * Attempt to read just the solved count via the official API.
+ * Returns the count or throws on network/HTTP errors.
+ */
+async function fetchGFGSolvedCountOfficial(username) {
+  const url = `https://practiceapi.geeksforgeeks.org/api/v1/user/get_stats?username=${encodeURIComponent(username)}`;
+  const { data } = await axios.get(url);
+
+  // Helper to recursively search for a numeric property containing "solved"
+  const findSolved = (obj) => {
+    if (!obj || typeof obj !== 'object') return undefined;
+    for (const [key, val] of Object.entries(obj)) {
+      if (typeof val === 'number' && key.toLowerCase().includes('solved')) {
+        return val;
+      }
+      if (typeof val === 'string' && key.toLowerCase().includes('solved') && !isNaN(Number(val))) {
+        return Number(val);
+      }
+      if (val && typeof val === 'object') {
+        const nested = findSolved(val);
+        if (typeof nested === 'number') return nested;
+      }
+    }
+    return undefined;
+  };
+
+  const solved = findSolved(data);
+  if (typeof solved === 'number') {
+    console.log(`🔍 Official API solved count ${solved} for ${username}`);
+    return solved;
+  }
+
+  const problems = data?.data?.practice?.problems || data?.practice?.problems;
+  if (Array.isArray(problems)) {
+    console.log(`🔍 Derived solved count ${problems.length} from problems array for ${username}`);
+    return problems.length;
+  }
+
+  throw new Error('Solved count not found in response');
+}
+
+
+/**
  * Fetch only the count of solved problems for a GfG user.
  */
 export async function fetchGFGSolvedCount(username) {
+    try {
+    return await fetchGFGSolvedCountOfficial(username);
+  } catch (err) {
+    if (err.response?.status === 404) {
+      console.warn(`⚠️ Official GfG API 404 for ${username}, falling back to full problem fetch…`);
+    } else {
+      console.warn(`⚠️ fetchGFGSolvedCountOfficial failed for ${username}:`, err.message);
+    }
+  }
+
   const problems = await fetchGFGProblems(username);
   return problems.length;
 }

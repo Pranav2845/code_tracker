@@ -148,10 +148,19 @@ export const getUserStats = async (req, res) => {
 // If user connected GeeksforGeeks, fetch solved count
     const gfgHandle = req.user.platforms?.gfg?.handle;
     if (gfgHandle) {
+      const dbCount = platformMap.gfg;
       try {
-        platformMap.gfg = await fetchGFGSolvedCount(gfgHandle);
+        const fetchedCount = await fetchGFGSolvedCount(gfgHandle);
+        if (fetchedCount) {
+          platformMap.gfg = fetchedCount;
+        } else if (typeof dbCount === 'number') {
+          platformMap.gfg = dbCount;
+        }
       } catch (err) {
-        console.error('❌ fetchGFGSolvedCount error:', err);
+        console.error('❌ fetchGFGSolvedCount error:', err.message);
+        if (typeof dbCount === 'number') {
+          platformMap.gfg = dbCount;
+        }
       }
     }
 
@@ -163,7 +172,20 @@ export const getUserStats = async (req, res) => {
 
     const totalSolved = byPlatform.reduce((sum, p) => sum + p.count, 0);
 
-    res.json({ totalSolved, byPlatform });
+     const daysAgg = await Problem.aggregate([
+      { $match: { user: userId } },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$solvedAt' } },
+        },
+      },
+      { $count: 'count' },
+    ]);
+
+    const activeDays = daysAgg[0]?.count || 0;
+
+    res.json({ totalSolved, byPlatform, activeDays });
+
   } catch (error) {
     console.error('❌ getUserStats error:', error);
     res.status(500).json({ message: 'Failed to fetch user stats' });
