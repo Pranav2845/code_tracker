@@ -27,3 +27,11 @@ export async function fetchCSESProblems(username) {
 
   return problems;
 }
+
+export async function fetchCSESCount(username) {
+  const url = `https://cses.fi/user/${encodeURIComponent(username)}`;
+  const { data: html } = await axios.get(url);
+
+  const $ = load(html);
+  return $('a[href^="/problemset/task/"]').length;
+}
