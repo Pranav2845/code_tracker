@@ -37,8 +37,9 @@ export async function fetchGFGProblems(username) {
   try {
     const vercelUrl = `https://geeks-for-geeks-api.vercel.app/${encodeURIComponent(username)}`;
     const { data } = await axios.get(vercelUrl);
-    console.log(`🔍 Unofficial API returned ${data.problems.length} problems for ${username}`);
-    return data.problems.map(p => ({
+    const list = Array.isArray(data?.problems) ? data.problems : [];
+    console.log(`🔍 Unofficial API returned ${list.length} problems for ${username}`);
+    return list.map(p => ({
       id:         p.name,
       title:      p.name,
       difficulty: p.difficulty || 'Unknown',
@@ -51,28 +52,32 @@ export async function fetchGFGProblems(username) {
 
   // 3️⃣ Last-ditch: scrape the public profile page
   try {
-    const profileUrl = `https://www.geeksforgeeks.org/user/${encodeURIComponent(username)}`;
+    const profileUrl = `https://auth.geeksforgeeks.org/user/${encodeURIComponent(username)}/practice/`;
     const html = (await axios.get(profileUrl)).data;
     const $ = cheerio.load(html);
-    const scraped = [];
-    $('.profile-ques-solved li').each((i, el) => {
-      const title = $(el).find('a').text().trim();
-      scraped.push({
-        id:         title,
-        title,
-        difficulty: 'Unknown',
-        tags:       [],
-        solvedAt:   new Date(),
-      });
+    const scraped = new Set();
+    // Many anchors on the practice page link to problems. Grab text from any
+    // link containing "/problems/" as a heuristic.
+    $('a[href*="/problems/"]').each((i, el) => {
+      const title = $(el).text().trim();
+      if (title) scraped.add(title);
     });
-    console.log(`🔍 Scraped ${scraped.length} problems from HTML for ${username}`);
-    return scraped;
+    const problems = Array.from(scraped).map(title => ({
+      id:         title,
+      title,
+      difficulty: 'Unknown',
+      tags:       [],
+      solvedAt:   new Date(),
+    }));
+    console.log(`🔍 Scraped ${problems.length} problems from HTML for ${username}`);
+    return problems;
   } catch (err) {
     console.error(`❌ HTML scraping failed for ${username}:`, err.message);
     // Return empty so controller returns a “no problems imported” response
     return [];
   }
 }
+
 
 /**
  * Attempt to read just the solved count via the official API.
@@ -115,21 +120,53 @@ async function fetchGFGSolvedCountOfficial(username) {
   throw new Error('Solved count not found in response');
 }
 
+// 🔎 Parse "Problems Solved" count from the HTML profile page
+function scrapeSolvedCount(html) {
+  const $ = cheerio.load(html);
+
+  let text = $('.score_card_value').first().text();
+  if (!text) {
+    text = $('[class*=score_card_value]').first().text();
+  }
+
+  if (!text) {
+    const label = $('*').filter((i, el) => /Problems\s*Solved/i.test($(el).text())).first();
+    if (label.length) {
+      text = label.next().text() || label.text();
+    }
+  }
+
+  const match = text && text.match(/\d+/);
+  return match ? Number(match[0]) : null;
+}
 
 /**
  * Fetch only the count of solved problems for a GfG user.
  */
 export async function fetchGFGSolvedCount(username) {
-    try {
+  try {
     return await fetchGFGSolvedCountOfficial(username);
   } catch (err) {
     if (err.response?.status === 404) {
-      console.warn(`⚠️ Official GfG API 404 for ${username}, falling back to full problem fetch…`);
+      console.warn(`⚠️ Official GfG API 404 for ${username}, falling back to scraping…`);
     } else {
       console.warn(`⚠️ fetchGFGSolvedCountOfficial failed for ${username}:`, err.message);
     }
   }
 
+  // Try scraping just the solved count from the profile page
+  try {
+    const profileUrl = `https://auth.geeksforgeeks.org/user/${encodeURIComponent(username)}/practice/`;
+    const html = (await axios.get(profileUrl)).data;
+    const scraped = scrapeSolvedCount(html);
+    if (typeof scraped === 'number') {
+      console.log(`🔍 Scraped solved count ${scraped} for ${username}`);
+      return scraped;
+    }
+  } catch (err) {
+    console.warn(`⚠️ scrapeSolvedCount failed for ${username}:`, err.message);
+  }
+
   const problems = await fetchGFGProblems(username);
-  return problems.length;
+  return Array.isArray(problems) ? problems.length : 0;
 }
