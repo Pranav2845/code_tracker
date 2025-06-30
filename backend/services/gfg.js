@@ -46,15 +46,35 @@ export async function fetchGFGProblems(username) {
   try {
     const vercelUrl = `https://geeks-for-geeks-api.vercel.app/${encodeURIComponent(username)}`;
     const { data } = await axios.get(vercelUrl);
-    const list = Array.isArray(data?.problems) ? data.problems : [];
+    
+    let list = [];
+
+    if (Array.isArray(data?.problems)) {
+      // Legacy structure from older versions of the API
+      list = data.problems.map(p => ({
+        id:         p.name,
+        title:      p.name,
+        difficulty: p.difficulty || 'Unknown',
+        tags:       [],
+        solvedAt:   new Date(),
+      }));
+    } else if (data?.solvedStats && typeof data.solvedStats === 'object') {
+      // Newer API structure: solvedStats.{easy,medium,hard,basic}.questions
+      for (const [difficulty, obj] of Object.entries(data.solvedStats)) {
+        const questions = Array.isArray(obj?.questions) ? obj.questions : [];
+        questions.forEach(q => {
+          list.push({
+            id:         q.question,
+            title:      q.question,
+            difficulty: difficulty.charAt(0).toUpperCase() + difficulty.slice(1),
+            tags:       [],
+            solvedAt:   new Date(),
+          });
+        });
+      }
+    }
     console.log(`🔍 Unofficial API returned ${list.length} problems for ${username}`);
-    return list.map(p => ({
-      id:         p.name,
-      title:      p.name,
-      difficulty: p.difficulty || 'Unknown',
-      tags:       [],              // not available via this API
-      solvedAt:   new Date(),      // timestamp not exposed
-    }));
+    if (list.length > 0) return list;
   } catch (err) {
     console.warn(`⚠️ Unofficial API failed for ${username}:`, err.message);
   }
