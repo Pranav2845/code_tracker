@@ -1,10 +1,15 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
-// Optional cookies for authenticated requests
-const AXIOS_OPTS = process.env.HACKERRANK_COOKIES
-  ? { headers: { Cookie: process.env.HACKERRANK_COOKIES } }
-  : {};
+// Always use a browser-like User-Agent and optional cookies for authenticated requests
+const AXIOS_OPTS = {
+  headers: {
+    'User-Agent': 'Mozilla/5.0',
+    ...(process.env.HACKERRANK_COOKIES
+      ? { Cookie: process.env.HACKERRANK_COOKIES }
+      : {}),
+  },
+};
 
 // Fetch the total solved challenge count for a HackerRank user
 export async function fetchHackerRankSolvedCount(username) {
@@ -46,17 +51,27 @@ export async function fetchHackerRankSolvedCount(username) {
 // Fetch up to 100 of the user's most recently solved challenges
 export async function fetchHackerRankProblems(username) {
   const url = `https://www.hackerrank.com/rest/hackers/${encodeURIComponent(username)}/recent_challenges?offset=0&limit=100`;
-  const { data } = await axios.get(url, AXIOS_OPTS);
-  const list = data?.models || [];
+  try {
+    const { data } = await axios.get(url, AXIOS_OPTS);
+    const list = data?.models || [];
 
-  return list.map((ch) => {
-    const ts = ch.created_at || ch.created_at_epoch || ch.completed_at;
-    return {
-      id: String(ch.id ?? ch.challenge_id ?? ch.slug ?? ch.name),
-      title: ch.challenge_name || ch.name || ch.slug,
-      difficulty: ch.difficulty_name || 'Unknown',
-      tags: [],
-      solvedAt: ts ? new Date(Number(ts) * (String(ts).length === 13 ? 1 : 1000)) : new Date(),
-    };
-  });
+    return list.map((ch) => {
+      const ts = ch.created_at || ch.created_at_epoch || ch.completed_at;
+      return {
+        id: String(ch.id ?? ch.challenge_id ?? ch.slug ?? ch.name),
+        title: ch.challenge_name || ch.name || ch.slug,
+        difficulty: ch.difficulty_name || 'Unknown',
+        tags: [],
+        solvedAt: ts ? new Date(Number(ts) * (String(ts).length === 13 ? 1 : 1000)) : new Date(),
+      };
+    });
+  } catch (err) {
+    if (err.response?.status === 403) {
+      console.warn(
+        '⚠️ HackerRank recent_challenges not public for this user, returning empty list'
+      );
+      return [];
+    }
+    throw err;
+  }
 }

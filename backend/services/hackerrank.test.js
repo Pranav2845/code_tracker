@@ -37,4 +37,18 @@ describe('fetchHackerRankSolvedCount', () => {
     expect(spy).toHaveBeenCalledWith('err');
     expect(count).toBe(3);
   });
+  });
+
+describe('fetchHackerRankProblems', () => {
+  it('returns empty array on 403', async () => {
+    axios.get.mockRejectedValueOnce({ response: { status: 403 } });
+    const list = await hr.fetchHackerRankProblems('user');
+    expect(Array.isArray(list)).toBe(true);
+    expect(list.length).toBe(0);
+  });
+
+  it('propagates other errors', async () => {
+    axios.get.mockRejectedValueOnce({ response: { status: 500 } });
+    await expect(hr.fetchHackerRankProblems('foo')).rejects.toBeTruthy();
+  });
 });
