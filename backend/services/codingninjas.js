@@ -61,7 +61,7 @@ export async function fetchCodingNinjasProblems(username) {
       offset += limit;
     }
 
-      return all.map((p) => ({
+    return all.map((p) => ({
       id: p.problemId || p.id || p.title,
       title: p.title || p.problemTitle || '',
       difficulty: p.difficulty || p.difficultyLevel || 'Unknown',
@@ -72,16 +72,36 @@ export async function fetchCodingNinjasProblems(username) {
     console.error('❌ CodingNinjas code360 API error:', err.message);
     return [];
   }
-  }
+}
 
 /**
  * Fetch the total number of solved problems for a Coding Ninjas user.
- * Uses the public Code360 search endpoint.
+ *
+ * @param {string} username CodingNinjas/Code360 handle
+ * @param {string} [token]   Optional JWT for the private Code360 API
+ * @returns {Promise<number>} Solved problem count
  */
-export async function fetchCodingNinjasSolvedCount(username) {
+export async function fetchCodingNinjasSolvedCount(username, token) {
+  // 1️⃣ Try the authenticated endpoint when a JWT token is provided
+  if (token) {
+    try {
+      const { data } = await axios.get(
+        'https://www.naukri.com/code360/api/v1/user/me/stats',
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const count = data?.stats?.totalSolved;
+      if (typeof count === 'number') return count;
+    } catch (err) {
+      console.warn('⚠️ fetchCodingNinjasSolvedCount token error:', err.message);
+    }
+  }
+
+  // 2️⃣ Fallback to the public search endpoint
   try {
     const url =
-      `https://www.naukri.com/code360/api/v1/user/search?username=${encodeURIComponent(username)}&fields=profile,stats`;
+      `https://www.naukri.com/code360/api/v1/user/search?username=${encodeURIComponent(
+        username
+      )}&fields=profile,stats`;
     const { data } = await axios.get(url);
     const count = data?.results?.[0]?.stats?.totalSolved;
     return typeof count === 'number' ? count : 0;
