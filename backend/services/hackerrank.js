@@ -65,22 +65,32 @@ export async function fetchHackerRankProblems(username) {
     const { data } = await axios.get(url, AXIOS_OPTS);
     const list = data?.models || [];
 
-    return list.map((ch) => {
+    const problems = list.map((ch) => {
       const ts = ch.created_at || ch.created_at_epoch || ch.completed_at;
       return {
         id: String(ch.id ?? ch.challenge_id ?? ch.slug ?? ch.name),
         title: ch.challenge_name || ch.name || ch.slug,
         difficulty: ch.difficulty_name || 'Unknown',
         tags: [],
-        solvedAt: ts ? new Date(Number(ts) * (String(ts).length === 13 ? 1 : 1000)) : new Date(),
+        solvedAt: ts
+          ? new Date(Number(ts) * (String(ts).length === 13 ? 1 : 1000))
+          : new Date(),
       };
     });
+
+    return { problems };
   } catch (err) {
-    if (err.response?.status === 403) {
-      console.warn(
-        '⚠️ HackerRank recent_challenges not public for this user, returning empty list'
-      );
-      return [];
+    const status = err.response?.status;
+    if (status >= 400 && status < 600) {
+      console.error('❌ fetchHackerRankProblems error:', err.message);
+      let message = '⚠️ Failed to fetch HackerRank submissions.';
+      if (status === 403) {
+        message =
+          '⚠️ HackerRank recent challenges are not public for this user.';
+      } else if (status === 404) {
+        message = '⚠️ HackerRank user not found.';
+      }
+      return { problems: [], message };
     }
     throw err;
   }

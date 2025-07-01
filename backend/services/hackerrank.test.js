@@ -47,15 +47,19 @@ describe('fetchHackerRankSolvedCount', () => {
 });
 
 describe('fetchHackerRankProblems', () => {
-  it('returns empty array on 403', async () => {
+  it('returns empty array with message on 403', async () => {
     axios.get.mockRejectedValueOnce({ response: { status: 403 } });
-    const list = await hr.fetchHackerRankProblems('user');
-    expect(Array.isArray(list)).toBe(true);
-    expect(list.length).toBe(0);
+    const result = await hr.fetchHackerRankProblems('user');
+    expect(Array.isArray(result.problems)).toBe(true);
+    expect(result.problems.length).toBe(0);
+    expect(result.message).toMatch(/not public/i);
   });
 
-  it('propagates other errors', async () => {
+  it('returns empty array with message on server error', async () => {
     axios.get.mockRejectedValueOnce({ response: { status: 500 } });
-    await expect(hr.fetchHackerRankProblems('foo')).rejects.toBeTruthy();
+    const result = await hr.fetchHackerRankProblems('foo');
+    expect(Array.isArray(result.problems)).toBe(true);
+    expect(result.problems.length).toBe(0);
+    expect(result.message).toMatch(/failed/i);
   });
 });

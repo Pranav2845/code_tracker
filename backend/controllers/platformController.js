@@ -71,18 +71,19 @@ export const syncPlatform = async (req, res) => {
       case 'codechef':
         problems = await fetchCodeChefProblems(handle);
         break;
-      case 'hackerrank':
-         try {
-          problems = await fetchHackerRankProblems(handle);
-        } catch (err) {
-          if (err.response?.status === 403) {
-            console.warn('⚠️ HackerRank recent_challenges not public for this user');
-            problems = [];
-          } else {
-            throw err;
-          }
+      case 'hackerrank': {
+        const result = await fetchHackerRankProblems(handle);
+        if (result.message) {
+          console.warn(result.message);
+          return res.status(200).json({
+            message: result.message,
+            account,
+            importedCount: 0,
+          });
         }
+        problems = result.problems;
         break;
+      }
       default:
         console.error('🚫 Unsupported platform in syncPlatform:', platform);
         return res.status(400).json({ message: `Unsupported platform: ${platform}` });
