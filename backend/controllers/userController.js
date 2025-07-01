@@ -7,7 +7,7 @@ import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
 import { fetchCSESCount } from '../services/cses.js';
 import { fetchGFGSolvedCount } from '../services/gfg.js';
 import { fetchCodingNinjasSolvedCount } from '../services/codingninjas.js';
-
+import { fetchHackerRankSolvedCount } from '../services/hackerrank.js';
 /**
  * GET /api/user/profile
  * Returns the current user's profile information.
@@ -180,6 +180,25 @@ export const getUserStats = async (req, res) => {
         console.error('❌ fetchCodingNinjasSolvedCount error:', err.message);
         if (typeof dbCount === 'number') {
           platformMap.codingninjas = dbCount;
+        }
+      }
+    }
+
+       // If user connected HackerRank, fetch solved count
+    const hrHandle = req.user.platforms?.hackerrank?.handle;
+    if (hrHandle) {
+      const dbCount = platformMap.hackerrank;
+      try {
+        const fetchedCount = await fetchHackerRankSolvedCount(hrHandle);
+        if (fetchedCount) {
+          platformMap.hackerrank = fetchedCount;
+        } else if (typeof dbCount === 'number') {
+          platformMap.hackerrank = dbCount;
+        }
+      } catch (err) {
+        console.error('❌ fetchHackerRankSolvedCount error:', err.message);
+        if (typeof dbCount === 'number') {
+          platformMap.hackerrank = dbCount;
         }
       }
     }
