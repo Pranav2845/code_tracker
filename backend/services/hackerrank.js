@@ -67,14 +67,30 @@ export async function fetchHackerRankProblems(username) {
 
     const problems = list.map((ch) => {
       const ts = ch.created_at || ch.created_at_epoch || ch.completed_at;
+      let date;
+      if (ts) {
+        date = new Date(ts);
+        // If it's not a valid date (i.e., "Invalid Date")
+        if (isNaN(date)) {
+          const num = Number(ts);
+          if (!Number.isNaN(num)) {
+            // Use ms if 13 digits, otherwise treat as seconds
+            date = new Date(num * (String(num).length === 13 ? 1 : 1000));
+          } else {
+            date = new Date();
+          }
+        }
+      } else {
+        date = new Date();
+      }
+      if (isNaN(date)) date = new Date();
+
       return {
         id: String(ch.id ?? ch.challenge_id ?? ch.slug ?? ch.name),
         title: ch.challenge_name || ch.name || ch.slug,
         difficulty: ch.difficulty_name || 'Unknown',
         tags: [],
-        solvedAt: ts
-          ? new Date(Number(ts) * (String(ts).length === 13 ? 1 : 1000))
-          : new Date(),
+        solvedAt: date,
       };
     });
 
@@ -85,8 +101,7 @@ export async function fetchHackerRankProblems(username) {
       console.error('❌ fetchHackerRankProblems error:', err.message);
       let message = '⚠️ Failed to fetch HackerRank submissions.';
       if (status === 403) {
-        message =
-          '⚠️ HackerRank recent challenges are not public for this user.';
+        message = '⚠️ HackerRank recent challenges are not public for this user.';
       } else if (status === 404) {
         message = '⚠️ HackerRank user not found.';
       }

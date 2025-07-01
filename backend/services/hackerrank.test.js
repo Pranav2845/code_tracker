@@ -62,4 +62,24 @@ describe('fetchHackerRankProblems', () => {
     expect(result.problems.length).toBe(0);
     expect(result.message).toMatch(/failed/i);
   });
+  
+  it('parses ISO timestamp strings into valid Dates', async () => {
+    const ts = '2024-01-01T00:00:00Z';
+    axios.get.mockResolvedValueOnce({
+      data: {
+        models: [
+          {
+            id: 1,
+            challenge_name: 'Test',
+            difficulty_name: 'Easy',
+            created_at: ts,
+          },
+        ],
+      },
+    });
+    const result = await hr.fetchHackerRankProblems('user');
+    expect(result.problems.length).toBe(1);
+    expect(result.problems[0].solvedAt instanceof Date).toBe(true);
+    expect(isNaN(result.problems[0].solvedAt)).toBe(false);
+  });
 });
