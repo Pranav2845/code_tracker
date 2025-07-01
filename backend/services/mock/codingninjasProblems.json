@@ -1,0 +1,16 @@
+[
+  {
+    "id": "sample-1",
+    "title": "Sample Problem 1",
+    "difficulty": "Easy",
+    "tags": ["arrays"],
+    "solvedAt": "2023-01-01T00:00:00Z"
+  },
+  {
+    "id": "sample-2",
+    "title": "Sample Problem 2",
+    "difficulty": "Medium",
+    "tags": ["strings"],
+    "solvedAt": "2023-01-02T00:00:00Z"
+  }
+]

@@ -1,12 +1,30 @@
 // backend/services/codingninjas.js
 
 import axios from 'axios';
+import fs from 'fs/promises';
+
+// When MOCK_CODINGNINJAS=true, read problems from local JSON instead of calling the API
+const USE_MOCK = process.env.MOCK_CODINGNINJAS === 'true';
 /**
  * Fetch solved problems for a Coding Ninjas user.
  * Tries the legacy API first, then falls back to the new code360 endpoint.
  * Returns an array of { id, title, difficulty, tags, solvedAt }.
  */
 export async function fetchCodingNinjasProblems(username) {
+  if (USE_MOCK) {
+    try {
+      const file = await fs.readFile(
+        new URL('./mock/codingninjasProblems.json', import.meta.url)
+      );
+      const data = JSON.parse(file.toString());
+      return data.map((p) => ({
+        ...p,
+        solvedAt: p.solvedAt ? new Date(p.solvedAt) : new Date(),
+      }));
+    } catch (err) {
+      console.warn('⚠️ Failed to load mock CodingNinjas data:', err.message);
+    }
+  }
   // 1️⃣ Legacy API used by older profiles
   try {
     const legacyUrl =
