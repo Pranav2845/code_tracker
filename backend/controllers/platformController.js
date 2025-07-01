@@ -72,7 +72,16 @@ export const syncPlatform = async (req, res) => {
         problems = await fetchCodeChefProblems(handle);
         break;
       case 'hackerrank':
-        problems = await fetchHackerRankProblems(handle);
+         try {
+          problems = await fetchHackerRankProblems(handle);
+        } catch (err) {
+          if (err.response?.status === 403) {
+            console.warn('⚠️ HackerRank recent_challenges not public for this user');
+            problems = [];
+          } else {
+            throw err;
+          }
+        }
         break;
       default:
         console.error('🚫 Unsupported platform in syncPlatform:', platform);
