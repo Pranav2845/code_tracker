@@ -6,6 +6,8 @@ import bcrypt from 'bcryptjs';
 import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
 import { fetchCSESCount } from '../services/cses.js';
 import { fetchGFGSolvedCount } from '../services/gfg.js';
+import { fetchCodingNinjasSolvedCount } from '../services/codingninjas.js';
+
 /**
  * GET /api/user/profile
  * Returns the current user's profile information.
@@ -160,6 +162,24 @@ export const getUserStats = async (req, res) => {
         console.error('❌ fetchGFGSolvedCount error:', err.message);
         if (typeof dbCount === 'number') {
           platformMap.gfg = dbCount;
+        }
+      }
+    }
+   // If user connected Coding Ninjas, fetch solved count
+    const cnHandle = req.user.platforms?.codingninjas?.handle;
+    if (cnHandle) {
+      const dbCount = platformMap.codingninjas;
+      try {
+        const fetchedCount = await fetchCodingNinjasSolvedCount(cnHandle);
+        if (fetchedCount) {
+          platformMap.codingninjas = fetchedCount;
+        } else if (typeof dbCount === 'number') {
+          platformMap.codingninjas = dbCount;
+        }
+      } catch (err) {
+        console.error('❌ fetchCodingNinjasSolvedCount error:', err.message);
+        if (typeof dbCount === 'number') {
+          platformMap.codingninjas = dbCount;
         }
       }
     }

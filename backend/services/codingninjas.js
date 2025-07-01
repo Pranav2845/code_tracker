@@ -54,4 +54,21 @@ export async function fetchCodingNinjasProblems(username) {
     console.error('❌ CodingNinjas code360 API error:', err.message);
     return [];
   }
+  }
+
+/**
+ * Fetch the total number of solved problems for a Coding Ninjas user.
+ * Uses the public Code360 search endpoint.
+ */
+export async function fetchCodingNinjasSolvedCount(username) {
+  try {
+    const url =
+      `https://www.naukri.com/code360/api/v1/user/search?username=${encodeURIComponent(username)}&fields=profile,stats`;
+    const { data } = await axios.get(url);
+    const count = data?.results?.[0]?.stats?.totalSolved;
+    return typeof count === 'number' ? count : 0;
+  } catch (err) {
+    console.warn('⚠️ fetchCodingNinjasSolvedCount error:', err.message);
+    return 0;
+  }
 }
