@@ -14,30 +14,37 @@ describe('fetchHackerRankSolvedCount', () => {
     const count = await hr.fetchHackerRankSolvedCount('user');
     expect(count).toBe(4);
     expect(axios.get).toHaveBeenCalledWith(
-      'https://www.hackerrank.com/rest/contests/master/hackers/user/profile'
+      'https://www.hackerrank.com/rest/contests/master/hackers/user/profile',
+      expect.anything() // to account for AXIOS_OPTS
     );
   });
 
-  it('invokes scraper when solved_challenges missing', async () => {
-    axios.get.mockResolvedValueOnce({ data: { model: {} } });
-    const spy = vi
-      .spyOn(hr, 'fetchHackerRankProblems')
-      .mockResolvedValueOnce([1, 2]);
+  it('scrapes unique accepted submissions when solved_challenges missing', async () => {
+    const html = `
+      <table><tbody>
+        <tr><td>P1</td><td></td><td></td><td>Accepted</td></tr>
+        <tr><td>P2</td><td></td><td></td><td>Accepted</td></tr>
+        <tr><td>P1</td><td></td><td></td><td>Accepted</td></tr>
+      </tbody></table>`;
+    axios.get
+      .mockResolvedValueOnce({ data: { model: {} } })
+      .mockResolvedValueOnce({ data: html });
     const count = await hr.fetchHackerRankSolvedCount('bob');
-    expect(spy).toHaveBeenCalledWith('bob');
-    expect(count).toBe(2);
+    expect(count).toBe(2); // Only P1 and P2 are unique
   });
 
-  it('invokes scraper when API request fails', async () => {
-    axios.get.mockRejectedValueOnce(new Error('fail'));
-    const spy = vi
-      .spyOn(hr, 'fetchHackerRankProblems')
-      .mockResolvedValueOnce([{}, {}, {}]);
+  it('scrapes submissions when API request fails', async () => {
+    const html = `
+      <table><tbody>
+        <tr><td>P1</td><td></td><td></td><td>Accepted</td></tr>
+      </tbody></table>`;
+    axios.get
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockResolvedValueOnce({ data: html });
     const count = await hr.fetchHackerRankSolvedCount('err');
-    expect(spy).toHaveBeenCalledWith('err');
-    expect(count).toBe(3);
+    expect(count).toBe(1); // Only P1
   });
-  });
+});
 
 describe('fetchHackerRankProblems', () => {
   it('returns empty array on 403', async () => {

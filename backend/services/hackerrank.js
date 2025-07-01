@@ -24,7 +24,7 @@ export async function fetchHackerRankSolvedCount(username) {
 
   // 🕷️ Fallback: scrape submissions list pages (requires login cookies!)
   let page = 0;
-  let total = 0;
+  const solved = new Set();
   while (true) {
     const pageUrl =
       page === 0
@@ -33,9 +33,19 @@ export async function fetchHackerRankSolvedCount(username) {
     try {
       const { data: html } = await axios.get(pageUrl, AXIOS_OPTS);
       const $ = cheerio.load(html);
-      const rows = $('table tbody tr').length;
-      if (rows === 0) break;
-      total += rows;
+
+      let found = false;
+      $('table tbody tr').each((_, el) => {
+        const cells = $(el).find('td');
+        const result = cells.eq(3).text().trim();
+        if (result === 'Accepted') {
+          found = true;
+          const name = cells.eq(0).text().trim();
+          if (name) solved.add(name);
+        }
+      });
+      if (!found) break;
+
       const nextExists = $(`a[href*="?page=${page + 1}"]`).length > 0;
       if (!nextExists) break;
       page += 1;
@@ -45,7 +55,7 @@ export async function fetchHackerRankSolvedCount(username) {
     }
   }
 
-  return total;
+  return solved.size;
 }
 
 // Fetch up to 100 of the user's most recently solved challenges
