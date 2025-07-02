@@ -110,3 +110,51 @@ export async function fetchCodingNinjasSolvedCount(username, token) {
     return 0;
   }
 }
+
+/**
+ * Fetch contribution stats for a Coding Ninjas user via the public Code360 API.
+ * This returns the total submission count as well as the per-type counts
+ * (e.g. coding vs MCQ submissions).
+ *
+ * @param {string} username Coding Ninjas/Code360 handle
+ * @returns {Promise<{ totalSubmissionCount: number, typeCountMap: Record<string, number> }>}
+ */
+export async function fetchCodingNinjasContributionStats(username) {
+  try {
+    // First lookup the user's UUID using the username handle
+    const detailsUrl =
+      `https://www.naukri.com/code360/api/v3/public_section/profile/user_details?uuid=${encodeURIComponent(
+        username
+      )}&app_context=publicsection&naukri_request=true`;
+    const { data: details } = await axios.get(detailsUrl);
+    const uuid =
+      details?.data?.user_details?.uuid ||
+      details?.data?.profile?.uuid ||
+      details?.data?.uuid;
+    if (!uuid) {
+      console.warn('⚠️ fetchCodingNinjasContributionStats: uuid not found');
+      return { totalSubmissionCount: 0, typeCountMap: {} };
+    }
+
+    // Build date range for the last year
+    const end = new Date();
+    const start = new Date();
+    start.setFullYear(end.getFullYear() - 1);
+
+    const contributionsUrl =
+      `https://www.naukri.com/code360/api/v3/public_section/profile/contributions?uuid=${uuid}&end_date=${encodeURIComponent(
+        end.toISOString()
+      )}&start_date=${encodeURIComponent(
+        start.toISOString()
+      )}&is_stats_required=true&unified=true&app_context=publicsection&naukri_request=true`;
+
+    const { data: contrib } = await axios.get(contributionsUrl);
+    const stats = contrib?.data || {};
+    const total = stats.total_submission_count || 0;
+    const map = stats.type_count_map || {};
+    return { totalSubmissionCount: total, typeCountMap: map };
+  } catch (err) {
+    console.error('❌ fetchCodingNinjasContributionStats error:', err.message);
+    return { totalSubmissionCount: 0, typeCountMap: {} };
+  }
+}

@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { fetchCodingNinjasSolvedCount } from './codingninjas.js';
+import {
+  fetchCodingNinjasSolvedCount,
+  fetchCodingNinjasContributionStats,
+} from './codingninjas.js';
+
 
 vi.mock('axios');
 
@@ -47,5 +51,26 @@ describe('fetchCodingNinjasSolvedCount', () => {
       2,
       'https://www.naukri.com/code360/api/v1/user/search?username=u2&fields=profile,stats'
     );
+  });
+  });
+
+describe('fetchCodingNinjasContributionStats', () => {
+  it('fetches uuid then stats', async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { data: { user_details: { uuid: 'uid123' } } } })
+      .mockResolvedValueOnce({
+        data: { data: { total_submission_count: 12, type_count_map: { '0': 6, '2': 6 } } },
+      });
+    const result = await fetchCodingNinjasContributionStats('user');
+    expect(result.totalSubmissionCount).toBe(12);
+    expect(result.typeCountMap['0']).toBe(6);
+    expect(result.typeCountMap['2']).toBe(6);
+  });
+
+  it('returns zero counts when uuid missing', async () => {
+    axios.get.mockResolvedValueOnce({ data: {} });
+    const result = await fetchCodingNinjasContributionStats('user');
+    expect(result.totalSubmissionCount).toBe(0);
+    expect(result.typeCountMap).toEqual({});
   });
 });
