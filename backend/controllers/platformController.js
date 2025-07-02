@@ -63,7 +63,14 @@ export const syncPlatform = async (req, res) => {
         problems = await fetchGFGProblems(handle);
         break;
       case 'codingninjas':
-        problems = await fetchCodingNinjasProblems(handle);
+         try {
+          problems = await fetchCodingNinjasProblems(handle);
+        } catch (err) {
+          console.error('❌ Coding Ninjas fetch error:', err.message);
+          return res.status(503).json({
+            message: 'Coding Ninjas could not be reached. Please try again later.'
+          });
+        }
         break;
       case 'cses':
         problems = await fetchCSESProblems(handle);

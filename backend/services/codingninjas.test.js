@@ -81,6 +81,48 @@ describe('fetchCodingNinjasSolvedCount', () => {
       'https://www.naukri.com/code360/api/v3/public_section/profile/user_details?uuid=name&app_context=publicsection&naukri_request=true'
     );
   });
+  
+  it('uses search when token request times out', async () => {
+    axios.get
+      .mockRejectedValueOnce(Object.assign(new Error('timeout'), { code: 'ECONNABORTED' }))
+      .mockResolvedValueOnce({ data: { results: [{ stats: { totalSolved: 11 } }] } });
+    const count = await fetchCodingNinjasSolvedCount('tuser', 'tok');
+    expect(count).toBe(11);
+    expect(axios.get).toHaveBeenNthCalledWith(
+      1,
+      'https://www.naukri.com/code360/api/v1/user/me/stats',
+      { headers: { Authorization: 'Bearer tok' } }
+    );
+    expect(axios.get).toHaveBeenNthCalledWith(
+      2,
+      'https://www.naukri.com/code360/api/v1/user/search?username=tuser&fields=profile,stats'
+    );
+  });
+
+  it('falls back to user_details after search timeout', async () => {
+    axios.get
+      .mockRejectedValueOnce(Object.assign(new Error('timeout'), { code: 'ECONNABORTED' }))
+      .mockResolvedValueOnce({
+        data: { data: { dsa_domain_data: { problem_count_data: { total_count: 9 } } } },
+      });
+    const count = await fetchCodingNinjasSolvedCount('nuser');
+    expect(count).toBe(9);
+    expect(axios.get).toHaveBeenNthCalledWith(
+      1,
+      'https://www.naukri.com/code360/api/v1/user/search?username=nuser&fields=profile,stats'
+    );
+    expect(axios.get).toHaveBeenNthCalledWith(
+      2,
+      'https://www.naukri.com/code360/api/v3/public_section/profile/user_details?uuid=nuser&app_context=publicsection&naukri_request=true'
+    );
+  });
+
+  it('returns zero when all endpoints fail', async () => {
+    axios.get.mockRejectedValue(new Error('timeout'));
+    const count = await fetchCodingNinjasSolvedCount('fail', 'tok');
+    expect(count).toBe(0);
+    expect(axios.get).toHaveBeenCalledTimes(3);
+  });
 });
 
 describe('fetchCodingNinjasContributionStats', () => {
@@ -121,6 +163,34 @@ describe('fetchCodingNinjasContributionStats', () => {
     expect(result.totalSubmissionCount).toBe(0);
     expect(result.typeCountMap).toEqual({});
   });
+  
+  it('returns zero when user_details request fails', async () => {
+    axios.get.mockRejectedValueOnce(new Error('timeout'));
+    const result = await fetchCodingNinjasContributionStats('bad');
+    expect(result.totalSubmissionCount).toBe(0);
+    expect(result.typeCountMap).toEqual({});
+    expect(axios.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns zero when uuid lookup fails after search error', async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: {} })
+      .mockRejectedValueOnce(new Error('search timeout'));
+    const result = await fetchCodingNinjasContributionStats('missing');
+    expect(result.totalSubmissionCount).toBe(0);
+    expect(result.typeCountMap).toEqual({});
+    expect(axios.get).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns zero when contributions request fails', async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { data: { user_details: { uuid: 'x' } } } })
+      .mockRejectedValueOnce(new Error('timeout'));
+    const result = await fetchCodingNinjasContributionStats('x');
+    expect(result.totalSubmissionCount).toBe(0);
+    expect(result.typeCountMap).toEqual({});
+    expect(axios.get).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('fetchCodingNinjasSubmissionCount', () => {
@@ -149,3 +219,13 @@ describe('fetchCodingNinjasProblems', () => {
     expect(axios.get).toHaveBeenCalledTimes(20);
   });
 });
+  it('parses mock data when MOCK_CODINGNINJAS=true', async () => {
+    process.env.MOCK_CODINGNINJAS = 'true';
+    vi.resetModules();
+    const { fetchCodingNinjasProblems: fetchMock } = await import('./codingninjas.js');
+    const problems = await fetchMock('any');
+    expect(problems.length).toBeGreaterThanOrEqual(12);
+    expect(problems.every((p) => p.solvedAt instanceof Date)).toBe(true);
+    expect(axios.get).not.toHaveBeenCalled();
+    delete process.env.MOCK_CODINGNINJAS;
+  });

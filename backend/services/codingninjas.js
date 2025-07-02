@@ -3,10 +3,29 @@
 import axios from 'axios';
 import fs from 'fs/promises';
 
-// Axios instance scoped to this service (default timeout: 30s)
+// Axios instance scoped to this service (default timeout: 60s)
 const api = axios.create({
-  timeout: parseInt(process.env.HTTP_TIMEOUT_MS || '30000', 10),
+  timeout: parseInt(process.env.HTTP_TIMEOUT_MS || '60000', 10),
 });
+
+// Simple retry helper for GET requests that time out
+async function getWithRetry(url, config = {}, retries = 1) {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await api.get(url, config);
+    } catch (err) {
+      if (err.code === 'ECONNABORTED' && attempt < retries) {
+        attempt += 1;
+        console.warn(
+          `⚠️ GET ${url} timed out, retrying (${attempt}/${retries})`
+        );
+        continue;
+      }
+      throw err;
+    }
+  }
+}
 
 // Enable offline mock for local development if needed
 const USE_MOCK = process.env.MOCK_CODINGNINJAS === 'true';
@@ -36,7 +55,7 @@ export async function fetchCodingNinjasProblems(username) {
   try {
     const legacyUrl =
       `https://www.codingninjas.com/api/v3/user_profile?username=${encodeURIComponent(username)}`;
-    const { data } = await api.get(legacyUrl);
+    const { data } = await getWithRetry(legacyUrl);
     const list =
       data?.data?.user_problems ??
       data?.data?.user_details?.practice_problem_stats?.solved_problems ?? [];
@@ -62,18 +81,18 @@ export async function fetchCodingNinjasProblems(username) {
         `https://www.naukri.com/code360/api/v3/public_section/profile/user_details?uuid=${encodeURIComponent(
           username
         )}&app_context=publicsection&naukri_request=true`;
-      const { data: details } = await api.get(detailsUrl);
+      const { data: details } = await getWithRetry(detailsUrl);
       const uuid =
         details?.data?.user_details?.uuid ||
         details?.data?.profile?.uuid ||
         details?.data?.uuid;
       if (uuid) lookupId = uuid;
-       else {
+      else {
         const searchUrl =
           `https://www.naukri.com/code360/api/v1/user/search?username=${encodeURIComponent(
             username
           )}&fields=profile`;
-        const { data: search } = await api.get(searchUrl);
+        const { data: search } = await getWithRetry(searchUrl);
         const fromSearch = search?.results?.[0]?.profile?.uuid;
         if (fromSearch) lookupId = fromSearch;
       }
@@ -82,12 +101,12 @@ export async function fetchCodingNinjasProblems(username) {
         '⚠️ fetchCodingNinjasProblems: user_details lookup failed:',
         err.message
       );
-       try {
+      try {
         const searchUrl =
           `https://www.naukri.com/code360/api/v1/user/search?username=${encodeURIComponent(
             username
           )}&fields=profile`;
-        const { data: search } = await api.get(searchUrl);
+        const { data: search } = await getWithRetry(searchUrl);
         const fromSearch = search?.results?.[0]?.profile?.uuid;
         if (fromSearch) lookupId = fromSearch;
       } catch (err2) {
@@ -107,7 +126,7 @@ export async function fetchCodingNinjasProblems(username) {
     while (page < maxPages) {
       const url =
         `https://www.naukri.com/code360/api/v1/user/${encodeURIComponent(lookupId)}/solvedProblems?limit=${limit}&offset=${offset}`;
-      const { data } = await api.get(url);
+      const { data } = await getWithRetry(url);
       const items =
         data?.solvedProblems ||
         data?.data?.solvedProblems ||
@@ -145,7 +164,7 @@ export async function fetchCodingNinjasSolvedCount(username, token) {
   // 1️⃣ Try authenticated endpoint with JWT
   if (token) {
     try {
-      const { data } = await api.get(
+      const { data } = await getWithRetry(
         'https://www.naukri.com/code360/api/v1/user/me/stats',
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -162,7 +181,7 @@ export async function fetchCodingNinjasSolvedCount(username, token) {
       `https://www.naukri.com/code360/api/v1/user/search?username=${encodeURIComponent(
         username
       )}&fields=profile,stats`;
-    const { data } = await api.get(url);
+    const { data } = await getWithRetry(url);
     const count = data?.results?.[0]?.stats?.totalSolved;
     if (typeof count === 'number') return count;
   } catch (err) {
@@ -175,7 +194,7 @@ export async function fetchCodingNinjasSolvedCount(username, token) {
       `https://www.naukri.com/code360/api/v3/public_section/profile/user_details?uuid=${encodeURIComponent(
         username
       )}&app_context=publicsection&naukri_request=true`;
-    const { data } = await api.get(detailsUrl);
+    const { data } = await getWithRetry(detailsUrl);
     const count =
       data?.data?.dsa_domain_data?.problem_count_data?.total_count;
     return typeof count === 'number' ? count : 0;
@@ -202,7 +221,7 @@ export async function fetchCodingNinjasContributionStats(username) {
       `https://www.naukri.com/code360/api/v3/public_section/profile/user_details?uuid=${encodeURIComponent(
         username
       )}&app_context=publicsection&naukri_request=true`;
-    const { data: details } = await api.get(detailsUrl);
+    const { data: details } = await getWithRetry(detailsUrl);
     let uuid =
       details?.data?.user_details?.uuid ||
       details?.data?.profile?.uuid ||
@@ -215,7 +234,7 @@ export async function fetchCodingNinjasContributionStats(username) {
           `https://www.naukri.com/code360/api/v1/user/search?username=${encodeURIComponent(
             username
           )}&fields=profile`;
-        const { data: search } = await api.get(searchUrl);
+        const { data: search } = await getWithRetry(searchUrl);
         uuid = search?.results?.[0]?.profile?.uuid;
       } catch (err) {
         console.warn(
@@ -242,7 +261,7 @@ export async function fetchCodingNinjasContributionStats(username) {
         start.toISOString()
       )}&is_stats_required=true&unified=true&app_context=publicsection&naukri_request=true`;
 
-    const { data: contrib } = await api.get(contributionsUrl);
+    const { data: contrib } = await getWithRetry(contributionsUrl);
     const stats = contrib?.data || {};
     const total = stats.total_submission_count || 0;
     const map = stats.type_count_map || {};
