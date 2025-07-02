@@ -58,9 +58,13 @@ const Dashboard = () => {
       const statsRes     = await axios.get("/user/stats");
       const problemsRes  = await axios.get("/problems");
       const analyticsRes = await axios.get("/user/analytics");
-      const csesSubsRes  = await axios.get("/user/cses/submissions");
+      let csesSubmissionCount = 0;
+      if (connections.cses?.handle) {
+        const csesSubsRes = await axios.get("/user/cses/submissions");
+        csesSubmissionCount = csesSubsRes.data?.submissionCount || 0;
+      }
       const { totalSolved, byPlatform, activeDays } = statsRes.data;
-      const csesSubmissionCount = csesSubsRes.data?.submissionCount || 0;
+      
       const allProblems  = problemsRes.data;
       const { progressData, platformActivity, topicStrength } = analyticsRes.data;
 
