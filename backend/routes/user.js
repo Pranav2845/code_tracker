@@ -6,6 +6,7 @@ import {
   updatePlatforms,
   getUserStats,
   getDashboardAnalytics,
+  getContributionStats,
   changePassword
 } from '../controllers/userController.js';
 
@@ -17,5 +18,6 @@ router.patch ('/profile',   updateUserProfile);
 router.patch ('/platforms', updatePlatforms);
 router.get   ('/stats',     getUserStats);
 router.get   ('/analytics', getDashboardAnalytics);
+router.get   ('/contributions', getContributionStats);
 router.post  ('/change-password', changePassword);
 export default router;

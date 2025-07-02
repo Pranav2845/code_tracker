@@ -6,7 +6,10 @@ import bcrypt from 'bcryptjs';
 import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
 import { fetchCSESCount } from '../services/cses.js';
 import { fetchGFGSolvedCount } from '../services/gfg.js';
-import { fetchCodingNinjasSolvedCount } from '../services/codingninjas.js';
+import {
+  fetchCodingNinjasSolvedCount,
+  fetchCodingNinjasContributionStats,
+} from '../services/codingninjas.js';
 import { fetchHackerRankSolvedCount } from '../services/hackerrank.js';
 /**
  * GET /api/user/profile
@@ -322,5 +325,23 @@ export const getDashboardAnalytics = async (req, res) => {
   } catch (error) {
     console.error('❌ getDashboardAnalytics error:', error);
     res.status(500).json({ message: 'Failed to fetch analytics data' });
+  }
+};
+
+/**
+ * GET /api/user/contributions
+ * Returns submission statistics from Coding Ninjas.
+ */
+export const getContributionStats = async (req, res) => {
+  try {
+    const handle = req.user?.platforms?.codingninjas?.handle;
+    if (!handle) {
+      return res.status(400).json({ message: 'Coding Ninjas handle not found' });
+    }
+    const stats = await fetchCodingNinjasContributionStats(handle);
+    res.json(stats);
+  } catch (err) {
+    console.error('❌ getContributionStats error:', err);
+    res.status(500).json({ message: 'Failed to fetch contribution stats' });
   }
 };
