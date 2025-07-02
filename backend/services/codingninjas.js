@@ -3,12 +3,16 @@
 import axios from 'axios';
 import fs from 'fs/promises';
 
-// When MOCK_CODINGNINJAS=true, read problems from local JSON instead of calling the API
+// Set a global timeout for all Coding Ninjas API requests (default: 15s)
+axios.defaults.timeout =
+  parseInt(process.env.HTTP_TIMEOUT_MS, 10) || 15000;
+
+// Enable offline mock for local development if needed
 const USE_MOCK = process.env.MOCK_CODINGNINJAS === 'true';
 
 /**
- * Fetch solved problems for a Coding Ninjas user.
- * Tries the legacy API first, then falls back to the new code360 endpoint.
+ * Fetch solved problems for a Coding Ninjas user (Code360).
+ * Accepts either username or UUID. Tries legacy API, then Code360 public API.
  * Returns an array of { id, title, difficulty, tags, solvedAt }.
  */
 export async function fetchCodingNinjasProblems(username) {
@@ -26,7 +30,8 @@ export async function fetchCodingNinjasProblems(username) {
       console.warn('⚠️ Failed to load mock CodingNinjas data:', err.message);
     }
   }
-  // 1️⃣ Legacy API used by older profiles
+
+  // 1️⃣ Try legacy API (old profiles)
   try {
     const legacyUrl =
       `https://www.codingninjas.com/api/v3/user_profile?username=${encodeURIComponent(username)}`;
@@ -47,18 +52,43 @@ export async function fetchCodingNinjasProblems(username) {
     console.warn('⚠️ CodingNinjas legacy API failed:', err.message);
   }
 
-  // 2️⃣ Fallback to the new Code360 public API
+  // 2️⃣ Use Code360 API with UUID lookup for maximum reliability
   try {
+    let lookupId = username;
+    try {
+      // Always resolve username to UUID if possible (Code360 is more reliable with uuid)
+      const detailsUrl =
+        `https://www.naukri.com/code360/api/v3/public_section/profile/user_details?uuid=${encodeURIComponent(
+          username
+        )}&app_context=publicsection&naukri_request=true`;
+      const { data: details } = await axios.get(detailsUrl);
+      const uuid =
+        details?.data?.user_details?.uuid ||
+        details?.data?.profile?.uuid ||
+        details?.data?.uuid;
+      if (uuid) lookupId = uuid;
+    } catch (err) {
+      console.warn(
+        '⚠️ fetchCodingNinjasProblems: user_details lookup failed:',
+        err.message
+      );
+    }
+
     const limit = 100;
-    const maxPages = 20; // safeguard to prevent infinite loops
+    const maxPages = 20;
     let offset = 0;
     let page = 0;
     const all = [];
+
     while (page < maxPages) {
       const url =
-        `https://www.naukri.com/code360/api/v1/user/${encodeURIComponent(username)}/solvedProblems?limit=${limit}&offset=${offset}`;
+        `https://www.naukri.com/code360/api/v1/user/${encodeURIComponent(lookupId)}/solvedProblems?limit=${limit}&offset=${offset}`;
       const { data } = await axios.get(url);
-      const items = data?.solvedProblems || [];
+      const items =
+        data?.solvedProblems ||
+        data?.data?.solvedProblems ||
+        data?.data ||
+        [];
       all.push(...items);
       if (items.length < limit) break;
       offset += limit;
@@ -83,13 +113,12 @@ export async function fetchCodingNinjasProblems(username) {
 
 /**
  * Fetch the total number of solved problems for a Coding Ninjas user.
- *
  * @param {string} username CodingNinjas/Code360 handle
  * @param {string} [token]   Optional JWT for the private Code360 API
  * @returns {Promise<number>} Solved problem count
  */
 export async function fetchCodingNinjasSolvedCount(username, token) {
-  // 1️⃣ Try the authenticated endpoint when a JWT token is provided
+  // 1️⃣ Try authenticated endpoint with JWT
   if (token) {
     try {
       const { data } = await axios.get(
@@ -103,7 +132,7 @@ export async function fetchCodingNinjasSolvedCount(username, token) {
     }
   }
 
-  // 2️⃣ Fallback to the public search endpoint
+  // 2️⃣ Public search endpoint fallback
   try {
     const url =
       `https://www.naukri.com/code360/api/v1/user/search?username=${encodeURIComponent(
@@ -120,15 +149,14 @@ export async function fetchCodingNinjasSolvedCount(username, token) {
 
 /**
  * Fetch contribution stats for a Coding Ninjas user via the public Code360 API.
- * This returns the total submission count as well as the per-type counts
- * (e.g. coding vs MCQ submissions).
- *
+ * Returns the total submission count as well as per-type counts.
+ * Accepts username (and resolves to uuid).
  * @param {string} username Coding Ninjas/Code360 handle
  * @returns {Promise<{ totalSubmissionCount: number, typeCountMap: Record<string, number> }>}
  */
 export async function fetchCodingNinjasContributionStats(username) {
   try {
-    // First lookup the user's UUID using the username handle
+    // Always lookup user's UUID first (by username or UUID)
     const detailsUrl =
       `https://www.naukri.com/code360/api/v3/public_section/profile/user_details?uuid=${encodeURIComponent(
         username
