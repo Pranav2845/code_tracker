@@ -3,9 +3,10 @@
 import axios from 'axios';
 import fs from 'fs/promises';
 
-// Set a global timeout for all Coding Ninjas API requests (default: 15s)
-axios.defaults.timeout =
-  parseInt(process.env.HTTP_TIMEOUT_MS, 10) || 15000;
+// Axios instance scoped to this service (default timeout: 30s)
+const api = axios.create({
+  timeout: parseInt(process.env.HTTP_TIMEOUT_MS || '30000', 10),
+});
 
 // Enable offline mock for local development if needed
 const USE_MOCK = process.env.MOCK_CODINGNINJAS === 'true';
@@ -35,7 +36,7 @@ export async function fetchCodingNinjasProblems(username) {
   try {
     const legacyUrl =
       `https://www.codingninjas.com/api/v3/user_profile?username=${encodeURIComponent(username)}`;
-    const { data } = await axios.get(legacyUrl);
+    const { data } = await api.get(legacyUrl);
     const list =
       data?.data?.user_problems ??
       data?.data?.user_details?.practice_problem_stats?.solved_problems ?? [];
@@ -61,7 +62,7 @@ export async function fetchCodingNinjasProblems(username) {
         `https://www.naukri.com/code360/api/v3/public_section/profile/user_details?uuid=${encodeURIComponent(
           username
         )}&app_context=publicsection&naukri_request=true`;
-      const { data: details } = await axios.get(detailsUrl);
+      const { data: details } = await api.get(detailsUrl);
       const uuid =
         details?.data?.user_details?.uuid ||
         details?.data?.profile?.uuid ||
@@ -83,7 +84,7 @@ export async function fetchCodingNinjasProblems(username) {
     while (page < maxPages) {
       const url =
         `https://www.naukri.com/code360/api/v1/user/${encodeURIComponent(lookupId)}/solvedProblems?limit=${limit}&offset=${offset}`;
-      const { data } = await axios.get(url);
+      const { data } = await api.get(url);
       const items =
         data?.solvedProblems ||
         data?.data?.solvedProblems ||
@@ -121,7 +122,7 @@ export async function fetchCodingNinjasSolvedCount(username, token) {
   // 1️⃣ Try authenticated endpoint with JWT
   if (token) {
     try {
-      const { data } = await axios.get(
+      const { data } = await api.get(
         'https://www.naukri.com/code360/api/v1/user/me/stats',
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -138,11 +139,28 @@ export async function fetchCodingNinjasSolvedCount(username, token) {
       `https://www.naukri.com/code360/api/v1/user/search?username=${encodeURIComponent(
         username
       )}&fields=profile,stats`;
-    const { data } = await axios.get(url);
+    const { data } = await api.get(url);
     const count = data?.results?.[0]?.stats?.totalSolved;
+    if (typeof count === 'number') return count;
+  } catch (err) {
+    console.warn('⚠️ fetchCodingNinjasSolvedCount search error:', err.message);
+  }
+
+  // 3️⃣ user_details endpoint final fallback
+  try {
+    const detailsUrl =
+      `https://www.naukri.com/code360/api/v3/public_section/profile/user_details?uuid=${encodeURIComponent(
+        username
+      )}&app_context=publicsection&naukri_request=true`;
+    const { data } = await api.get(detailsUrl);
+    const count =
+      data?.data?.dsa_domain_data?.problem_count_data?.total_count;
     return typeof count === 'number' ? count : 0;
   } catch (err) {
-    console.warn('⚠️ fetchCodingNinjasSolvedCount error:', err.message);
+    console.warn(
+      '⚠️ fetchCodingNinjasSolvedCount user_details error:',
+      err.message
+    );
     return 0;
   }
 }
@@ -161,7 +179,7 @@ export async function fetchCodingNinjasContributionStats(username) {
       `https://www.naukri.com/code360/api/v3/public_section/profile/user_details?uuid=${encodeURIComponent(
         username
       )}&app_context=publicsection&naukri_request=true`;
-    const { data: details } = await axios.get(detailsUrl);
+    const { data: details } = await api.get(detailsUrl);
     const uuid =
       details?.data?.user_details?.uuid ||
       details?.data?.profile?.uuid ||
@@ -183,7 +201,7 @@ export async function fetchCodingNinjasContributionStats(username) {
         start.toISOString()
       )}&is_stats_required=true&unified=true&app_context=publicsection&naukri_request=true`;
 
-    const { data: contrib } = await axios.get(contributionsUrl);
+    const { data: contrib } = await api.get(contributionsUrl);
     const stats = contrib?.data || {};
     const total = stats.total_submission_count || 0;
     const map = stats.type_count_map || {};

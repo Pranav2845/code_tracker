@@ -6,8 +6,13 @@ import {
   fetchCodingNinjasProblems,
 } from './codingninjas.js';
 
-
-vi.mock('axios');
+vi.mock('axios', () => {
+  const instance = {
+    get: vi.fn(),
+    post: vi.fn(),
+  };
+  return { default: { ...instance, create: vi.fn(() => instance) } };
+});
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -53,7 +58,29 @@ describe('fetchCodingNinjasSolvedCount', () => {
       'https://www.naukri.com/code360/api/v1/user/search?username=u2&fields=profile,stats'
     );
   });
+
+  it('falls back to user_details when search fails', async () => {
+    axios.get
+      .mockRejectedValueOnce(new Error('search fail'))
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            dsa_domain_data: { problem_count_data: { total_count: 6 } },
+          },
+        },
+      });
+    const count = await fetchCodingNinjasSolvedCount('name');
+    expect(count).toBe(6);
+    expect(axios.get).toHaveBeenNthCalledWith(
+      1,
+      'https://www.naukri.com/code360/api/v1/user/search?username=name&fields=profile,stats'
+    );
+    expect(axios.get).toHaveBeenNthCalledWith(
+      2,
+      'https://www.naukri.com/code360/api/v3/public_section/profile/user_details?uuid=name&app_context=publicsection&naukri_request=true'
+    );
   });
+});
 
 describe('fetchCodingNinjasContributionStats', () => {
   it('fetches uuid then stats', async () => {
@@ -74,7 +101,7 @@ describe('fetchCodingNinjasContributionStats', () => {
     expect(result.totalSubmissionCount).toBe(0);
     expect(result.typeCountMap).toEqual({});
   });
-  });
+});
 
 describe('fetchCodingNinjasProblems', () => {
   it('stops after max pages when results repeat', async () => {
