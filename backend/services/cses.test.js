@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { findCSESUserId, fetchCSESCount, fetchCSESSubmissionCount } from './cses.js';
-
+import { findCSESUserId, fetchCSESProblems, fetchCSESCount, fetchCSESSubmissionCount } from './cses.js';
 vi.mock('axios');
 
 beforeEach(() => {
@@ -25,9 +24,20 @@ describe('findCSESUserId', () => {
       .mockResolvedValueOnce({ data: page1 })
       .mockResolvedValueOnce({ data: page2 });
     const id = await findCSESUserId('charlie');
-    expect(id).toBe(99);
-    expect(axios.get).toHaveBeenNthCalledWith(1, 'https://cses.fi/list/user/1');
-    expect(axios.get).toHaveBeenNthCalledWith(2, 'https://cses.fi/list/user/2');
+      expect(id).toBe(99);
+  expect(axios.get).toHaveBeenNthCalledWith(1, 'https://cses.fi/list/user/1');
+  expect(axios.get).toHaveBeenNthCalledWith(2, 'https://cses.fi/list/user/2');
+});
+});
+
+describe('fetchCSESProblems', () => {
+  it('fetches solved problems when numeric id provided', async () => {
+    const html = '<table><tr><td><a href="/problemset/task/10">A</a></td><td>2024-01-01</td></tr></table>';
+    axios.get.mockResolvedValueOnce({ data: html });
+    const problems = await fetchCSESProblems('55');
+    expect(problems).toHaveLength(1);
+    expect(problems[0].id).toBe('10');
+    expect(axios.get).toHaveBeenCalledWith('https://cses.fi/user/55');
   });
 });
 

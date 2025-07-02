@@ -37,10 +37,16 @@ export async function findCSESUserId(username, maxPages = 10) {
 }
 
 export async function fetchCSESProblems(username) {
-  const id = await findCSESUserId(username);
-  if (!id) {
-    throw new Error(`CSES user '${username}' not found`);
-  }
+    // allow passing numeric id directly to avoid an extra lookup
+  let id;
+  if (/^\d+$/.test(String(username))) {
+    id = Number(username);
+  } else {
+    id = await findCSESUserId(username);
+    if (!id) {
+      throw new Error(`CSES user '${username}' not found`);
+    }
+}
   const url = `https://cses.fi/user/${id}`;
   const { data: html } = await axios.get(url);
 
@@ -67,8 +73,14 @@ export async function fetchCSESProblems(username) {
 }
 
 export async function fetchCSESCount(username) {
-   const id = await findCSESUserId(username);
-  if (!id) return 0;
+     // handle numeric id directly without searching the user list
+  let id;
+  if (/^\d+$/.test(String(username))) {
+    id = Number(username);
+  } else {
+    id = await findCSESUserId(username);
+    if (!id) return 0;
+  }
 
   const url = `https://cses.fi/user/${id}`;
   const { data: html } = await axios.get(url);
