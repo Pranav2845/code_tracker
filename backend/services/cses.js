@@ -75,4 +75,22 @@ export async function fetchCSESCount(username) {
 
   const $ = load(html);
   return $('a[href^="/problemset/task/"]').length;
+  }
+
+/**
+ * Fetch the total submission count for a CSES user.
+ * @param {string|number} userId Numeric user id from CSES.
+ * @returns {Promise<number>} number of submissions or 0 if not found
+ */
+export async function fetchCSESSubmissionCount(userId) {
+  const url = `https://cses.fi/user/${userId}`;
+  const { data: html } = await axios.get(url);
+  const $ = load(html);
+
+  const label = $('td,th')
+    .filter((i, el) => $(el).text().trim() === 'Submission count:')
+    .first();
+  const text = label.next().text().trim();
+  const m = text.match(/\d+/);
+  return m ? Number(m[0]) : 0;
 }

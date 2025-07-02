@@ -7,6 +7,7 @@ import {
   getUserStats,
   getDashboardAnalytics,
   getContributionStats,
+  getCSESSubmissionCount,
   changePassword
 } from '../controllers/userController.js';
 
@@ -19,5 +20,6 @@ router.patch ('/platforms', updatePlatforms);
 router.get   ('/stats',     getUserStats);
 router.get   ('/analytics', getDashboardAnalytics);
 router.get   ('/contributions', getContributionStats);
+router.get   ('/cses/submissions', getCSESSubmissionCount);
 router.post  ('/change-password', changePassword);
 export default router;

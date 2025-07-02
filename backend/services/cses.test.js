@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { findCSESUserId, fetchCSESCount } from './cses.js';
+import { findCSESUserId, fetchCSESCount, fetchCSESSubmissionCount } from './cses.js';
 
 vi.mock('axios');
 
@@ -13,8 +13,9 @@ describe('findCSESUserId', () => {
     const listHtml = '<table><tr><td><a href="/user/42">alice</a></td></tr></table>';
     axios.get.mockResolvedValueOnce({ data: listHtml });
     const id = await findCSESUserId('alice');
-    expect(id).toBe('42');
-    expect(axios.get).toHaveBeenCalledWith('https://cses.fi/user/list?page=1');
+    // PATCH: now expects a number, not a string
+    expect(id).toBe(42);
+    expect(axios.get).toHaveBeenCalledWith('https://cses.fi/list/user/1');
   });
 
   it('returns id when username on second page', async () => {
@@ -24,9 +25,9 @@ describe('findCSESUserId', () => {
       .mockResolvedValueOnce({ data: page1 })
       .mockResolvedValueOnce({ data: page2 });
     const id = await findCSESUserId('charlie');
-    expect(id).toBe('99');
-    expect(axios.get).toHaveBeenNthCalledWith(1, 'https://cses.fi/user/list?page=1');
-    expect(axios.get).toHaveBeenNthCalledWith(2, 'https://cses.fi/user/list?page=2');
+    expect(id).toBe(99);
+    expect(axios.get).toHaveBeenNthCalledWith(1, 'https://cses.fi/list/user/1');
+    expect(axios.get).toHaveBeenNthCalledWith(2, 'https://cses.fi/list/user/2');
   });
 });
 
@@ -40,5 +41,21 @@ describe('fetchCSESCount', () => {
     const count = await fetchCSESCount('42');
     expect(count).toBe(3);
     expect(axios.get).toHaveBeenCalledWith('https://cses.fi/user/42');
+  });
+});
+
+describe('fetchCSESSubmissionCount', () => {
+  it('parses submission count from profile page', async () => {
+    const html = '<table><tr><td>Submission count:</td><td>123</td></tr></table>';
+    axios.get.mockResolvedValueOnce({ data: html });
+    const count = await fetchCSESSubmissionCount('99');
+    expect(count).toBe(123);
+    expect(axios.get).toHaveBeenCalledWith('https://cses.fi/user/99');
+  });
+
+  it('returns 0 when count not found', async () => {
+    axios.get.mockResolvedValueOnce({ data: '<div></div>' });
+    const count = await fetchCSESSubmissionCount('1');
+    expect(count).toBe(0);
   });
 });

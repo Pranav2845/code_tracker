@@ -41,7 +41,7 @@ const ConnectionModal = ({ platform, onClose, onConnect, isConnecting }) => {
     const newErr = { username: "" };
     let ok = true;
     if (!credentials.username.trim()) {
-      newErr.username = "Username is required";
+      newErr.username = platform.id === "cses" ? "User ID is required" : "Username is required";
       ok = false;
     }
     setErrors(newErr);
@@ -50,9 +50,7 @@ const ConnectionModal = ({ platform, onClose, onConnect, isConnecting }) => {
 
   const handleSubmit = e => {
     e.preventDefault();
-    console.log("📝 ConnectionModal.handleSubmit credentials:", credentials);
     if (!validateForm()) return;
-    console.log("✅ ConnectionModal validation passed, calling onConnect");
     onConnect(credentials);
   };
 
@@ -89,15 +87,17 @@ const ConnectionModal = ({ platform, onClose, onConnect, isConnecting }) => {
         <form onSubmit={handleSubmit}>
           <div className="p-6">
             <p className="text-text-secondary mb-6">
-              Enter your {platform.name} username to connect your account and track your progress.
+              {platform.id === "cses"
+                ? "Enter your numeric CSES user ID to connect your account and track your progress."
+                : `Enter your ${platform.name} username to connect your account and track your progress.`}
             </p>
             <div className="space-y-4">
               <FormInput
                 ref={initialFocusRef}
                 id="username"
                 name="username"
-                label={`${platform.name} Username`}
-                placeholder="Enter your username"
+                label={platform.id === "cses" ? "CSES User ID" : `${platform.name} Username`}
+                placeholder={platform.id === "cses" ? "Enter your user ID" : "Enter your username"}
                 value={credentials.username}
                 onChange={handleChange}
                 error={errors.username}
@@ -107,7 +107,7 @@ const ConnectionModal = ({ platform, onClose, onConnect, isConnecting }) => {
                 <div className="flex">
                   <Icon name="Info" size={16} className="text-primary mt-0.5 mr-2" />
                   <p className="text-xs text-text-secondary">
-                    We use your username to fetch your coding activity and progress from {platform.name}.
+                    We use your {platform.id === "cses" ? "user ID" : "username"} to fetch your coding activity and progress from {platform.name}.
                   </p>
                 </div>
               </div>

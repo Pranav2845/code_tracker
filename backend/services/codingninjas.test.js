@@ -189,7 +189,7 @@ describe('fetchCodingNinjasContributionStats', () => {
     const result = await fetchCodingNinjasContributionStats('x');
     expect(result.totalSubmissionCount).toBe(0);
     expect(result.typeCountMap).toEqual({});
-    expect(axios.get).toHaveBeenCalledTimes(2);
+    expect(axios.get).toHaveBeenCalledTimes(2)
   });
 });
 

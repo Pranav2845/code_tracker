@@ -4,8 +4,7 @@ import Problem from '../models/Problem.js'; // ← ensure we can query the Probl
 import PlatformAccount from '../models/PlatformAccount.js';
 import bcrypt from 'bcryptjs';
 import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
-import { fetchCSESCount } from '../services/cses.js';
-import { fetchGFGSolvedCount } from '../services/gfg.js';
+import { fetchCSESCount, fetchCSESSubmissionCount } from '../services/cses.js';import { fetchGFGSolvedCount } from '../services/gfg.js';
 import {
   fetchCodingNinjasSolvedCount,
   fetchCodingNinjasContributionStats,
@@ -343,5 +342,23 @@ export const getContributionStats = async (req, res) => {
   } catch (err) {
     console.error('❌ getContributionStats error:', err);
     res.status(500).json({ message: 'Failed to fetch contribution stats' });
+  }
+  };
+
+/**
+ * GET /api/user/cses/submissions
+ * Returns the submission count for the logged-in user's CSES account.
+ */
+export const getCSESSubmissionCount = async (req, res) => {
+  try {
+    const id = req.user?.platforms?.cses?.handle;
+    if (!id) {
+      return res.status(400).json({ message: 'CSES ID not found' });
+    }
+    const count = await fetchCSESSubmissionCount(id);
+    res.json({ submissionCount: count });
+  } catch (err) {
+    console.error('❌ getCSESSubmissionCount error:', err);
+    res.status(500).json({ message: 'Failed to fetch CSES submission count' });
   }
 };

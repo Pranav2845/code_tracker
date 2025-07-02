@@ -1,4 +1,3 @@
-// src/pages/dashboard/index.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -59,7 +58,9 @@ const Dashboard = () => {
       const statsRes     = await axios.get("/user/stats");
       const problemsRes  = await axios.get("/problems");
       const analyticsRes = await axios.get("/user/analytics");
+      const csesSubsRes  = await axios.get("/user/cses/submissions");
       const { totalSolved, byPlatform, activeDays } = statsRes.data;
+      const csesSubmissionCount = csesSubsRes.data?.submissionCount || 0;
       const allProblems  = problemsRes.data;
       const { progressData, platformActivity, topicStrength } = analyticsRes.data;
 
@@ -101,7 +102,8 @@ const Dashboard = () => {
           totalProblemsSolved: totalSolved,
           activeDays,
           currentStreak,
-          longestStreak
+          longestStreak,
+          csesSubmissionCount
         },
         platforms,
         progressData,
@@ -113,7 +115,7 @@ const Dashboard = () => {
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
       setHasError(true);
-            setErrorMessage(err.response?.data?.message || "");
+      setErrorMessage(err.response?.data?.message || "");
     } finally {
       setIsLoading(false);
     }
@@ -179,7 +181,7 @@ const Dashboard = () => {
             <div className="h-16 bg-surface rounded animate-pulse" />
           ) : hasError ? (
             <div className="p-4 bg-surface border rounded text-text-secondary">
-               {errorMessage || 'Failed to load platform data'}
+              {errorMessage || 'Failed to load platform data'}
             </div>
           ) : (
             <PlatformStatus platforms={dashboardData.platforms} />
@@ -187,12 +189,12 @@ const Dashboard = () => {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           {isLoading ? (
-            [0,1,2,3].map((_,i) => <SkeletonCard key={i} />)
+            [0,1,2,3,4].map((_,i) => <SkeletonCard key={i} />)
           ) : hasError ? (
             <div className="col-span-full p-4 bg-surface border rounded text-center">
-             {errorMessage || 'Failed to load stats'}
+              {errorMessage || 'Failed to load stats'}
             </div>
           ) : (
             <>
@@ -219,6 +221,11 @@ const Dashboard = () => {
                 title="Longest Streak"
                 value={dashboardData.userStats.longestStreak}
                 icon="Award"
+              />
+              <MetricCard
+                title="CSES Submissions"
+                value={dashboardData.userStats.csesSubmissionCount}
+                icon="FileText"
               />
             </>
           )}
@@ -275,7 +282,7 @@ const Dashboard = () => {
                 <div className="w-full h-full bg-background animate-pulse rounded" />
               ) : hasError ? (
                 <div className="flex items-center justify-center h-full text-text-secondary">
-                                <Icon name="AlertTriangle" size={24} /> {errorMessage || 'Failed to load'}
+                  <Icon name="AlertTriangle" size={24} /> {errorMessage || 'Failed to load'}
                 </div>
               ) : (
                 <RadarChart data={dashboardData.topicStrength} />
