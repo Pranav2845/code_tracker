@@ -68,11 +68,34 @@ export async function fetchCodingNinjasProblems(username) {
         details?.data?.profile?.uuid ||
         details?.data?.uuid;
       if (uuid) lookupId = uuid;
+       else {
+        const searchUrl =
+          `https://www.naukri.com/code360/api/v1/user/search?username=${encodeURIComponent(
+            username
+          )}&fields=profile`;
+        const { data: search } = await api.get(searchUrl);
+        const fromSearch = search?.results?.[0]?.profile?.uuid;
+        if (fromSearch) lookupId = fromSearch;
+      }
     } catch (err) {
       console.warn(
         '⚠️ fetchCodingNinjasProblems: user_details lookup failed:',
         err.message
       );
+       try {
+        const searchUrl =
+          `https://www.naukri.com/code360/api/v1/user/search?username=${encodeURIComponent(
+            username
+          )}&fields=profile`;
+        const { data: search } = await api.get(searchUrl);
+        const fromSearch = search?.results?.[0]?.profile?.uuid;
+        if (fromSearch) lookupId = fromSearch;
+      } catch (err2) {
+        console.warn(
+          '⚠️ fetchCodingNinjasProblems: search lookup failed:',
+          err2.message
+        );
+      }
     }
 
     const limit = 100;
@@ -210,4 +233,15 @@ export async function fetchCodingNinjasContributionStats(username) {
     console.error('❌ fetchCodingNinjasContributionStats error:', err.message);
     return { totalSubmissionCount: 0, typeCountMap: {} };
   }
+}
+
+/**
+ * Fetch only the total submission count for a Coding Ninjas user over the last year.
+ * This is a thin wrapper around fetchCodingNinjasContributionStats.
+ * @param {string} username Coding Ninjas/Code360 handle
+ * @returns {Promise<number>} total submissions in the past year
+ */
+export async function fetchCodingNinjasSubmissionCount(username) {
+  const { totalSubmissionCount } = await fetchCodingNinjasContributionStats(username);
+  return totalSubmissionCount;
 }

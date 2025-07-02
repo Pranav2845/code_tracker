@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
 import {
   fetchCodingNinjasSolvedCount,
+  fetchCodingNinjasSubmissionCount,
   fetchCodingNinjasContributionStats,
   fetchCodingNinjasProblems,
 } from './codingninjas.js';
@@ -100,6 +101,22 @@ describe('fetchCodingNinjasContributionStats', () => {
     const result = await fetchCodingNinjasContributionStats('user');
     expect(result.totalSubmissionCount).toBe(0);
     expect(result.typeCountMap).toEqual({});
+  });
+});
+
+describe('fetchCodingNinjasSubmissionCount', () => {
+  it('fetches uuid then total count', async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { data: { user_details: { uuid: 'u1' } } } })
+      .mockResolvedValueOnce({ data: { data: { total_submission_count: 5 } } });
+    const count = await fetchCodingNinjasSubmissionCount('foo');
+    expect(count).toBe(5);
+  });
+
+  it('returns zero when uuid missing', async () => {
+    axios.get.mockResolvedValueOnce({ data: {} });
+    const count = await fetchCodingNinjasSubmissionCount('bar');
+    expect(count).toBe(0);
   });
 });
 
