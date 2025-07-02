@@ -68,4 +68,10 @@ describe('fetchCSESSubmissionCount', () => {
     const count = await fetchCSESSubmissionCount('1');
     expect(count).toBe(0);
   });
+  
+  it('returns 0 on network error', async () => {
+    axios.get.mockRejectedValueOnce(new Error('network fail'));
+    const count = await fetchCSESSubmissionCount('2');
+    expect(count).toBe(0);
+  });
 });

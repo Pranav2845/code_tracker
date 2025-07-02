@@ -96,13 +96,18 @@ export async function fetchCSESCount(username) {
  */
 export async function fetchCSESSubmissionCount(userId) {
   const url = `https://cses.fi/user/${userId}`;
-  const { data: html } = await axios.get(url);
-  const $ = load(html);
+  try {
+    const { data: html } = await axios.get(url);
+    const $ = load(html);
 
-  const label = $('td,th')
-    .filter((i, el) => $(el).text().trim() === 'Submission count:')
-    .first();
-  const text = label.next().text().trim();
-  const m = text.match(/\d+/);
-  return m ? Number(m[0]) : 0;
+      const label = $('td,th')
+      .filter((i, el) => $(el).text().trim() === 'Submission count:')
+      .first();
+    const text = label.next().text().trim();
+    const m = text.match(/\d+/);
+    return m ? Number(m[0]) : 0;
+  } catch (err) {
+    console.warn('⚠️ fetchCSESSubmissionCount failed:', err.message);
+    return 0;
+  }
 }
