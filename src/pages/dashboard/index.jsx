@@ -44,12 +44,14 @@ function computeActivityStats(problems) {
 const Dashboard = () => {
   const [isLoading, setIsLoading]       = useState(true);
   const [hasError, setHasError]         = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [dashboardData, setDashboardData] = useState(null);
   const [lastUpdated, setLastUpdated]   = useState(new Date());
 
   const fetchData = async () => {
     setIsLoading(true);
     setHasError(false);
+    setErrorMessage("");
     try {
       const profileRes  = await axios.get("/user/profile");
       const connections = profileRes.data.platforms || {};
@@ -111,6 +113,7 @@ const Dashboard = () => {
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
       setHasError(true);
+            setErrorMessage(err.response?.data?.message || "");
     } finally {
       setIsLoading(false);
     }
@@ -176,7 +179,7 @@ const Dashboard = () => {
             <div className="h-16 bg-surface rounded animate-pulse" />
           ) : hasError ? (
             <div className="p-4 bg-surface border rounded text-text-secondary">
-              Failed to load platform data
+               {errorMessage || 'Failed to load platform data'}
             </div>
           ) : (
             <PlatformStatus platforms={dashboardData.platforms} />
@@ -189,7 +192,7 @@ const Dashboard = () => {
             [0,1,2,3].map((_,i) => <SkeletonCard key={i} />)
           ) : hasError ? (
             <div className="col-span-full p-4 bg-surface border rounded text-center">
-              Failed to load stats
+             {errorMessage || 'Failed to load stats'}
             </div>
           ) : (
             <>
@@ -256,7 +259,7 @@ const Dashboard = () => {
                 <div className="w-full h-full bg-background animate-pulse rounded" />
               ) : hasError ? (
                 <div className="flex items-center justify-center h-full text-text-secondary">
-                  <Icon name="AlertTriangle" size={24} /> Failed to load
+                  <Icon name="AlertTriangle" size={24} /> {errorMessage || 'Failed to load'}
                 </div>
               ) : (
                 <LineChart data={dashboardData.progressData} />
@@ -272,7 +275,7 @@ const Dashboard = () => {
                 <div className="w-full h-full bg-background animate-pulse rounded" />
               ) : hasError ? (
                 <div className="flex items-center justify-center h-full text-text-secondary">
-                  <Icon name="AlertTriangle" size={24} /> Failed to load
+                                <Icon name="AlertTriangle" size={24} /> {errorMessage || 'Failed to load'}
                 </div>
               ) : (
                 <RadarChart data={dashboardData.topicStrength} />
@@ -295,7 +298,7 @@ const Dashboard = () => {
               <div className="w-full h-full bg-background animate-pulse rounded" />
             ) : hasError ? (
               <div className="flex items-center justify-center h-full text-text-secondary">
-                <Icon name="AlertTriangle" size={24} /> Failed to load
+                <Icon name="AlertTriangle" size={24} /> {errorMessage || 'Failed to load'}
               </div>
             ) : (
               <BarChart data={dashboardData.platformActivity} />
@@ -315,7 +318,7 @@ const Dashboard = () => {
             ))
           ) : hasError ? (
             <div className="text-center text-text-secondary py-8">
-              <Icon name="AlertTriangle" size={24} /> Failed to load
+              <Icon name="AlertTriangle" size={24} /> {errorMessage || 'Failed to load'}
             </div>
           ) : (
             <div className="divide-y divide-border">
