@@ -3,6 +3,7 @@ import axios from 'axios';
 import {
   fetchCodingNinjasSolvedCount,
   fetchCodingNinjasContributionStats,
+  fetchCodingNinjasProblems,
 } from './codingninjas.js';
 
 
@@ -72,5 +73,16 @@ describe('fetchCodingNinjasContributionStats', () => {
     const result = await fetchCodingNinjasContributionStats('user');
     expect(result.totalSubmissionCount).toBe(0);
     expect(result.typeCountMap).toEqual({});
+  });
+  });
+
+describe('fetchCodingNinjasProblems', () => {
+  it('stops after max pages when results repeat', async () => {
+    const sample = Array.from({ length: 100 }, (_, i) => ({ problemId: i }));
+    axios.get.mockResolvedValue({ data: { solvedProblems: sample } });
+
+    const problems = await fetchCodingNinjasProblems('foo');
+    expect(problems.length).toBe(2000); // 20 pages * 100 each
+    expect(axios.get).toHaveBeenCalledTimes(20);
   });
 });

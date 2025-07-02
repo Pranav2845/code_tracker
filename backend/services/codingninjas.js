@@ -5,6 +5,7 @@ import fs from 'fs/promises';
 
 // When MOCK_CODINGNINJAS=true, read problems from local JSON instead of calling the API
 const USE_MOCK = process.env.MOCK_CODINGNINJAS === 'true';
+
 /**
  * Fetch solved problems for a Coding Ninjas user.
  * Tries the legacy API first, then falls back to the new code360 endpoint.
@@ -49,9 +50,11 @@ export async function fetchCodingNinjasProblems(username) {
   // 2️⃣ Fallback to the new Code360 public API
   try {
     const limit = 100;
+    const maxPages = 20; // safeguard to prevent infinite loops
     let offset = 0;
+    let page = 0;
     const all = [];
-    while (true) {
+    while (page < maxPages) {
       const url =
         `https://www.naukri.com/code360/api/v1/user/${encodeURIComponent(username)}/solvedProblems?limit=${limit}&offset=${offset}`;
       const { data } = await axios.get(url);
@@ -59,6 +62,10 @@ export async function fetchCodingNinjasProblems(username) {
       all.push(...items);
       if (items.length < limit) break;
       offset += limit;
+      page += 1;
+    }
+    if (page === maxPages) {
+      console.warn('⚠️ fetchCodingNinjasProblems reached max pages, stopping early');
     }
 
     return all.map((p) => ({
