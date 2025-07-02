@@ -96,6 +96,25 @@ describe('fetchCodingNinjasContributionStats', () => {
     expect(result.typeCountMap['2']).toBe(6);
   });
 
+    it('falls back to search when user_details has no uuid', async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: {} })
+      .mockResolvedValueOnce({ data: { results: [{ profile: { uuid: 'u2' } }] } })
+      .mockResolvedValueOnce({ data: { data: { total_submission_count: 3, type_count_map: {} } } });
+
+    const result = await fetchCodingNinjasContributionStats('foo');
+    expect(result.totalSubmissionCount).toBe(3);
+    expect(axios.get).toHaveBeenCalledTimes(3);
+    expect(axios.get).toHaveBeenNthCalledWith(
+      1,
+      'https://www.naukri.com/code360/api/v3/public_section/profile/user_details?uuid=foo&app_context=publicsection&naukri_request=true'
+    );
+    expect(axios.get).toHaveBeenNthCalledWith(
+      2,
+      'https://www.naukri.com/code360/api/v1/user/search?username=foo&fields=profile'
+    );
+  });
+
   it('returns zero counts when uuid missing', async () => {
     axios.get.mockResolvedValueOnce({ data: {} });
     const result = await fetchCodingNinjasContributionStats('user');

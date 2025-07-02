@@ -203,10 +203,28 @@ export async function fetchCodingNinjasContributionStats(username) {
         username
       )}&app_context=publicsection&naukri_request=true`;
     const { data: details } = await api.get(detailsUrl);
-    const uuid =
+    let uuid =
       details?.data?.user_details?.uuid ||
       details?.data?.profile?.uuid ||
       details?.data?.uuid;
+      
+    // Fallback: try the search endpoint if uuid is missing
+    if (!uuid) {
+      try {
+        const searchUrl =
+          `https://www.naukri.com/code360/api/v1/user/search?username=${encodeURIComponent(
+            username
+          )}&fields=profile`;
+        const { data: search } = await api.get(searchUrl);
+        uuid = search?.results?.[0]?.profile?.uuid;
+      } catch (err) {
+        console.warn(
+          '⚠️ fetchCodingNinjasContributionStats: search lookup failed:',
+          err.message
+        );
+      }
+    }
+
     if (!uuid) {
       console.warn('⚠️ fetchCodingNinjasContributionStats: uuid not found');
       return { totalSubmissionCount: 0, typeCountMap: {} };
