@@ -144,25 +144,6 @@ export async function fetchCode360Problems(username) {
       );
       try {
         const scraped = await scrapeCode360SolvedProblems(username);
-          it('handles problemTitle property', async () => {
-    axios.get
-      .mockResolvedValueOnce({ data: { data: { user_id: 'idpt' } } })
-      .mockResolvedValueOnce({
-        data: {
-          data: {
-            problems: [
-              {
-                id: 3,
-                problemTitle: 'CamelCase',
-              },
-            ],
-          },
-        },
-      });
-    const list = await fetchCode360Problems('ptuser');
-    expect(list).toHaveLength(1);
-    expect(list[0].title).toBe('CamelCase');
-  });
 
         if (Array.isArray(scraped) && scraped.length > 0) {
           return scraped;
