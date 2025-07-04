@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
     codeforces: { handle: String },
     hackerrank: { handle: String },
     gfg: { handle: String },
-    codingninjas: { handle: String },
+    code360: { handle: String },
     cses: { handle: String },
     codechef: { handle: String }
   }

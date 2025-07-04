@@ -6,7 +6,7 @@ import User from '../models/User.js';
 import { fetchLeetCodeProblems } from '../services/leetcode.js';
 import { fetchCFProblems } from '../services/codeforces.js';
 import { fetchGFGProblems } from '../services/gfg.js';
-import { fetchCodingNinjasProblems } from '../services/codingninjas.js';
+import { fetchCode360Problems } from '../services/code360.js';
 import { fetchCSESProblems } from '../services/cses.js';
 import { fetchCodeChefProblems } from '../services/codechef.js';
 import { fetchHackerRankProblems } from '../services/hackerrank.js';
@@ -62,16 +62,16 @@ export const syncPlatform = async (req, res) => {
       case 'gfg':
         problems = await fetchGFGProblems(handle);
         break;
-      case 'codingninjas':
+      case 'code360':
          try {
-          problems = await fetchCodingNinjasProblems(handle);
+          problems = await fetchCode360Problems(handle);
         } catch (err) {
-          console.error('❌ Coding Ninjas fetch error:', err.message);
+          console.error('❌ Code360 fetch error:', err.message);
           if (/user not found/i.test(err.message)) {
-            return res.status(404).json({ message: 'Coding Ninjas user not found' });
+            return res.status(404).json({ message: 'Code360 user not found' });
           }
           return res.status(503).json({
-            message: 'Coding Ninjas could not be reached. Please try again later.'
+            message: 'Code360 could not be reached. Please try again later.'
           });
         }
         break;

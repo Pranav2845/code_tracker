@@ -6,9 +6,9 @@ import bcrypt from 'bcryptjs';
 import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
 import { fetchCSESCount, fetchCSESSubmissionCount } from '../services/cses.js';import { fetchGFGSolvedCount } from '../services/gfg.js';
 import {
-  fetchCodingNinjasSolvedCount,
-  fetchCodingNinjasContributionStats,
-} from '../services/codingninjas.js';
+  fetchCode360SolvedCount,
+  fetchCode360ContributionStats,
+} from '../services/code360.js';
 import { fetchHackerRankSolvedCount } from '../services/hackerrank.js';
 /**
  * GET /api/user/profile
@@ -167,21 +167,21 @@ export const getUserStats = async (req, res) => {
         }
       }
     }
-   // If user connected Coding Ninjas, fetch solved count
-    const cnHandle = req.user.platforms?.codingninjas?.handle;
+  // If user connected Code360, fetch solved count
+    const cnHandle = req.user.platforms?.code360?.handle;
     if (cnHandle) {
-      const dbCount = platformMap.codingninjas;
+      const dbCount = platformMap.code360;
       try {
-        const fetchedCount = await fetchCodingNinjasSolvedCount(cnHandle);
+        const fetchedCount = await fetchCode360SolvedCount(cnHandle);
         if (fetchedCount) {
-          platformMap.codingninjas = fetchedCount;
+          platformMap.code360 = fetchedCount;
         } else if (typeof dbCount === 'number') {
-          platformMap.codingninjas = dbCount;
+          platformMap.code360 = dbCount;
         }
       } catch (err) {
-        console.error('❌ fetchCodingNinjasSolvedCount error:', err.message);
+        console.error('❌ fetchCode360SolvedCount error:', err.message);
         if (typeof dbCount === 'number') {
-          platformMap.codingninjas = dbCount;
+          platformMap.code360 = dbCount;
         }
       }
     }
@@ -329,15 +329,15 @@ export const getDashboardAnalytics = async (req, res) => {
 
 /**
  * GET /api/user/contributions
- * Returns submission statistics from Coding Ninjas.
- */
+ * Returns submission statistics from Code360.
+*/
 export const getContributionStats = async (req, res) => {
   try {
-    const handle = req.user?.platforms?.codingninjas?.handle;
+    const handle = req.user?.platforms?.code360?.handle;
     if (!handle) {
-      return res.status(400).json({ message: 'Coding Ninjas handle not found' });
+      return res.status(400).json({ message: 'Code360 handle not found' });
     }
-    const stats = await fetchCodingNinjasContributionStats(handle);
+    const stats = await fetchCode360ContributionStats(handle);
     res.json(stats);
   } catch (err) {
     console.error('❌ getContributionStats error:', err);

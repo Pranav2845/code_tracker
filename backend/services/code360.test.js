@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
 import {
-  fetchCodingNinjasProblems,
-  fetchCodingNinjasSolvedCount,
-  fetchCodingNinjasContributionStats,
-  fetchCodingNinjasSubmissionCount,
-} from './codingninjas.js';
+  fetchCode360Problems,
+  fetchCode360SolvedCount,
+  fetchCode360ContributionStats,
+  fetchCode360SubmissionCount,
+} from './code360.js';
 
 vi.mock('axios');
 
@@ -13,12 +13,12 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('fetchCodingNinjasSolvedCount', () => {
+describe('fetchCode360SolvedCount', () => {
   it('returns solved count on success', async () => {
     axios.get
       .mockResolvedValueOnce({ data: { data: { user_id: 'u1' } } })
       .mockResolvedValueOnce({ data: { data: { solved_count: 5 } } });
-    const count = await fetchCodingNinjasSolvedCount('alice');
+    const count = await fetchCode360SolvedCount('alice');
     expect(count).toBe(5);
     expect(axios.get).toHaveBeenNthCalledWith(
       1,
@@ -37,46 +37,46 @@ describe('fetchCodingNinjasSolvedCount', () => {
       .mockRejectedValueOnce(new Error('fail'))
       .mockResolvedValueOnce({ data: { data: { user_id: 'u2' } } })
       .mockResolvedValueOnce({ data: { data: { solved_count: 3 } } });
-    const count = await fetchCodingNinjasSolvedCount('bob');
+    const count = await fetchCode360SolvedCount('bob');
     expect(count).toBe(3);
     expect(axios.get).toHaveBeenCalledTimes(3);
   });
 
   it('returns 0 on error', async () => {
     axios.get.mockRejectedValue(new Error('nope'));
-    const count = await fetchCodingNinjasSolvedCount('err');
+    const count = await fetchCode360SolvedCount('err');
     expect(count).toBe(0);
   });
 });
 
-describe('fetchCodingNinjasContributionStats', () => {
+describe('fetchCode360ContributionStats', () => {
   it('returns contributions object', async () => {
     const stats = { solved_count: 7, submission_count: 10 };
     axios.get
       .mockResolvedValueOnce({ data: { data: { user_id: 'ux' } } })
       .mockResolvedValueOnce({ data: { data: stats } });
-    const result = await fetchCodingNinjasContributionStats('user');
+    const result = await fetchCode360ContributionStats('user');
     expect(result).toEqual(stats);
   });
 });
 
-describe('fetchCodingNinjasSubmissionCount', () => {
+describe('fetchCode360SubmissionCount', () => {
   it('returns submission count from contributions', async () => {
     axios.get
       .mockResolvedValueOnce({ data: { data: { user_id: 'uid' } } })
       .mockResolvedValueOnce({ data: { data: { submission_count: 9 } } });
-    const count = await fetchCodingNinjasSubmissionCount('id');
+    const count = await fetchCode360SubmissionCount('id');
     expect(count).toBe(9);
   });
 
   it('returns 0 on network error', async () => {
     axios.get.mockRejectedValue(new Error('bad'));
-    const count = await fetchCodingNinjasSubmissionCount('fail');
+    const count = await fetchCode360SubmissionCount('fail');
     expect(count).toBe(0);
   });
 });
 
-describe('fetchCodingNinjasProblems', () => {
+describe('fetchCode360Problems', () => {
   it('maps problem data', async () => {
     axios.get
       .mockResolvedValueOnce({ data: { data: { user_id: 'uu' } } })
@@ -95,7 +95,7 @@ describe('fetchCodingNinjasProblems', () => {
           },
         },
       });
-    const list = await fetchCodingNinjasProblems('user');
+    const list = await fetchCode360Problems('user');
     expect(list.length).toBe(1);
     expect(list[0].title).toBe('Prob');
     expect(list[0].solvedAt instanceof Date).toBe(true);
@@ -110,13 +110,13 @@ describe('fetchCodingNinjasProblems', () => {
       .mockRejectedValueOnce(new Error('fail2'))
       .mockRejectedValueOnce(new Error('fail3'))
       .mockResolvedValueOnce({ data: html });
-    const list = await fetchCodingNinjasProblems('scraper');
+    const list = await fetchCode360Problems('scraper');
     expect(list).toHaveLength(1);
     expect(list[0].title).toBe('Scraped');
   });
 
   it('throws when lookup fails', async () => {
     axios.get.mockRejectedValue(new Error('fail'));
-    await expect(fetchCodingNinjasProblems('x')).rejects.toThrow();
+    await expect(fetchCode360Problems('x')).rejects.toThrow();
   });
 });
