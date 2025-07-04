@@ -63,6 +63,8 @@ export default function PlatformConnection() {
       closeModal();
     } catch (err) {
       console.error("❌ sync failed:", err);
+      const msg = err.response?.data?.message || "Sync failed—check console for details.";
+      alert(msg);
       alert("Sync failed—check console for details.");
     } finally {
       setIsConnecting(false);

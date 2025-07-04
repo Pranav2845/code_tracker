@@ -67,6 +67,9 @@ export const syncPlatform = async (req, res) => {
           problems = await fetchCodingNinjasProblems(handle);
         } catch (err) {
           console.error('❌ Coding Ninjas fetch error:', err.message);
+          if (/user not found/i.test(err.message)) {
+            return res.status(404).json({ message: 'Coding Ninjas user not found' });
+          }
           return res.status(503).json({
             message: 'Coding Ninjas could not be reached. Please try again later.'
           });
