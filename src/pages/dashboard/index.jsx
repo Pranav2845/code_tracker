@@ -63,6 +63,11 @@ const Dashboard = () => {
         const csesSubsRes = await axios.get("/user/cses/submissions");
         csesSubmissionCount = csesSubsRes.data?.submissionCount || 0;
       }
+      let code360SubmissionCount = 0;
+      if (connections.codingninjas?.handle) {
+        const contribRes = await axios.get("/user/contributions");
+        code360SubmissionCount = contribRes.data?.totalSubmissionCount || 0;
+      }
       const { totalSolved, byPlatform, activeDays } = statsRes.data;
       
       const allProblems  = problemsRes.data;
@@ -107,7 +112,8 @@ const Dashboard = () => {
           activeDays,
           currentStreak,
           longestStreak,
-          csesSubmissionCount
+          csesSubmissionCount,
+          code360SubmissionCount
         },
         platforms,
         progressData,
@@ -193,9 +199,9 @@ const Dashboard = () => {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
           {isLoading ? (
-            [0,1,2,3,4].map((_,i) => <SkeletonCard key={i} />)
+             [0,1,2,3,4,5].map((_,i) => <SkeletonCard key={i} />)
           ) : hasError ? (
             <div className="col-span-full p-4 bg-surface border rounded text-center">
               {errorMessage || 'Failed to load stats'}
@@ -229,6 +235,11 @@ const Dashboard = () => {
               <MetricCard
                 title="CSES Submissions"
                 value={dashboardData.userStats.csesSubmissionCount}
+                icon="FileText"
+              />
+               <MetricCard
+                title="Code360 Submissions"
+                value={dashboardData.userStats.code360SubmissionCount}
                 icon="FileText"
               />
             </>

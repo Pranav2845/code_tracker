@@ -33,7 +33,7 @@
     --color-codingninjas: #F97316; /* orange-500 */
     --color-cses: #0EA5E9; /* sky-500 */
     --color-codechef: #8B5CF6; /* violet-500 */
-
+    --color-code360: #44230b; /* orange-500 */
     /* Extended Primary Colors */
     --color-primary-50: #ECEDFB;
     --color-primary-100: #D9DBF8;
@@ -61,6 +61,7 @@
     --color-codingninjas: #F97316;
     --color-cses: #0EA5E9;
     --color-codechef: #8B5CF6;
+    --color-code360: #44230b;
 }
 
 

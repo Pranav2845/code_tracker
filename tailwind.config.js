@@ -38,6 +38,7 @@ module.exports = {
         codingninjas: 'var(--color-codingninjas)',
         cses: 'var(--color-cses)',
         codechef: 'var(--color-codechef)',
+        code360: 'var(--color-code360)',
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui'],
