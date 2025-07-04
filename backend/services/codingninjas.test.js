@@ -34,6 +34,21 @@ describe('fetchCode360SolvedCount', () => {
     );
   });
 
+  it('uses numeric id when both numeric id and uuid exist', async () => {
+    axios.get
+      .mockResolvedValueOnce({
+        data: { data: { profile: { user_id: 55, uuid: 'abc' } } },
+      })
+      .mockResolvedValueOnce({ data: { data: { solved_count: 2 } } });
+    const count = await fetchCode360SolvedCount('mix');
+    expect(count).toBe(2);
+    expect(axios.get).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('user_id=55'),
+      expect.anything()
+    );
+  });
+
   it('retries lookup when first attempt fails', async () => {
     axios.get
       .mockRejectedValueOnce(new Error('fail'))

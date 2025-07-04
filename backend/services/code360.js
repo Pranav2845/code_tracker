@@ -41,11 +41,13 @@ async function fetchUserId(username) {
   const data = await getWithRetry(url);
 
   const id =
-    data?.data?.profile?.uuid ??
+    data?.data?.profile?.user_id ??
+    data?.data?.profile?.id ??
     data?.data?.user_id ??
     data?.data?.user?.user_id ??
     data?.data?.user?.id ??
-    data?.user_id;
+    data?.user_id ??
+    data?.data?.profile?.uuid;
 
   if (!id) {
     throw new Error('Code360 user not found');
@@ -119,6 +121,8 @@ export async function fetchCode360Problems(username) {
   try {
     const id = await fetchUserId(username);
     const url = `${BASE_URL}/profile/solved_problems?user_id=${id}&request_differentiator=1751613875507&app_context=publicsection&naukri_request=true`;
+      console.log('[fetchCode360Problems] resolved id:', id);
+    console.log('[fetchCode360Problems] request url:', url);
     const data = await getWithRetry(url);
        let list = data?.data?.problems || data?.problems;
 
@@ -129,6 +133,10 @@ export async function fetchCode360Problems(username) {
       }
     }
     if (!Array.isArray(list) || list.length === 0) {
+       console.log(
+        '[fetchCode360Problems] API returned no problem data:',
+        JSON.stringify(data).slice(0, 500)
+      );
       try {
         const scraped = await scrapeCode360SolvedProblems(username);
         if (Array.isArray(scraped) && scraped.length > 0) {

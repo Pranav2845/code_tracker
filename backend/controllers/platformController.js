@@ -26,7 +26,7 @@ export const syncPlatform = async (req, res) => {
   }
 
   const { platform } = req.params; // e.g. 'gfg'
-  const { handle } = req.body;     // e.g. 'pranav_pandey02'
+   const handle = (req.body.handle || '').trim(); // ensure no leading/trailing spaces
   const userId = req.user._id;
 
   try {
