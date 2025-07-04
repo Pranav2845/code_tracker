@@ -64,7 +64,7 @@ const Dashboard = () => {
         csesSubmissionCount = csesSubsRes.data?.submissionCount || 0;
       }
       let code360SubmissionCount = 0;
-      if (connections.codingninjas?.handle) {
+      if (connections.code360?.handle) {
         const contribRes = await axios.get("/user/contributions");
         code360SubmissionCount = contribRes.data?.totalSubmissionCount || 0;
       }
@@ -73,13 +73,13 @@ const Dashboard = () => {
       const allProblems  = problemsRes.data;
       const { progressData, platformActivity, topicStrength } = analyticsRes.data;
 
-      // 3️⃣ Build the platforms array (now includes GFG, Coding Ninjas, CSES, CodeChef)
+      // 3️⃣ Build the platforms array (now includes GFG, Code 360, CSES, CodeChef)
       const platforms = [
         { id: "leetcode",     name: "LeetCode",      color: "var(--color-leetcode)" },
         { id: "codeforces",   name: "Codeforces",    color: "var(--color-codeforces)" },
         { id: "hackerrank",   name: "HackerRank",    color: "var(--color-success)" },
         { id: "gfg",          name: "GeeksforGeeks", color: "var(--color-gfg)" },
-        { id: "codingninjas", name: "Coding Ninjas", color: "var(--color-codingninjas)" },
+        { id: "code360",      name: "Code 360 by Coding Ninjas", color: "var(--color-code360)" },
         { id: "cses",         name: "CSES",          color: "var(--color-cses)" },
         { id: "codechef",     name: "CodeChef",      color: "var(--color-codechef)" }
       ].map((p) => {
@@ -266,7 +266,7 @@ const Dashboard = () => {
                   <span className="w-2 h-2 bg-gfg rounded-full mr-1" />GFG
                 </span>
                 <span className="flex items-center">
-                  <span className="w-2 h-2 bg-codingninjas rounded-full mr-1" />Coding Ninjas
+                  <span className="w-2 h-2 bg-code360 rounded-full mr-1" />Code 360
                 </span>
                 <span className="flex items-center">
                   <span className="w-2 h-2 bg-cses rounded-full mr-1" />CSES
@@ -353,7 +353,7 @@ const Dashboard = () => {
                         codeforces:  "bg-codeforces",
                         hackerrank:  "bg-success",
                         gfg:         "bg-gfg",
-                        codingninjas:"bg-codingninjas",
+                        code360:     "bg-code360",
                         cses:        "bg-cses",
                         codechef:    "bg-codechef"
                       }[act.platform] || "bg-primary")

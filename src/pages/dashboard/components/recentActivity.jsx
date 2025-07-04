@@ -39,7 +39,7 @@ const RecentActivity = ({ activities, isLoading, hasError, onRefresh }) => {
                 codeforces: 'bg-codeforces',
                 hackerrank: 'bg-success',
                 gfg: 'bg-gfg',
-                codingninjas: 'bg-codingninjas',
+                code360: 'bg-code360',
                 cses: 'bg-cses',
                 codechef: 'bg-codechef'
               }[activity.platform] || 'bg-primary'

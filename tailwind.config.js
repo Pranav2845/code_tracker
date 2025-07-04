@@ -35,7 +35,6 @@ module.exports = {
         leetcode: 'var(--color-leetcode)',
         codeforces: 'var(--color-codeforces)',
         gfg: 'var(--color-gfg)',
-        codingninjas: 'var(--color-codingninjas)',
         cses: 'var(--color-cses)',
         codechef: 'var(--color-codechef)',
         code360: 'var(--color-code360)',

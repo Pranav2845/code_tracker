@@ -10,7 +10,7 @@ const problemSchema = new mongoose.Schema({
       'codeforces',
       'hackerrank',
       'gfg',
-      'codingninjas',
+      'code360',
       'cses',
       'codechef'
     ],
