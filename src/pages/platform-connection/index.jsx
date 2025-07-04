@@ -55,11 +55,10 @@ export default function PlatformConnection() {
     setIsConnecting(true);
     try {
       const { data } = await axios.post(`/platform/sync/${platformId}`, { handle: username });
-      if (data.importedCount === 0) {
-        // Surface warning from server if no problems were imported
-        alert(data.message ||
-          "⚠️ No problems imported. Double-check your handle and that your submissions are public.");
-      }
+      // only warn on other platforms—Code360 uses the total-count API fallback
+   if (platformId !== 'code360' && data.importedCount === 0) {
+     alert(data.message || "⚠️ No problems imported. Double-check your handle and that your submissions are public.");
+   }
       await fetchPlatforms();
             if (platformId === 'code360') {
         try {
