@@ -68,7 +68,12 @@ function mapProblem(p) {
 function findProblemArray(obj) {
   if (!obj || typeof obj !== 'object') return null;
   if (Array.isArray(obj)) {
-    if (obj.every((o) => typeof o === 'object' && (o.title || o.problem_title))) {
+        if (
+      obj.every(
+        (o) =>
+          typeof o === 'object' && (o.title || o.problem_title || o.problemTitle)
+      )
+    ) {
       return obj;
     }
     for (const el of obj) {
@@ -139,6 +144,26 @@ export async function fetchCode360Problems(username) {
       );
       try {
         const scraped = await scrapeCode360SolvedProblems(username);
+          it('handles problemTitle property', async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { data: { user_id: 'idpt' } } })
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            problems: [
+              {
+                id: 3,
+                problemTitle: 'CamelCase',
+              },
+            ],
+          },
+        },
+      });
+    const list = await fetchCode360Problems('ptuser');
+    expect(list).toHaveLength(1);
+    expect(list[0].title).toBe('CamelCase');
+  });
+
         if (Array.isArray(scraped) && scraped.length > 0) {
           return scraped;
         }
