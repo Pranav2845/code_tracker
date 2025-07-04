@@ -1,3 +1,4 @@
+// File: backend/services/codingninjas.test.js
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
 import {
@@ -100,6 +101,32 @@ describe('fetchCode360Problems', () => {
     expect(list.length).toBe(1);
     expect(list[0].title).toBe('Prob');
     expect(list[0].solvedAt instanceof Date).toBe(true);
+  });
+
+  it('reads nested problems from API response', async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { data: { user_id: 'nid' } } })
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            outer: {
+              inner: {
+                list: [
+                  {
+                    id: 2,
+                    title: 'Nested',
+                  },
+                ],
+              },
+            },
+          },
+        },
+      });
+
+    const list = await fetchCode360Problems('nested');
+    expect(list).toHaveLength(1);
+    expect(list[0].title).toBe('Nested');
+    expect(axios.get).toHaveBeenCalledTimes(2);
   });
 
    it('scrapes profile page when API fails', async () => {

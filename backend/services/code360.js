@@ -1,3 +1,4 @@
+// File: backend/services/code360.js
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
@@ -119,8 +120,14 @@ export async function fetchCode360Problems(username) {
     const id = await fetchUserId(username);
     const url = `${BASE_URL}/profile/solved_problems?user_id=${id}&request_differentiator=1751613875507&app_context=publicsection&naukri_request=true`;
     const data = await getWithRetry(url);
-   let list = data?.data?.problems || data?.problems || [];
+       let list = data?.data?.problems || data?.problems;
 
+    if (!Array.isArray(list) || list.length === 0) {
+      const found = findProblemArray(data);
+      if (Array.isArray(found) && found.length > 0) {
+        list = found;
+      }
+    }
     if (!Array.isArray(list) || list.length === 0) {
       try {
         const scraped = await scrapeCode360SolvedProblems(username);
