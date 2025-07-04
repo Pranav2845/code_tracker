@@ -116,6 +116,19 @@ describe('fetchCode360Problems', () => {
     expect(list[0].title).toBe('Scraped');
   });
 
+   it('scrapes profile page when API returns empty list', async () => {
+    const html = `
+      <script id="__NEXT_DATA__" type="application/json">{"problems":[{"id":7,"title":"Fallback"}]}</script>
+    `;
+    axios.get
+      .mockResolvedValueOnce({ data: { data: { user_id: 'uid' } } })
+      .mockResolvedValueOnce({ data: { data: { problems: [] } } })
+      .mockResolvedValueOnce({ data: html });
+    const list = await fetchCode360Problems('empty');
+    expect(list).toHaveLength(1);
+    expect(list[0].title).toBe('Fallback');
+  });
+
   it('throws when lookup fails', async () => {
     axios.get.mockRejectedValue(new Error('fail'));
     await expect(fetchCode360Problems('x')).rejects.toThrow();

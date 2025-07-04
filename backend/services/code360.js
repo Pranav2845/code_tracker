@@ -119,8 +119,20 @@ export async function fetchCode360Problems(username) {
     const id = await fetchUserId(username);
     const url = `${BASE_URL}/profile/solved_problems?user_id=${id}&request_differentiator=1751613875507&app_context=publicsection&naukri_request=true`;
     const data = await getWithRetry(url);
-    const list = data?.data?.problems || data?.problems || [];
-    return list.map(mapProblem);
+   let list = data?.data?.problems || data?.problems || [];
+
+    if (!Array.isArray(list) || list.length === 0) {
+      try {
+        const scraped = await scrapeCode360SolvedProblems(username);
+        if (Array.isArray(scraped) && scraped.length > 0) {
+          return scraped;
+        }
+      } catch (e) {
+        console.warn('⚠️ scrapeCode360SolvedProblems failed:', e.message);
+      }
+    }
+
+    return Array.isArray(list) ? list.map(mapProblem) : [];
   } catch (err) {
     console.warn('⚠️ fetchCode360Problems API failed:', err.message);
     try {
