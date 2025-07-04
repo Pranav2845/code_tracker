@@ -1,3 +1,4 @@
+// backend/services/cses.js
 import axios from 'axios';
 import { load } from 'cheerio';
 
@@ -45,10 +46,10 @@ export async function fetchCSESProblems(username) {
     const dateText = link.closest('tr').find('td').last().text().trim();
     problems.push({
       id,
-      title:     link.text().trim(),
-      difficulty:'Unknown',
-      tags:      [],
-      solvedAt:  dateText ? new Date(dateText) : new Date(),
+      title: link.text().trim(),
+      difficulty: 'Unknown',
+      tags: [],
+      solvedAt: dateText ? new Date(dateText) : new Date(),
     });
   });
   return problems;
@@ -56,7 +57,7 @@ export async function fetchCSESProblems(username) {
 
 /**
  * Scrape and return the total “problems solved” count.
- * Throws if the user doesn’t exist.
+ * Throws if the user doesn’t exist or the profile page is not valid.
  */
 export async function fetchCSESSolvedCount(username) {
   const userId = /^\d+$/.test(username)
@@ -65,7 +66,23 @@ export async function fetchCSESSolvedCount(username) {
 
   const { data: html } = await axios.get(`${BASE}/user/${userId}`);
   const $ = load(html);
-  return $('a[href^="/problemset/task/"]').length;
+
+  // Parse the “Submission count:” field instead of counting task links
+  const label = $('td,th')
+    .filter((_, el) => $(el).text().trim() === 'Submission count:')
+    .first();
+
+  if (!label.length) {
+    throw new Error('User not found');
+  }
+
+  const text = label.next().text().trim();
+  const m = text.match(/\d+/);
+  if (!m) {
+    throw new Error('Could not parse submission count');
+  }
+
+  return Number(m[0]);
 }
 
 /**

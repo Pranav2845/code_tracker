@@ -83,22 +83,28 @@ export const syncPlatform = async (req, res) => {
   }
 
   // ─── Special‐case CSES ───────────────────────────────────────────────────
-  if (platform === 'cses') {
-    try {
-      const solvedCount = await fetchCSESSolvedCount(handle);
-      console.log(`✅ CSES solved count for ${handle}:`, solvedCount);
-
-      await Problem.deleteMany({ user: userId, platform: 'cses' });
-
-      return res.status(200).json({
-        message:       '✅ CSES synced successfully!',
-        account,
-        importedCount: solvedCount,
-      });
-    } catch {
-      return res.status(404).json({ message: 'CSES user not found' });
-    }
+// ─── Special‐case CSES ───────────────────────────────────────────────────
+if (platform === 'cses') {
+  let solvedCount;
+  try {
+    solvedCount = await fetchCSESSolvedCount(handle);
+  } catch {
+    // network error or truly invalid handle → 404
+    return res.status(404).json({ message: 'CSES user not found' });
   }
+
+  // Even if solvedCount is 0, we treat it as a valid response
+  console.log(`✅ CSES solved count for ${handle}:`, solvedCount);
+
+  // Remove any previous CSES entries, then respond with the new count
+  await Problem.deleteMany({ user: userId, platform: 'cses' });
+  return res.status(200).json({
+    message:       '✅ CSES synced successfully!',
+    account,
+    importedCount: solvedCount,
+  });
+}
+
 
   // ─── Fetch problems for all other platforms ─────────────────────────────
   try {

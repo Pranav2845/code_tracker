@@ -4,9 +4,6 @@ import User from '../models/User.js';
 import Problem from '../models/Problem.js';
 import PlatformAccount from '../models/PlatformAccount.js';
 import bcrypt from 'bcryptjs';
-import { fetchCSESSolvedCount, fetchCSESSubmissionCount } from '../services/cses.js';
-
-
 import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
 import { fetchCSESSolvedCount, fetchCSESSubmissionCount } from '../services/cses.js';
 import { fetchGFGSolvedCount } from '../services/gfg.js';

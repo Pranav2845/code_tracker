@@ -1,6 +1,8 @@
+//backend/services/cses.js
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { findCSESUserId, fetchCSESProblems, fetchCSESCount, fetchCSESSubmissionCount } from './cses.js';
+import { findCSESUserId, fetchCSESProblems, fetchCSESSolvedCount, fetchCSESSubmissionCount } from './cses.js';
+
 vi.mock('axios');
 
 beforeEach(() => {
@@ -24,10 +26,10 @@ describe('findCSESUserId', () => {
       .mockResolvedValueOnce({ data: page1 })
       .mockResolvedValueOnce({ data: page2 });
     const id = await findCSESUserId('charlie');
-      expect(id).toBe(99);
-  expect(axios.get).toHaveBeenNthCalledWith(1, 'https://cses.fi/list/user/1');
-  expect(axios.get).toHaveBeenNthCalledWith(2, 'https://cses.fi/list/user/2');
-});
+    expect(id).toBe(99);
+    expect(axios.get).toHaveBeenNthCalledWith(1, 'https://cses.fi/list/user/1');
+    expect(axios.get).toHaveBeenNthCalledWith(2, 'https://cses.fi/list/user/2');
+  });
 });
 
 describe('fetchCSESProblems', () => {
@@ -41,14 +43,14 @@ describe('fetchCSESProblems', () => {
   });
 });
 
-describe('fetchCSESCount', () => {
+describe('fetchCSESSolvedCount', () => {
   it('counts solved problems from profile page', async () => {
     const html = `
       <a href="/problemset/task/1">One</a>
       <a href="/problemset/task/2">Two</a>
       <a href="/problemset/task/3">Three</a>`;
     axios.get.mockResolvedValueOnce({ data: html });
-    const count = await fetchCSESCount('42');
+    const count = await fetchCSESSolvedCount('42');
     expect(count).toBe(3);
     expect(axios.get).toHaveBeenCalledWith('https://cses.fi/user/42');
   });
