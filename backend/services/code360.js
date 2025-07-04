@@ -57,8 +57,21 @@ async function fetchUserId(username) {
 
 function mapProblem(p) {
   return {
-    id: String(p.id ?? p.problem_id ?? p.title ?? p.problemTitle),
-    title: p.title || p.problem_title || p.problemTitle || '',
+    id: String(
+      p.id ??
+      p.problem_id ??
+      p.title ??
+      p.problemTitle ??
+      p.problemName ??
+      p.problem_name
+    ),
+    title:
+      p.title ||
+      p.problem_title ||
+      p.problemTitle ||
+      p.problemName ||
+      p.problem_name ||
+      '',
     difficulty: p.difficulty || 'Unknown',
     tags: p.tags || [],
     solvedAt: p.solved_at ? new Date(p.solved_at) : new Date(),
@@ -68,10 +81,17 @@ function mapProblem(p) {
 function findProblemArray(obj) {
   if (!obj || typeof obj !== 'object') return null;
   if (Array.isArray(obj)) {
-        if (
+    if (
       obj.every(
         (o) =>
-          typeof o === 'object' && (o.title || o.problem_title || o.problemTitle)
+          typeof o === 'object' &&
+          (
+            o.title ||
+            o.problem_title ||
+            o.problemTitle ||
+            o.problemName ||
+            o.problem_name
+          )
       )
     ) {
       return obj;
@@ -126,10 +146,10 @@ export async function fetchCode360Problems(username) {
   try {
     const id = await fetchUserId(username);
     const url = `${BASE_URL}/profile/solved_problems?user_id=${id}&request_differentiator=1751613875507&app_context=publicsection&naukri_request=true`;
-      console.log('[fetchCode360Problems] resolved id:', id);
+    console.log('[fetchCode360Problems] resolved id:', id);
     console.log('[fetchCode360Problems] request url:', url);
     const data = await getWithRetry(url);
-       let list = data?.data?.problems || data?.problems;
+    let list = data?.data?.problems || data?.problems;
 
     if (!Array.isArray(list) || list.length === 0) {
       const found = findProblemArray(data);
@@ -138,7 +158,7 @@ export async function fetchCode360Problems(username) {
       }
     }
     if (!Array.isArray(list) || list.length === 0) {
-       console.log(
+      console.log(
         '[fetchCode360Problems] API returned no problem data:',
         JSON.stringify(data).slice(0, 500)
       );

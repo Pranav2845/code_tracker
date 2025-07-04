@@ -118,6 +118,27 @@ describe('fetchCode360Problems', () => {
     expect(list[0].solvedAt instanceof Date).toBe(true);
   });
 
+  it('handles problemName field', async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { data: { user_id: 'pname' } } })
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            problems: [
+              {
+                problemName: 'ByName',
+                difficulty: 'Hard',
+              },
+            ],
+          },
+        },
+      });
+
+    const list = await fetchCode360Problems('pname');
+    expect(list).toHaveLength(1);
+    expect(list[0].title).toBe('ByName');
+    expect(list[0].id).toBe('ByName');
+  });
   it('reads nested problems from API response', async () => {
     axios.get
       .mockResolvedValueOnce({ data: { data: { user_id: 'nid' } } })
