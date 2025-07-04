@@ -1,6 +1,6 @@
 // backend/controllers/userController.js
 import User from '../models/User.js';
-import Problem from '../models/Problem.js'; // ← ensure we can query the Problem collection
+import Problem from '../models/Problem.js';
 import PlatformAccount from '../models/PlatformAccount.js';
 import bcrypt from 'bcryptjs';
 import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
@@ -170,22 +170,30 @@ export const getUserStats = async (req, res) => {
         }
       }
     }
-    // If user connected Code360, fetch solved count
+
+    // If user connected Code360, fetch solved count (with fallback)
     const cnHandle = req.user.platforms?.code360?.handle;
     if (cnHandle) {
       const dbCount = platformMap.code360;
+      let count;
       try {
-        const fetchedCount = await fetchCode360SolvedCount(cnHandle);
-        if (fetchedCount) {
-          platformMap.code360 = fetchedCount;
-        } else if (typeof dbCount === 'number') {
-          platformMap.code360 = dbCount;
+        count = await fetchCode360SolvedCount(cnHandle);
+        if (!count) {
+          // Fallback when 0 returned
+          count = await fetchCode360ProfileTotalCount(cnHandle);
         }
       } catch (err) {
         console.error('❌ fetchCode360SolvedCount error:', err.message);
-        if (typeof dbCount === 'number') {
-          platformMap.code360 = dbCount;
+        try {
+          count = await fetchCode360ProfileTotalCount(cnHandle);
+        } catch (err2) {
+          console.error('❌ fetchCode360ProfileTotalCount error:', err2.message);
         }
+      }
+      if (typeof count === 'number') {
+        platformMap.code360 = count;
+      } else if (typeof dbCount === 'number') {
+        platformMap.code360 = dbCount;
       }
     }
 
@@ -330,7 +338,6 @@ export const getDashboardAnalytics = async (req, res) => {
 };
 
 /**
-/**
  * GET /api/user/contributions
  * Returns submission statistics from Code360.
  */
@@ -342,7 +349,13 @@ export const getContributionStats = async (req, res) => {
       return res.status(400).json({ message: 'Code360 handle not found' });
     }
 
-    const stats = await fetchCode360ContributionStats(handle);
+    let stats;
+    try {
+      stats = await fetchCode360ContributionStats(handle);
+    } catch (err) {
+      console.warn('⚠️ fetchCode360ContributionStats failed:', err.message);
+      return res.status(200).json({ totalSubmissionCount: 0 });
+    }
 
     const totalSubmissionCount =
       stats?.submission_count ??
@@ -356,7 +369,6 @@ export const getContributionStats = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch contribution stats' });
   }
 };
-
 
 /**
  * GET /api/user/cses/submissions
