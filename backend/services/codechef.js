@@ -1,56 +1,38 @@
 // backend/services/codechef.js
+
 import axios from 'axios';
 
-const CODECHEF_BASE = 'https://api.codechef.com';
+const PROFILE_URL = (username) =>
+  `https://www.codechef.com/users/${encodeURIComponent(username)}`;
 
-async function getAccessToken() {
-  const id = process.env.CODECHEF_CLIENT_ID;
-  const secret = process.env.CODECHEF_CLIENT_SECRET;
+/**
+ * Scrape the CodeChef profile page to get the total problems solved.
+ * Throws if the profile page looks like “not found”.
+ */
+export async function fetchCodeChefSolvedCount(username) {
+  let html;
+  try {
+    const resp = await axios.get(PROFILE_URL(username));
+    html = resp.data;
+  } catch (err) {
+    // e.g. network error, 404 status, etc.
+    throw new Error('User not found');
+  }
 
-  const params = new URLSearchParams({
-    grant_type: 'client_credentials',
-    scope: 'public',
-    client_id: id,
-    client_secret: secret,
-  });
+  // 1️⃣ Check for the “Problems Successfully Solved” section
+  //    (class only present on real profiles)
+  if (!/rating-data-section problems-solved/i.test(html)) {
+    throw new Error('User not found');
+  }
 
-  const { data } = await axios.post(`${CODECHEF_BASE}/oauth/token`, params, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  });
-
-  return (
-    data?.result?.data?.access_token || data?.access_token || null
-  );
+  // 2️⃣ Extract “Total Problems Solved: N”
+  const m = html.match(/Total Problems Solved:\s*(\d+)/i);
+  return m ? parseInt(m[1], 10) : 0;
 }
 
+/**
+ * Stub for fetching individual solved problems.
+ */
 export async function fetchCodeChefProblems(username) {
-  const token = await getAccessToken();
-  if (!token) return [];
-
-  const { data } = await axios.get(
-    `${CODECHEF_BASE}/users/${encodeURIComponent(username)}`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-
-  const solved =
-    data?.result?.data?.content?.fully_solved ||
-    data?.result?.data?.content?.user_problems_solved?.fully_solved || {};
-
-  const problems = [];
-  Object.values(solved).forEach((arr) => {
-    if (Array.isArray(arr)) {
-      arr.forEach((p) => {
-        const code = p.problemCode || p.problem_code || p;
-        problems.push({
-          id: code,
-          title: p.problemName || p.problem_name || code,
-          difficulty: p.difficulty || 'Unknown',
-          tags: p.tags || [],
-          solvedAt: p.dateSolved ? new Date(p.dateSolved) : new Date(),
-        });
-      });
-    }
-  });
-
-  return problems;
+  return [];
 }
