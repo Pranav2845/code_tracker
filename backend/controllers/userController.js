@@ -9,6 +9,7 @@ import { fetchGFGSolvedCount } from '../services/gfg.js';
 import {
   fetchCode360SolvedCount,
   fetchCode360ContributionStats,
+  fetchCode360ProfileTotalCount,
 } from '../services/code360.js';
 import { fetchHackerRankSolvedCount } from '../services/hackerrank.js';
 
@@ -361,5 +362,20 @@ export const getCSESSubmissionCount = async (req, res) => {
   } catch (err) {
     console.error('❌ getCSESSubmissionCount error:', err);
     res.status(500).json({ message: 'Failed to fetch CSES submission count' });
+  }
+};
+
+/**
+ * GET /api/user/code360/count/:username
+ * Returns the public total solved count for the specified Code360 profile.
+ */
+export const getCode360TotalCount = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const count = await fetchCode360ProfileTotalCount(username);
+    res.json({ totalCount: count });
+  } catch (err) {
+    console.error('❌ getCode360TotalCount error:', err);
+    res.status(500).json({ message: 'Failed to fetch Code360 total count' });
   }
 };

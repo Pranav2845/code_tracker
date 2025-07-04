@@ -8,6 +8,7 @@ import {
   getDashboardAnalytics,
   getContributionStats,
   getCSESSubmissionCount,
+  getCode360TotalCount,
   changePassword
 } from '../controllers/userController.js';
 
@@ -22,4 +23,5 @@ router.get   ('/analytics', getDashboardAnalytics);
 router.get   ('/contributions', getContributionStats);
 router.get   ('/cses/submissions', getCSESSubmissionCount);
 router.post  ('/change-password', changePassword);
+router.get   ('/code360/count/:username', getCode360TotalCount);
 export default router;

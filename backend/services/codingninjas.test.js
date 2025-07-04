@@ -5,6 +5,7 @@ import {
   fetchCode360SolvedCount,
   fetchCode360ContributionStats,
   fetchCode360SubmissionCount,
+  fetchCode360ProfileTotalCount,
 } from './code360.js';
 
 vi.mock('axios');
@@ -118,5 +119,31 @@ describe('fetchCode360Problems', () => {
   it('throws when lookup fails', async () => {
     axios.get.mockRejectedValue(new Error('fail'));
     await expect(fetchCode360Problems('x')).rejects.toThrow();
+  });
+});
+
+describe('fetchCode360ProfileTotalCount', () => {
+  it('returns total count on success', async () => {
+    axios.get.mockResolvedValueOnce({
+      data: {
+        data: {
+          profile: {
+            dsa_domain_data: { problem_count_data: { total_count: 42 } },
+          },
+        },
+      },
+    });
+    const count = await fetchCode360ProfileTotalCount('alpha');
+    expect(count).toBe(42);
+    expect(axios.get).toHaveBeenCalledWith(
+      expect.stringContaining('/profile/user_details'),
+      expect.anything()
+    );
+  });
+
+  it('returns null on request error', async () => {
+    axios.get.mockRejectedValueOnce(new Error('oops'));
+    const result = await fetchCode360ProfileTotalCount('err');
+    expect(result).toBeNull();
   });
 });

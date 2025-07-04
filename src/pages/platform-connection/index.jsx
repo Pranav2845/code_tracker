@@ -6,6 +6,7 @@ import Header from "../../components/ui/Header";
 import PlatformCard from "./components/PlatformCard";
 import ConnectionModal from "./components/ConnectionModal";
 import ActionButton from "./components/ActionButton";
+import { fetchCode360ProfileTotalCount } from "../../api/code360";
 
 export default function PlatformConnection() {
   const navigate = useNavigate();
@@ -60,12 +61,20 @@ export default function PlatformConnection() {
           "⚠️ No problems imported. Double-check your handle and that your submissions are public.");
       }
       await fetchPlatforms();
+            if (platformId === 'code360') {
+        try {
+          const count = await fetchCode360ProfileTotalCount(username);
+          console.log('Code360 total count:', count);
+        } catch (err) {
+          console.error('❌ fetchCode360ProfileTotalCount error:', err);
+        }
+      }
       closeModal();
     } catch (err) {
       console.error("❌ sync failed:", err);
       const msg = err.response?.data?.message || "Sync failed—check console for details.";
       alert(msg);
-      alert("Sync failed—check console for details.");
+      
     } finally {
       setIsConnecting(false);
     }
