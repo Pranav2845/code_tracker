@@ -149,3 +149,27 @@ export async function fetchCode360SubmissionCount(username) {
     return 0;
   }
 }
+
+// NEW FUNCTION TO FETCH problem_count_data.total_count for user
+export async function fetchCode360ProfileTotalCount(username) {
+  const url = `${BASE_URL}/profile/user_details?uuid=${encodeURIComponent(username)}&request_differentiator=1751611375475&app_context=publicsection&naukri_request=true`;
+  try {
+    const data = await getWithRetry(url);
+
+    // Supports both data.profile and possible older shapes
+    const totalCount =
+      data?.data?.profile?.dsa_domain_data?.problem_count_data?.total_count ??
+      data?.data?.dsa_domain_data?.problem_count_data?.total_count ??
+      data?.dsa_domain_data?.problem_count_data?.total_count ??
+      null;
+
+    if (typeof totalCount === 'number') {
+      return totalCount;
+    } else {
+      throw new Error('Total count not found');
+    }
+  } catch (err) {
+    console.warn('⚠️ fetchCode360ProfileTotalCount failed:', err.message);
+    return null;
+  }
+}
