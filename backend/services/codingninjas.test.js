@@ -60,6 +60,7 @@ describe('fetchCode360SolvedCount', () => {
   });
 
   it('returns 0 on error', async () => {
+
     axios.get.mockRejectedValue(new Error('nope'));
     const count = await fetchCode360SolvedCount('err');
     expect(count).toBe(0);
@@ -139,9 +140,61 @@ describe('fetchCode360Problems', () => {
     expect(list[0].title).toBe('ByName');
     expect(list[0].id).toBe('ByName');
   });
+
+   it('maps problemId level and topics fields', async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { data: { user_id: 'pid' } } })
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            problems: [
+              {
+                problemId: 9,
+                level: 'Medium',
+                topics: ['graph'],
+                solved_at: '2024-01-02T00:00:00Z',
+              },
+            ],
+          },
+        },
+      });
+
+    const list = await fetchCode360Problems('pid');
+    expect(list).toHaveLength(1);
+    expect(list[0].id).toBe('9');
+    expect(list[0].difficulty).toBe('Medium');
+    expect(list[0].tags).toEqual(['graph']);
+    expect(list[0].title).toBe('');
+  });
+
+  it('detects nested arrays with slug field', async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { data: { user_id: 'sid' } } })
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            wrapper: {
+              arr: [
+                {
+                  slug: 'slug-problem',
+                  level: 'Hard',
+                },
+              ],
+            },
+          },
+        },
+      });
+
+    const list = await fetchCode360Problems('sid');
+    expect(list).toHaveLength(1);
+    expect(list[0].id).toBe('slug-problem');
+    expect(list[0].title).toBe('slug-problem');
+    expect(list[0].difficulty).toBe('Hard');
+  });
   it('reads nested problems from API response', async () => {
     axios.get
       .mockResolvedValueOnce({ data: { data: { user_id: 'nid' } } })
+      
       .mockResolvedValueOnce({
         data: {
           data: {

@@ -60,6 +60,8 @@ function mapProblem(p) {
     id: String(
       p.id ??
       p.problem_id ??
+      p.problemId ??
+      p.slug ??
       p.title ??
       p.problemTitle ??
       p.problemName ??
@@ -71,9 +73,10 @@ function mapProblem(p) {
       p.problemTitle ||
       p.problemName ||
       p.problem_name ||
+      p.slug ||
       '',
-    difficulty: p.difficulty || 'Unknown',
-    tags: p.tags || [],
+    difficulty: p.difficulty || p.level || 'Unknown',
+    tags: p.tags || p.topics || [],
     solvedAt: p.solved_at ? new Date(p.solved_at) : new Date(),
   };
 }
@@ -90,7 +93,12 @@ function findProblemArray(obj) {
             o.problem_title ||
             o.problemTitle ||
             o.problemName ||
-            o.problem_name
+            o.problem_name ||
+            o.problemId ||
+            o.problem_id ||
+            o.slug ||
+            o.level ||
+            o.topics
           )
       )
     ) {
@@ -144,17 +152,52 @@ async function scrapeCode360SolvedProblems(username) {
 // ✅ Corrected fetchCode360Problems function
 export async function fetchCode360Problems(username) {
   try {
+    const baseParams =
+      'request_differentiator=1751613875507&app_context=publicsection&naukri_request=true';
+
     const id = await fetchUserId(username);
-    const url = `${BASE_URL}/profile/solved_problems?user_id=${id}&request_differentiator=1751613875507&app_context=publicsection&naukri_request=true`;
+    let url = `${BASE_URL}/profile/solved_problems?user_id=${id}&${baseParams}`;
     console.log('[fetchCode360Problems] resolved id:', id);
     console.log('[fetchCode360Problems] request url:', url);
-    const data = await getWithRetry(url);
+
+    let data = await getWithRetry(url);
     let list = data?.data?.problems || data?.problems;
+
+    if (Array.isArray(list) && list.length === 0) {
+      console.log(
+        '[fetchCode360Problems] empty list for',
+        username,
+        'url:',
+        url
+      );
+    }
 
     if (!Array.isArray(list) || list.length === 0) {
       const found = findProblemArray(data);
       if (Array.isArray(found) && found.length > 0) {
         list = found;
+      }
+    }
+    if (!Array.isArray(list) || list.length === 0) {
+      url = `${BASE_URL}/profile/solved_problems?uuid=${encodeURIComponent(
+        username
+      )}&${baseParams}`;
+      console.log('[fetchCode360Problems] retry url:', url);
+      data = await getWithRetry(url);
+      list = data?.data?.problems || data?.problems;
+      if (Array.isArray(list) && list.length === 0) {
+        console.log(
+          '[fetchCode360Problems] empty list for',
+          username,
+          'url:',
+          url
+        );
+      }
+      if (!Array.isArray(list) || list.length === 0) {
+        const found = findProblemArray(data);
+        if (Array.isArray(found) && found.length > 0) {
+          list = found;
+        }
       }
     }
     if (!Array.isArray(list) || list.length === 0) {
