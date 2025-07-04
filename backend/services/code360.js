@@ -4,11 +4,25 @@ import * as cheerio from 'cheerio';
 const BASE_URL = 'https://www.naukri.com/code360/api/v3/public_section';
 const MAX_RETRIES = 3;
 
+const AXIOS_OPTS = {
+  headers: {
+    'User-Agent': 'Mozilla/5.0',
+    ...(process.env.CODE360_COOKIES
+      ? { Cookie: process.env.CODE360_COOKIES }
+      : {}),
+  },
+};
+
 async function getWithRetry(url, options = {}, retries = MAX_RETRIES) {
   let lastErr;
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      const { data } = await axios.get(url, options);
+      const opts = {
+        ...AXIOS_OPTS,
+        ...options,
+        headers: { ...AXIOS_OPTS.headers, ...(options.headers || {}) },
+      };
+      const { data } = await axios.get(url, opts);
       return data;
     } catch (err) {
       lastErr = err;
@@ -17,14 +31,21 @@ async function getWithRetry(url, options = {}, retries = MAX_RETRIES) {
   throw lastErr;
 }
 
+// ✅ Corrected fetchUserId function
 async function fetchUserId(username) {
-  const url = `${BASE_URL}/profile/user_details?uuid=${encodeURIComponent(username)}&request_differentiator=1751611375475&app_context=publicsection&naukri_request=true`;
+  const url = `${BASE_URL}/profile/user_details?uuid=${encodeURIComponent(
+    username
+  )}&request_differentiator=1751613875507&app_context=publicsection&naukri_request=true`;
+
   const data = await getWithRetry(url);
+
   const id =
+    data?.data?.profile?.uuid ??
     data?.data?.user_id ??
     data?.data?.user?.user_id ??
     data?.data?.user?.id ??
     data?.user_id;
+
   if (!id) {
     throw new Error('Code360 user not found');
   }
@@ -61,8 +82,10 @@ function findProblemArray(obj) {
 }
 
 async function scrapeCode360SolvedProblems(username) {
-  const url = `https://www.naukri.com/code360/profile/${encodeURIComponent(username)}`;
-  const { data: html } = await axios.get(url);
+  const url = `https://www.naukri.com/code360/profile/${encodeURIComponent(
+    username
+  )}`;
+  const { data: html } = await axios.get(url, AXIOS_OPTS);
   const $ = cheerio.load(html);
   const next = $('#__NEXT_DATA__').html();
   if (next) {
@@ -90,10 +113,11 @@ async function scrapeCode360SolvedProblems(username) {
   }));
 }
 
+// ✅ Corrected fetchCode360Problems function
 export async function fetchCode360Problems(username) {
   try {
     const id = await fetchUserId(username);
-    const url = `${BASE_URL}/profile/solved_problems?user_id=${id}&request_differentiator=1751611375475&app_context=publicsection&naukri_request=true`;
+    const url = `${BASE_URL}/profile/solved_problems?user_id=${id}&request_differentiator=1751613875507&app_context=publicsection&naukri_request=true`;
     const data = await getWithRetry(url);
     const list = data?.data?.problems || data?.problems || [];
     return list.map(mapProblem);
@@ -109,9 +133,10 @@ export async function fetchCode360Problems(username) {
   }
 }
 
+// ✅ Corrected fetchCode360ContributionStats function
 export async function fetchCode360ContributionStats(username) {
   const id = await fetchUserId(username);
-  const url = `${BASE_URL}/profile/contributions?user_id=${id}&request_differentiator=1751611375475&app_context=publicsection&naukri_request=true`;
+  const url = `${BASE_URL}/profile/contributions?user_id=${id}&request_differentiator=1751613875507&app_context=publicsection&naukri_request=true`;
   const data = await getWithRetry(url);
   return data?.data || data || {};
 }
@@ -120,10 +145,7 @@ export async function fetchCode360SolvedCount(username) {
   try {
     const stats = await fetchCode360ContributionStats(username);
     const count =
-      stats?.solved_count ??
-      stats?.count?.solved ??
-      stats?.solved ??
-      0;
+      stats?.solved_count ?? stats?.count?.solved ?? stats?.solved ?? 0;
     if (typeof count === 'number') {
       console.log(`Total Count for ${username}:`, count);
       return count;
@@ -150,13 +172,13 @@ export async function fetchCode360SubmissionCount(username) {
   }
 }
 
-// NEW FUNCTION TO FETCH problem_count_data.total_count for user
 export async function fetchCode360ProfileTotalCount(username) {
-  const url = `${BASE_URL}/profile/user_details?uuid=${encodeURIComponent(username)}&request_differentiator=1751611375475&app_context=publicsection&naukri_request=true`;
+  const url = `${BASE_URL}/profile/user_details?uuid=${encodeURIComponent(
+    username
+  )}&request_differentiator=1751613875507&app_context=publicsection&naukri_request=true`;
   try {
     const data = await getWithRetry(url);
 
-    // Supports both data.profile and possible older shapes
     const totalCount =
       data?.data?.profile?.dsa_domain_data?.problem_count_data?.total_count ??
       data?.data?.dsa_domain_data?.problem_count_data?.total_count ??

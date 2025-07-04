@@ -330,22 +330,33 @@ export const getDashboardAnalytics = async (req, res) => {
 };
 
 /**
+/**
  * GET /api/user/contributions
  * Returns submission statistics from Code360.
  */
 export const getContributionStats = async (req, res) => {
   try {
     const handle = req.user?.platforms?.code360?.handle;
+
     if (!handle) {
       return res.status(400).json({ message: 'Code360 handle not found' });
     }
+
     const stats = await fetchCode360ContributionStats(handle);
-    res.json(stats);
+
+    const totalSubmissionCount =
+      stats?.submission_count ??
+      stats?.total_submission_count ??
+      stats?.count?.submissions ??
+      0;
+
+    res.json({ totalSubmissionCount });
   } catch (err) {
     console.error('❌ getContributionStats error:', err);
     res.status(500).json({ message: 'Failed to fetch contribution stats' });
   }
 };
+
 
 /**
  * GET /api/user/cses/submissions
