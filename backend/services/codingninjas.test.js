@@ -101,6 +101,20 @@ describe('fetchCodingNinjasProblems', () => {
     expect(list[0].solvedAt instanceof Date).toBe(true);
   });
 
+   it('scrapes profile page when API fails', async () => {
+    const html = `
+      <script id="__NEXT_DATA__" type="application/json">{"problems":[{"id":5,"title":"Scraped"}]}</script>
+    `;
+    axios.get
+      .mockRejectedValueOnce(new Error('fail1'))
+      .mockRejectedValueOnce(new Error('fail2'))
+      .mockRejectedValueOnce(new Error('fail3'))
+      .mockResolvedValueOnce({ data: html });
+    const list = await fetchCodingNinjasProblems('scraper');
+    expect(list).toHaveLength(1);
+    expect(list[0].title).toBe('Scraped');
+  });
+
   it('throws when lookup fails', async () => {
     axios.get.mockRejectedValue(new Error('fail'));
     await expect(fetchCodingNinjasProblems('x')).rejects.toThrow();
