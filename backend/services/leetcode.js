@@ -114,7 +114,8 @@ export async function fetchLeetCodeProblems(username) {
       title,
       difficulty: meta.difficulty,
       tags: meta.tags,
-      solvedAt: new Date(timestamp * 1000)
+      solvedAt: new Date(timestamp * 1000),
+      url: `https://leetcode.com/problems/${slug}/`
     };
   });
 }

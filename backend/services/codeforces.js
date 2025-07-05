@@ -23,6 +23,7 @@ export async function fetchCFProblems(handle) {
       difficulty: s.problem.rating ? String(s.problem.rating) : 'Unknown',
       tags:       s.problem.tags || [],
       solvedAt:   new Date(s.creationTimeSeconds * 1000),
+       url:      `https://codeforces.com/problemset/problem/${s.problem.contestId}/${s.problem.index}`,
     }));
 }
 

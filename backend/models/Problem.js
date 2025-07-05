@@ -20,7 +20,8 @@ const problemSchema = new mongoose.Schema({
   title: { type: String, required: true },
   difficulty: { type: String },
   tags: [String],
-  solvedAt: { type: Date, default: Date.now }
+ solvedAt: { type: Date, default: Date.now },
+  url: String
 }, { timestamps: true });
 
 // Ensure we don't store duplicates for the same problem

@@ -23,6 +23,7 @@ export async function fetchCodeChefSolvedCount(username) {
   //    (class only present on real profiles)
   if (!/rating-data-section problems-solved/i.test(html)) {
     throw new Error('User not found');
+    
   }
 
   // 2️⃣ Extract “Total Problems Solved: N”

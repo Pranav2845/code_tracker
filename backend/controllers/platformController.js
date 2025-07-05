@@ -166,6 +166,7 @@ if (platform === 'cses') {
       difficulty:p.difficulty,
       tags:      p.tags,
       solvedAt:  p.solvedAt,
+      url:       p.url,
     }));
 
     let insertedCount = 0;

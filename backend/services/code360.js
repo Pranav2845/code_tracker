@@ -78,6 +78,12 @@ function mapProblem(p) {
     difficulty: p.difficulty || p.level || 'Unknown',
     tags: p.tags || p.topics || [],
     solvedAt: p.solved_at ? new Date(p.solved_at) : new Date(),
+        url:
+      p.slug
+        ? `https://www.naukri.com/code360/problems/${p.slug}`
+        : p.problem_slug
+        ? `https://www.naukri.com/code360/problems/${p.problem_slug}`
+        : undefined,
   };
 }
 

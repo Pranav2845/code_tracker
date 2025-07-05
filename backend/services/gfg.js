@@ -23,6 +23,12 @@ export async function fetchGFGProblems(username) {
         difficulty: p.difficulty || 'Unknown',
         tags:       p.tags || [],
         solvedAt:   p.solvedOn ? new Date(p.solvedOn) : new Date(),
+          url:
+          p.slug || p.problem_code || p.problemCode
+            ? `https://practice.geeksforgeeks.org/problems/${
+                (p.slug || p.problem_code || p.problemCode).toString().trim()
+              }/`
+            : undefined,
       }));
     }
 
@@ -57,6 +63,7 @@ export async function fetchGFGProblems(username) {
         difficulty: p.difficulty || 'Unknown',
         tags:       [],
         solvedAt:   new Date(),
+        url:        p.slug ? `https://practice.geeksforgeeks.org/problems/${p.slug}/` : undefined,
       }));
     } else if (data?.solvedStats && typeof data.solvedStats === 'object') {
       // Newer API structure: solvedStats.{easy,medium,hard,basic}.questions
@@ -69,6 +76,7 @@ export async function fetchGFGProblems(username) {
             difficulty: difficulty.charAt(0).toUpperCase() + difficulty.slice(1),
             tags:       [],
             solvedAt:   new Date(),
+             url:        q.slug ? `https://practice.geeksforgeeks.org/problems/${q.slug}/` : undefined,
           });
         });
       }
@@ -97,6 +105,7 @@ export async function fetchGFGProblems(username) {
         difficulty: p.problemDifficulty || 'Unknown',
         tags:       p.problemTags || [],
         solvedAt:   p.solvedAt ? new Date(p.solvedAt) : new Date(),
+         url:        p.problemSlug ? `https://practice.geeksforgeeks.org/problems/${p.problemSlug}/` : undefined,
       }));
     }
 
@@ -112,6 +121,7 @@ export async function fetchGFGProblems(username) {
       difficulty: 'Unknown',
       tags:       [],
       solvedAt:   new Date(),
+       url:        `https://practice.geeksforgeeks.org/problems/${title.replace(/\s+/g, '-').toLowerCase()}/`,
     }));
     console.log(`🔍 Link-based scrape found ${list.length} problems for ${username}`);
     return list;

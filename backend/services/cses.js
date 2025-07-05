@@ -50,6 +50,7 @@ export async function fetchCSESProblems(username) {
       difficulty: 'Unknown',
       tags: [],
       solvedAt: dateText ? new Date(dateText) : new Date(),
+       url: `${BASE}/problemset/task/${id}`,
     });
   });
   return problems;

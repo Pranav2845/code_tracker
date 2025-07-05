@@ -91,6 +91,14 @@ export async function fetchHackerRankProblems(username) {
         difficulty: ch.difficulty_name || 'Unknown',
         tags: [],
         solvedAt: date,
+         url:
+          ch.slug || ch.challenge_slug || ch.name
+            ? `https://www.hackerrank.com/challenges/${
+                (ch.slug || ch.challenge_slug || ch.name)
+                  .toString()
+                  .trim()
+              }/problem`
+            : undefined,
       };
     });
 

@@ -1,3 +1,4 @@
+// src/pages/dashboard/components/SolvedQuestions.jsx
 import React, { useState } from "react";
 import Icon from "../../../components/AppIcon";
 
