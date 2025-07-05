@@ -1,4 +1,3 @@
-// File: src/pages/dashboard/index.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -11,29 +10,30 @@ import PlatformStatus from "./components/PlatformStatus";
 import SkeletonCard from "./components/SkeletonCard";
 import EventTracker from "./components/EventTracker";
 import SolvedQuestions from "./components/SolvedQuestions";
+
 const Dashboard = () => {
-  const [isLoading, setIsLoading]       = useState(true);
-  const [hasError, setHasError]         = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [dashboardData, setDashboardData] = useState(null);
-  const [lastUpdated, setLastUpdated]   = useState(new Date());
-  const [contests, setContests]         = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [contests, setContests] = useState([]);
 
   const fetchData = async () => {
     setIsLoading(true);
     setHasError(false);
     setErrorMessage("");
     try {
-      const profileRes  = await axios.get("/user/profile");
+      const profileRes = await axios.get("/user/profile");
       const connections = profileRes.data.platforms || {};
 
-      const statsRes     = await axios.get("/user/stats");
-      const problemsRes  = await axios.get("/problems");
+      const statsRes = await axios.get("/user/stats");
+      const problemsRes = await axios.get("/problems");
       const analyticsRes = await axios.get("/user/analytics");
-      const contestsRes  = await axios.get("/contests");
+      const contestsRes = await axios.get("/contests");
 
       const { totalSolved, byPlatform } = statsRes.data;
-      const allProblems  = problemsRes.data;
+      const allProblems = problemsRes.data;
       const { platformActivity: rawActivity, topicStrength: rawStrength } = analyticsRes.data;
 
       const upcomingContests = Array.isArray(contestsRes.data)
@@ -43,15 +43,15 @@ const Dashboard = () => {
 
       // Build platforms array
       const platforms = [
-        { id: "leetcode",   name: "LeetCode",      color: "var(--color-leetcode)" },
-        { id: "codeforces", name: "Codeforces",    color: "var(--color-codeforces)" },
-        { id: "hackerrank", name: "HackerRank",    color: "var(--color-success)" },
-        { id: "gfg",        name: "GeeksforGeeks", color: "var(--color-gfg)" },
-        { id: "code360",    name: "Code 360 by Coding Ninjas", color: "var(--color-code360)" },
-        { id: "cses",       name: "CSES",          color: "var(--color-cses)" },
-        { id: "codechef",   name: "CodeChef",      color: "var(--color-codechef)" }
+        { id: "leetcode", name: "LeetCode", color: "var(--color-leetcode)" },
+        { id: "codeforces", name: "Codeforces", color: "var(--color-codeforces)" },
+        { id: "hackerrank", name: "HackerRank", color: "var(--color-success)" },
+        { id: "gfg", name: "GeeksforGeeks", color: "var(--color-gfg)" },
+        { id: "code360", name: "Code 360 by Coding Ninjas", color: "var(--color-code360)" },
+        { id: "cses", name: "CSES", color: "var(--color-cses)" },
+        { id: "codechef", name: "CodeChef", color: "var(--color-codechef)" }
       ].map(p => {
-        const entry  = byPlatform.find(({ _id }) => _id === p.id);
+        const entry = byPlatform.find(({ _id }) => _id === p.id);
         const solved = entry ? entry.count : 0;
         const handle = connections[p.id]?.handle || "";
         return { ...p, isConnected: !!handle, problemsSolved: solved };
@@ -69,14 +69,25 @@ const Dashboard = () => {
         .sort((a, b) => new Date(b.solvedAt) - new Date(a.solvedAt))
         .slice(0, 5)
         .map(p => ({
-          id:          p._id,
-          platform:    p.platform,
+          id: p._id,
+          platform: p.platform,
           problemName: p.title,
-          difficulty:  p.difficulty,
-          timestamp:   p.solvedAt,
-          topics:      p.tags,
-          url:         p.url || "#"
+          difficulty: p.difficulty,
+          timestamp: p.solvedAt,
+          topics: p.tags,
+          url: p.url || "#"
         }));
+
+      // Map of problems by platform for quick lookup
+      const problemsMap = allProblems.reduce((acc, prob) => {
+        acc[prob.platform] ??= [];
+        acc[prob.platform].push({
+          id: prob._id,
+          title: prob.title,
+          url: prob.url || "#",
+        });
+        return acc;
+      }, {});
 
       // Topic strength & activity placeholders
       const platformActivity = Array.isArray(rawActivity) &&
@@ -87,12 +98,13 @@ const Dashboard = () => {
         : [];
 
       setDashboardData({
-        userStats:        { totalProblemsSolved: totalSolved },
+        userStats: { totalProblemsSolved: totalSolved },
         platforms,
         progressData,
         topicStrength,
         platformActivity,
-        recentActivity
+        recentActivity,
+        problemsMap
       });
       setLastUpdated(new Date());
     } catch (err) {
@@ -252,14 +264,30 @@ const Dashboard = () => {
                 {dashboardData.platforms.map(p => (
                   <div
                     key={p.id}
-                    className="bg-surface dark:bg-gray-800 rounded-lg p-4 flex flex-col items-center"
+                    className="bg-surface dark:bg-gray-800 rounded-lg p-4 flex flex-col"
                   >
-                    <span className="text-sm font-medium text-text-secondary mb-1">
-                      {p.name}
-                    </span>
-                    <span className="text-2xl font-bold text-text-primary">
-                      {p.problemsSolved}
-                    </span>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-text-secondary">
+                        {p.name}
+                      </span>
+                      <span className="text-xl font-bold text-text-primary">
+                        {p.problemsSolved}
+                      </span>
+                    </div>
+                    <ul className="mt-2 space-y-1 text-sm list-disc list-inside">
+                      {(dashboardData.problemsMap?.[p.id] || []).map(q => (
+                        <li key={q.id} className="truncate">
+                          <a
+                            href={q.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            {q.title}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 ))}
               </div>
@@ -290,13 +318,13 @@ const Dashboard = () => {
                   <div
                     className={`w-2 h-2 rounded-full mr-3 ${
                       {
-                        leetcode:   "bg-leetcode",
+                        leetcode: "bg-leetcode",
                         codeforces: "bg-codeforces",
                         hackerrank: "bg-success",
-                        gfg:        "bg-gfg",
-                        code360:    "bg-code360",
-                        cses:       "bg-cses",
-                        codechef:   "bg-codechef"
+                        gfg: "bg-gfg",
+                        code360: "bg-code360",
+                        cses: "bg-cses",
+                        codechef: "bg-codechef"
                       }[act.platform] || "bg-primary"
                     }`}
                   />
@@ -318,7 +346,7 @@ const Dashboard = () => {
                     <div className="text-xs text-text-secondary mt-1">
                       {new Date(act.timestamp).toLocaleDateString("en-US", {
                         month: "short",
-                        day:   "numeric"
+                        day: "numeric"
                       })}
                     </div>
                   </div>
