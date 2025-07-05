@@ -72,7 +72,26 @@ const Dashboard = () => {
       const { totalSolved, byPlatform, activeDays } = statsRes.data;
       
       const allProblems  = problemsRes.data;
-      const { progressData, platformActivity, topicStrength } = analyticsRes.data;
+      const {
+        progressData: rawProgress,
+        platformActivity: rawActivity,
+        topicStrength: rawStrength,
+      } = analyticsRes.data;
+
+      const progressData = Array.isArray(rawProgress) &&
+        rawProgress.every((d) => d && typeof d.date === 'string')
+          ? rawProgress
+          : [];
+
+      const platformActivity = Array.isArray(rawActivity) &&
+        rawActivity.every((d) => d && typeof d.month === 'string')
+          ? rawActivity
+          : [];
+
+      const topicStrength = Array.isArray(rawStrength) &&
+        rawStrength.every((t) => t && typeof t.topic === 'string' && typeof t.score === 'number')
+          ? rawStrength
+          : [];
 
       // 3️⃣ Build the platforms array (now includes GFG, Code 360, CSES, CodeChef)
       const platforms = [

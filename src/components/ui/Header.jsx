@@ -2,9 +2,11 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from '../AppIcon';
+import useTheme from '../../hooks/useTheme';
 
 function Header({ variant = 'default' }) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+   const [isDark, setIsDark] = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -75,6 +77,16 @@ function Header({ variant = 'default' }) {
               aria-label="View notifications"
             >
               <Icon name="Bell" size={20} />
+            </button>
+
+            {/* Theme toggle */}
+            <button
+              type="button"
+              className="p-2 ml-2 rounded-md text-text-secondary hover:text-text-primary hover:bg-background"
+              aria-label="Toggle dark mode"
+              onClick={() => setIsDark(d => !d)}
+            >
+              <Icon name={isDark ? 'Moon' : 'Sun'} size={20} />
             </button>
 
             {/* Profile dropdown */}

@@ -3,7 +3,7 @@ import axios from 'axios';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
-
+import useTheme from '../../hooks/useTheme';
 // Simple toggle switch if you don't have one in your ui
 const ToggleSwitch = ({ label, checked, onChange }) => (
   <label className="flex items-center space-x-2 mb-4 dark:text-text-primary">
@@ -21,7 +21,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState({ name: '', email: '' });
   const [passForm, setPassForm] = useState({ currentPassword: '', newPassword: '', confirm: '' });
-  const [theme, setTheme] = useState(localStorage.getItem('theme') === 'dark');
+  const [theme, setTheme] = useTheme();
   const [status, setStatus] = useState({ profile: '', password: '' });
 
   // 1️⃣ Load current profile
@@ -61,11 +61,10 @@ export default function Settings() {
     }
   };
 
-  // 4️⃣ Toggle theme
+   // 4️⃣ Theme preference handled by hook
   const toggleTheme = isDark => {
     setTheme(isDark);
-    document.documentElement.classList[isDark ? 'add' : 'remove']('dark');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    
   };
 
   // 5️⃣ Sign out
