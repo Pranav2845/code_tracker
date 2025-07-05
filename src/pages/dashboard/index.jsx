@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import Header from "../../components/ui/Header";
 import Icon from "../../components/AppIcon";
 import MetricCard from "./components/MetricCard";
-import LineChart from "./components/LineChart";
+import PlatformTotalsChart from "./components/PlatformTotalsChart";
 import RadarChart from "./components/RadarChart";
 import BarChart from "./components/BarChart";
 import PlatformStatus from "./components/PlatformStatus";
@@ -73,15 +73,10 @@ const Dashboard = () => {
       
       const allProblems  = problemsRes.data;
       const {
-        progressData: rawProgress,
+        
         platformActivity: rawActivity,
         topicStrength: rawStrength,
       } = analyticsRes.data;
-
-      const progressData = Array.isArray(rawProgress) &&
-        rawProgress.every((d) => d && typeof d.date === 'string')
-          ? rawProgress
-          : [];
 
       const platformActivity = Array.isArray(rawActivity) &&
         rawActivity.every((d) => d && typeof d.month === 'string')
@@ -108,6 +103,12 @@ const Dashboard = () => {
         const handle = connections[p.id]?.handle || "";
         return { ...p, isConnected: !!handle, problemsSolved: solved };
       });
+            // Build progress data based on total solved per platform
+      const progressData = platforms.map((p) => ({
+        platform: p.name,
+        solved: p.problemsSolved,
+        color: p.color,
+      }));
 
       // 4️⃣ Recent activity (last 5 solves)
       const recentActivity = allProblems
@@ -304,7 +305,7 @@ const Dashboard = () => {
                   <Icon name="AlertTriangle" size={24} /> {errorMessage || 'Failed to load'}
                 </div>
               ) : (
-                <LineChart data={dashboardData.progressData} />
+                 <PlatformTotalsChart data={dashboardData.progressData} />
               )}
             </div>
           </div>
