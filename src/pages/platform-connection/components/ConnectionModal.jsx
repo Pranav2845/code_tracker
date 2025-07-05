@@ -10,11 +10,10 @@ const ConnectionModal = ({ platform, onClose, onConnect, isConnecting }) => {
   const initialFocusRef = useRef(null);
 
   useEffect(() => {
-    // focus first field
     initialFocusRef.current?.focus();
 
-    const handleEscape = e => e.key === "Escape" && onClose();
-    const handleClickOutside = e => {
+    const handleEscape = (e) => e.key === "Escape" && onClose();
+    const handleClickOutside = (e) => {
       if (modalRef.current && !modalRef.current.contains(e.target)) {
         onClose();
       }
@@ -31,24 +30,25 @@ const ConnectionModal = ({ platform, onClose, onConnect, isConnecting }) => {
     };
   }, [onClose]);
 
-  const handleChange = e => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setCredentials(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
+    setCredentials((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateForm = () => {
     const newErr = { username: "" };
     let ok = true;
     if (!credentials.username.trim()) {
-      newErr.username = platform.id === "cses" ? "User ID is required" : "Username is required";
+      newErr.username =
+        platform.id === "cses" ? "User ID is required" : "Username is required";
       ok = false;
     }
     setErrors(newErr);
     return ok;
   };
 
-  const handleSubmit = e => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!validateForm()) return;
     onConnect(credentials);
@@ -103,11 +103,13 @@ const ConnectionModal = ({ platform, onClose, onConnect, isConnecting }) => {
                 error={errors.username}
                 icon="User"
               />
-              <div className="bg-primary-50 p-3 rounded-md">
+              <div className="bg-primary-50 dark:bg-gray-700 p-3 rounded-md">
                 <div className="flex">
                   <Icon name="Info" size={16} className="text-primary mt-0.5 mr-2" />
-                  <p className="text-xs text-text-secondary">
-                    We use your {platform.id === "cses" ? "user ID" : "username"} to fetch your coding activity and progress from {platform.name}.
+                  <p className="text-xs text-gray-700 dark:text-gray-300">
+                    We use your{" "}
+                    {platform.id === "cses" ? "user ID" : "username"} to fetch your coding
+                    activity and progress from {platform.name}.
                   </p>
                 </div>
               </div>
@@ -118,8 +120,8 @@ const ConnectionModal = ({ platform, onClose, onConnect, isConnecting }) => {
             <button
               type="button"
               onClick={onClose}
-              className="btn btn-secondary py-2 px-4"
               disabled={isConnecting}
+              className="px-4 py-2 rounded bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               Cancel
             </button>
