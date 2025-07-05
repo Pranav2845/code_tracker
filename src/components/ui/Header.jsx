@@ -14,6 +14,7 @@ function Header({ variant = 'default' }) {
     { name: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard' },
     { name: 'Platform Connection', path: '/platform-connection', icon: 'Link' },
     { name: 'Topic Analysis', path: '/topic-analysis', icon: 'BarChart2' },
+    { name: 'Contests', path: '/contests', icon: 'Calendar' },
   ];
 
   const isActive = (path) => location.pathname === path;

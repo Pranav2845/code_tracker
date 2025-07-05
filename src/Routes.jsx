@@ -14,6 +14,7 @@ import Dashboard from "./pages/dashboard";
 import PlatformConnection from "./pages/platform-connection";
 import Onboarding from "./pages/onboarding";
 import TopicAnalysis from "./pages/topic-analysis";
+import Contests from "./pages/contests";
 import NotFound from "./pages/NotFound";
 
 const Routes = () => (
@@ -63,6 +64,14 @@ const Routes = () => (
           element={
             <PrivateRoute>
               <TopicAnalysis />
+            </PrivateRoute>
+          }
+       />
+        <Route
+          path="/contests"
+          element={
+            <PrivateRoute>
+              <Contests />
             </PrivateRoute>
           }
         />
