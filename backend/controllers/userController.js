@@ -14,7 +14,9 @@ import {
 } from '../services/code360.js';
 import { fetchHackerRankSolvedCount } from '../services/hackerrank.js';
 import { fetchCodeChefSolvedCount } from '../services/codechef.js';
+import { fetchCFSolvedCount } from '../services/codeforces.js';
 import { fetchUpcomingContests } from '../services/contests.js';
+
 /**
  * GET /api/user/profile
  * Returns the current user's profile information.
@@ -123,18 +125,51 @@ export const getUserStats = async (req, res) => {
       { $group: { _id: '$platform', count: { $sum: 1 } } },
     ]);
 
-    const platformMap = {};
+    const supportedPlatforms = [
+      'leetcode',
+      'codeforces',
+      'hackerrank',
+      'gfg',
+      'code360',
+      'cses',
+      'codechef',
+    ];
+
+    const platformMap = Object.fromEntries(
+      supportedPlatforms.map((p) => [p, 0])
+    );
+
     byPlatformDB.forEach((p) => {
-      platformMap[p._id] = p.count;
+      if (supportedPlatforms.includes(p._id)) {
+        platformMap[p._id] = p.count;
+      } else {
+        platformMap[p._id] = p.count;
+      }
     });
 
     // LeetCode
     const leetcodeHandle = req.user.platforms?.leetcode?.handle;
     if (leetcodeHandle) {
+      const dbCount = platformMap.leetcode;
       try {
-        platformMap.leetcode = await fetchLeetCodeSolvedCount(leetcodeHandle);
+        const fetched = await fetchLeetCodeSolvedCount(leetcodeHandle);
+        platformMap.leetcode = typeof fetched === 'number' ? fetched : dbCount;
       } catch (err) {
         console.error('❌ fetchLeetCodeSolvedCount error:', err);
+        platformMap.leetcode = dbCount;
+      }
+    }
+
+    // Codeforces
+    const cfHandle = req.user.platforms?.codeforces?.handle;
+    if (cfHandle) {
+      const dbCount = platformMap.codeforces;
+      try {
+        const fetched = await fetchCFSolvedCount(cfHandle);
+        platformMap.codeforces = typeof fetched === 'number' ? fetched : dbCount;
+      } catch (err) {
+        console.error('❌ fetchCFSolvedCount error:', err);
+        platformMap.codeforces = dbCount;
       }
     }
 
