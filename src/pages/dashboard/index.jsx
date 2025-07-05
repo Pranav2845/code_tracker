@@ -206,7 +206,7 @@ const Dashboard = () => {
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Problem Solving Progress */}
+          {/* Questions Solved Per Platform */}
           <div className="bg-surface border rounded p-4 shadow-sm">
             <div className="flex justify-between mb-4">
               <h2 className="font-semibold">Problem Solving Progress</h2>
@@ -270,33 +270,22 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Platform Activity Summary */}
-        <div className="bg-surface border rounded p-4 shadow-sm mb-6">
-          <h2 className="font-semibold mb-4">Platform Activity Summary</h2>
-          <div className="h-64">
-            {isLoading ? (
-              <div className="w-full h-full bg-background animate-pulse rounded" />
-            ) : hasError ? (
-              <div className="flex items-center justify-center h-full text-text-secondary">
-                <Icon name="AlertTriangle" size={24} /> {errorMessage || 'Failed to load'}
-              </div>
-            ) : (
-              <BarChart data={dashboardData.platformActivity} />
-            )}
-          </div>
-        </div>
-              {/* Upcoming Contests */}
+           {/* Solved Questions by Platform */}
         <div className="mb-6">
           {isLoading ? (
             <div className="h-32 bg-background animate-pulse rounded" />
           ) : hasError ? (
             <div className="p-4 bg-surface border rounded text-text-secondary">
-              {errorMessage || 'Failed to load contests'}
+              {errorMessage || 'Failed to load problems'}
             </div>
           ) : (
-            <EventTracker contests={contests} />
+            <SolvedQuestions
+              platforms={dashboardData.platforms}
+              problemsMap={dashboardData.platformProblems}
+            />
           )}
         </div>
+
 
         {/* Recent Activity */}
         <div className="bg-surface border rounded p-4 shadow-sm">
