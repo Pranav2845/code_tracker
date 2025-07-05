@@ -8,6 +8,7 @@ import authRoutes     from './routes/auth.js';
 import userRoutes     from './routes/user.js';
 import platformRoutes from './routes/platform.js';
 import problemRoutes  from './routes/problem.js';
+import contestRoutes  from './routes/contests.js';
 
 import authMiddleware from './middleware/auth.js';
 import { notFound, errorHandler } from './utils/errorHandler.js';
@@ -36,6 +37,7 @@ app.use('/api', authMiddleware);
 app.use('/api/user',     userRoutes);
 app.use('/api/platform', platformRoutes);
 app.use('/api/problems', problemRoutes);
+app.use('/api/contests', contestRoutes);
 
 // 6️⃣ 404 + error handler
 app.use(notFound);

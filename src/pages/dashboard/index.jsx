@@ -10,36 +10,7 @@ import RadarChart from "./components/RadarChart";
 import BarChart from "./components/BarChart";
 import PlatformStatus from "./components/PlatformStatus";
 import SkeletonCard from "./components/SkeletonCard";
-
-function computeActivityStats(problems) {
-  if (!Array.isArray(problems) || problems.length === 0) {
-    return { currentStreak: 0, longestStreak: 0 };
-  }
-  const dayStrings = problems
-    .map((p) => new Date(p.solvedAt).toISOString().split("T")[0]);
-  const uniqueDays = Array.from(new Set(dayStrings)).sort();
-
-  let longestStreak = 0, streak = 0, prevDate = null;
-  uniqueDays.forEach((d) => {
-    const cur = new Date(d);
-    if (prevDate && cur - prevDate === 86_400_000) streak += 1;
-    else streak = 1;
-    longestStreak = Math.max(longestStreak, streak);
-    prevDate = cur;
-  });
-
-  let currentStreak = 0;
-  prevDate = null;
-  for (let i = uniqueDays.length - 1; i >= 0; i--) {
-    const cur = new Date(uniqueDays[i]);
-    if (!prevDate) currentStreak = 1;
-    else if (prevDate - cur === 86_400_000) currentStreak += 1;
-    else break;
-    prevDate = cur;
-  }
-
-  return { currentStreak, longestStreak };
-}
+import EventTracker from "./components/EventTracker";
 
 const Dashboard = () => {
   const [isLoading, setIsLoading]       = useState(true);
@@ -47,6 +18,7 @@ const Dashboard = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [dashboardData, setDashboardData] = useState(null);
   const [lastUpdated, setLastUpdated]   = useState(new Date());
+  const [contests, setContests]         = useState([]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -59,17 +31,8 @@ const Dashboard = () => {
       const statsRes     = await axios.get("/user/stats");
       const problemsRes  = await axios.get("/problems");
       const analyticsRes = await axios.get("/user/analytics");
-      let csesSubmissionCount = 0;
-      if (connections.cses?.handle) {
-        const csesSubsRes = await axios.get("/user/cses/submissions");
-        csesSubmissionCount = csesSubsRes.data?.submissionCount || 0;
-      }
-      let code360SubmissionCount = 0;
-      if (connections.code360?.handle) {
-        const contribRes = await axios.get("/user/contributions");
-        code360SubmissionCount = contribRes.data?.totalSubmissionCount || 0;
-      }
-      const { totalSolved, byPlatform, activeDays } = statsRes.data;
+       const contestsRes  = await axios.get("/contests");
+      const { totalSolved, byPlatform } = statsRes.data;
       
       const allProblems  = problemsRes.data;
       const {
@@ -87,6 +50,12 @@ const Dashboard = () => {
         rawStrength.every((t) => t && typeof t.topic === 'string' && typeof t.score === 'number')
           ? rawStrength
           : [];
+
+      const upcomingContests = Array.isArray(contestsRes.data)
+        ? contestsRes.data.slice(0, 5)
+        : [];
+      setContests(upcomingContests);
+
 
       // 3️⃣ Build the platforms array (now includes GFG, Code 360, CSES, CodeChef)
       const platforms = [
@@ -124,17 +93,11 @@ const Dashboard = () => {
           url:         p.url || "#"
         }));
 
-      const { currentStreak, longestStreak } = computeActivityStats(allProblems);
 
       // 5️⃣ Dashboard analytics
       setDashboardData({
         userStats: {
-          totalProblemsSolved: totalSolved,
-          activeDays,
-          currentStreak,
-          longestStreak,
-          csesSubmissionCount,
-          code360SubmissionCount
+           totalProblemsSolved: totalSolved
         },
         platforms,
         progressData,
@@ -222,7 +185,7 @@ const Dashboard = () => {
         {/* Stats Overview */}
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
           {isLoading ? (
-             [0,1,2,3,4,5].map((_,i) => <SkeletonCard key={i} />)
+            [0].map((_,i) => <SkeletonCard key={i} />)
           ) : hasError ? (
             <div className="col-span-full p-4 bg-surface border rounded text-center">
               {errorMessage || 'Failed to load stats'}
@@ -236,33 +199,7 @@ const Dashboard = () => {
                 trend="+12 this week"
                 trendUp
               />
-              <MetricCard
-                title="Active Days"
-                value={dashboardData.userStats.activeDays}
-                icon="Calendar"
-                trend="+3 this week"
-                trendUp
-              />
-              <MetricCard
-                title="Current Streak"
-                value={dashboardData.userStats.currentStreak}
-                icon="Flame"
-              />
-              <MetricCard
-                title="Longest Streak"
-                value={dashboardData.userStats.longestStreak}
-                icon="Award"
-              />
-              <MetricCard
-                title="CSES Submissions"
-                value={dashboardData.userStats.csesSubmissionCount}
-                icon="FileText"
-              />
-               <MetricCard
-                title="Code360 Submissions"
-                value={dashboardData.userStats.code360SubmissionCount}
-                icon="FileText"
-              />
+              
             </>
           )}
         </div>
@@ -347,6 +284,18 @@ const Dashboard = () => {
               <BarChart data={dashboardData.platformActivity} />
             )}
           </div>
+        </div>
+              {/* Upcoming Contests */}
+        <div className="mb-6">
+          {isLoading ? (
+            <div className="h-32 bg-background animate-pulse rounded" />
+          ) : hasError ? (
+            <div className="p-4 bg-surface border rounded text-text-secondary">
+              {errorMessage || 'Failed to load contests'}
+            </div>
+          ) : (
+            <EventTracker contests={contests} />
+          )}
         </div>
 
         {/* Recent Activity */}

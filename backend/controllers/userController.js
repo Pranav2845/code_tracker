@@ -14,7 +14,7 @@ import {
 } from '../services/code360.js';
 import { fetchHackerRankSolvedCount } from '../services/hackerrank.js';
 import { fetchCodeChefSolvedCount } from '../services/codechef.js';
-
+import { fetchUpcomingContests } from '../services/contests.js';
 /**
  * GET /api/user/profile
  * Returns the current user's profile information.
@@ -391,5 +391,19 @@ export const getCodeChefTotalCount = async (req, res) => {
   } catch (err) {
     console.error('❌ getCodeChefTotalCount error:', err);
     res.status(500).json({ message: 'Failed to fetch CodeChef total count' });
+  }
+};
+
+/**
+ * GET /api/contests
+ * Returns an array of upcoming programming contests.
+ */
+export const getUpcomingContests = async (req, res) => {
+  try {
+    const contests = await fetchUpcomingContests();
+    res.json(contests);
+  } catch (err) {
+    console.error('❌ getUpcomingContests error:', err);
+    res.status(500).json({ message: 'Failed to fetch contests' });
   }
 };
