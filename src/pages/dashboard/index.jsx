@@ -64,20 +64,6 @@ const Dashboard = () => {
         color: p.color
       }));
 
-      // Recent activity
-      const recentActivity = allProblems
-        .sort((a, b) => new Date(b.solvedAt) - new Date(a.solvedAt))
-        .slice(0, 5)
-        .map(p => ({
-          id: p._id,
-          platform: p.platform,
-          problemName: p.title,
-          difficulty: p.difficulty,
-          timestamp: p.solvedAt,
-          topics: p.tags,
-          url: p.url || "#"
-        }));
-
       // Map of problems by platform for quick lookup
       const problemsMap = allProblems.reduce((acc, prob) => {
         acc[prob.platform] ??= [];
@@ -103,7 +89,6 @@ const Dashboard = () => {
         progressData,
         topicStrength,
         platformActivity,
-        recentActivity,
         problemsMap
       });
       setLastUpdated(new Date());
@@ -292,75 +277,6 @@ const Dashboard = () => {
                 ))}
               </div>
             </section>
-          )}
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-surface border rounded p-4 shadow-sm">
-          <div className="flex justify-between mb-4">
-            <h2 className="font-semibold">Recent Activity</h2>
-            <button className="text-sm text-primary hover:underline">
-              View all
-            </button>
-          </div>
-          {isLoading ? (
-            Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-16 bg-background animate-pulse rounded mb-2" />
-            ))
-          ) : hasError ? (
-            <div className="text-center text-text-secondary py-8">
-              <Icon name="AlertTriangle" size={24} /> {errorMessage || "Failed to load"}
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {dashboardData.recentActivity.map(act => (
-                <div key={act.id} className="py-3 flex items-center">
-                  <div
-                    className={`w-2 h-2 rounded-full mr-3 ${
-                      {
-                        leetcode: "bg-leetcode",
-                        codeforces: "bg-codeforces",
-                        hackerrank: "bg-success",
-                        gfg: "bg-gfg",
-                        code360: "bg-code360",
-                        cses: "bg-cses",
-                        codechef: "bg-codechef"
-                      }[act.platform] || "bg-primary"
-                    }`}
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center">
-                      <h3 className="font-medium">{act.problemName}</h3>
-                      <span
-                        className={`ml-2 px-2 text-xs rounded-full ${
-                          act.difficulty === "Easy"
-                            ? "bg-success text-success"
-                            : act.difficulty === "Medium"
-                            ? "bg-warning text-warning"
-                            : "bg-error text-error"
-                        }`}
-                      >
-                        {act.difficulty}
-                      </span>
-                    </div>
-                    <div className="text-xs text-text-secondary mt-1">
-                      {new Date(act.timestamp).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric"
-                      })}
-                    </div>
-                  </div>
-                  <a
-                    href={act.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-4 text-primary"
-                  >
-                    <Icon name="ExternalLink" size={16} />
-                  </a>
-                </div>
-              ))}
-            </div>
           )}
         </div>
       </main>

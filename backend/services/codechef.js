@@ -1,6 +1,7 @@
 // backend/services/codechef.js
 
 import axios from 'axios';
+import { load } from 'cheerio';
 
 const PROFILE_URL = (username) =>
   `https://www.codechef.com/users/${encodeURIComponent(username)}`;
@@ -35,5 +36,36 @@ export async function fetchCodeChefSolvedCount(username) {
  * Stub for fetching individual solved problems.
  */
 export async function fetchCodeChefProblems(username) {
-  return [];
+  let html;
+  try {
+    const resp = await axios.get(PROFILE_URL(username));
+    html = resp.data;
+  } catch {
+    throw new Error('User not found');
+  }
+
+  if (!/rating-data-section problems-solved/i.test(html)) {
+    throw new Error('User not found');
+  }
+
+  const $ = load(html);
+  const problems = [];
+  $('section.rating-data-section.problems-solved a[href*="/problems/"]').each(
+    (_, el) => {
+      const link = $(el);
+      const href = link.attr('href') || '';
+      const m = href.match(/\/problems\/([^/?#]+)/);
+      const id = m ? m[1] : link.text().trim();
+      const title = link.text().trim();
+      problems.push({
+        id,
+        title,
+        difficulty: 'Unknown',
+        tags: [],
+        solvedAt: new Date(),
+        url: href.startsWith('http') ? href : `https://www.codechef.com${href}`,
+      });
+    }
+  );
+  return problems;
 }

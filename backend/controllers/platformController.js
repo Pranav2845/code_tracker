@@ -7,8 +7,14 @@ import User from '../models/User.js';
 import { fetchLeetCodeProblems } from '../services/leetcode.js';
 import { fetchCFProblems } from '../services/codeforces.js';
 import { fetchGFGProblems } from '../services/gfg.js';
-import { fetchCodeChefSolvedCount } from '../services/codechef.js';
-import { fetchCSESSolvedCount } from '../services/cses.js';
+import {
+  fetchCodeChefSolvedCount,
+  fetchCodeChefProblems,
+} from '../services/codechef.js';
+import {
+  fetchCSESSolvedCount,
+  fetchCSESProblems,
+} from '../services/cses.js';
 import {
   fetchCode360Problems,
   fetchCode360ProfileTotalCount
@@ -64,54 +70,50 @@ export const syncPlatform = async (req, res) => {
     $set: { [`platforms.${platform}.handle`]: handle }
   });
 
-  // ─── Special‐case CodeChef ───────────────────────────────────────────────
-  if (platform === 'codechef') {
-    try {
-      const solvedCount = await fetchCodeChefSolvedCount(handle);
-      console.log(`🍽️ CodeChef solved count for ${handle}:`, solvedCount);
-
-      await Problem.deleteMany({ user: userId, platform: 'codechef' });
-
-      return res.status(200).json({
-        message:       '✅ CodeChef synced successfully!',
-        account,
-        importedCount: solvedCount,
-      });
-    } catch {
-      return res.status(404).json({ message: 'CodeChef user not found' });
-    }
-  }
-
-  // ─── Special‐case CSES ───────────────────────────────────────────────────
-// ─── Special‐case CSES ───────────────────────────────────────────────────
-if (platform === 'cses') {
-  let solvedCount;
-  try {
-    solvedCount = await fetchCSESSolvedCount(handle);
-  } catch {
-    // network error or truly invalid handle → 404
-    return res.status(404).json({ message: 'CSES user not found' });
-  }
-
-  // Even if solvedCount is 0, we treat it as a valid response
-  console.log(`✅ CSES solved count for ${handle}:`, solvedCount);
-
-  // Remove any previous CSES entries, then respond with the new count
-  await Problem.deleteMany({ user: userId, platform: 'cses' });
-  return res.status(200).json({
-    message:       '✅ CSES synced successfully!',
-    account,
-    importedCount: solvedCount,
-  });
-}
-
-
-  // ─── Fetch problems for all other platforms ─────────────────────────────
+  // ─── Fetch problems for all platforms ───────────────────────────────────
   try {
     let problems = [];
     switch (platform) {
       case 'leetcode':
         problems = await fetchLeetCodeProblems(handle);
+        break;
+
+      case 'codechef':
+        try {
+          problems = await fetchCodeChefProblems(handle);
+        } catch (err) {
+          console.warn('⚠️ fetchCodeChefProblems failed:', err.message);
+          try {
+            const solvedCount = await fetchCodeChefSolvedCount(handle);
+            await Problem.deleteMany({ user: userId, platform: 'codechef' });
+            return res.status(200).json({
+              message: '✅ CodeChef synced successfully!',
+              account,
+              importedCount: solvedCount,
+            });
+          } catch {
+            return res.status(404).json({ message: 'CodeChef user not found' });
+          }
+        }
+        break;
+
+      case 'cses':
+        try {
+          problems = await fetchCSESProblems(handle);
+        } catch (err) {
+          console.warn('⚠️ fetchCSESProblems failed:', err.message);
+          try {
+            const solvedCount = await fetchCSESSolvedCount(handle);
+            await Problem.deleteMany({ user: userId, platform: 'cses' });
+            return res.status(200).json({
+              message: '✅ CSES synced successfully!',
+              account,
+              importedCount: solvedCount,
+            });
+          } catch {
+            return res.status(404).json({ message: 'CSES user not found' });
+          }
+        }
         break;
 
       case 'codeforces':

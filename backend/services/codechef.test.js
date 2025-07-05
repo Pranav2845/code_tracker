@@ -1,7 +1,6 @@
-// File: backend/services/codechef.js
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { fetchCodeChefSolvedCount } from './codechef.js';
+import { fetchCodeChefSolvedCount, fetchCodeChefProblems } from './codechef.js';
 
 vi.mock('axios');
 
@@ -10,42 +9,45 @@ beforeEach(() => {
 });
 
 describe('fetchCodeChefSolvedCount', () => {
-  it('returns count from API when available', async () => {
-    axios.post.mockResolvedValueOnce({ data: { result: { data: { access_token: 't' } } } });
-    axios.get.mockResolvedValueOnce({
-      data: {
-        result: {
-          data: { content: { fully_solved: { count: 4 } } }
-        }
-      }
-    });
-    const count = await fetchCodeChefSolvedCount('user');
-    expect(count).toBe(4);
-    expect(axios.get).toHaveBeenCalledWith(
-      expect.stringContaining('/users/user'),
-      expect.objectContaining({ headers: { Authorization: 'Bearer t' } })
-    );
+  it('parses solved count from profile page', async () => {
+    const html = '<section class="rating-data-section problems-solved">Total Problems Solved: 42</section>';
+    axios.get.mockResolvedValueOnce({ data: html });
+    const count = await fetchCodeChefSolvedCount('alice');
+    expect(count).toBe(42);
+    expect(axios.get).toHaveBeenCalledWith(expect.stringContaining('/users/alice'));
   });
 
-  it('falls back to summing list lengths', async () => {
-    axios.post.mockResolvedValueOnce({ data: { result: { data: { access_token: 't2' } } } });
-    axios.get.mockResolvedValueOnce({
-      data: {
-        result: {
-          data: {
-            content: { fully_solved: { school: ['A', 'B'], practice: ['C'] } }
-          }
-        }
-      }
-    });
+  it('returns 0 when count missing', async () => {
+    const html = '<section class="rating-data-section problems-solved"></section>';
+    axios.get.mockResolvedValueOnce({ data: html });
     const count = await fetchCodeChefSolvedCount('bob');
-    expect(count).toBe(3);
+    expect(count).toBe(0);
   });
 
-  it('returns 0 on request error', async () => {
-    axios.post.mockResolvedValueOnce({ data: { result: { data: { access_token: 't' } } } });
+  it('throws when page not found', async () => {
+    axios.get.mockResolvedValueOnce({ data: '<div></div>' });
+    await expect(fetchCodeChefSolvedCount('bad')).rejects.toThrow('User not found');
+  });
+});
+
+describe('fetchCodeChefProblems', () => {
+  it('scrapes solved problems', async () => {
+    const html = `
+      <section class="rating-data-section problems-solved">
+        <a href="/problems/ABC">Alpha</a>
+        <a href="/problems/XYZ">Xyz</a>
+      </section>`;
+    axios.get.mockResolvedValueOnce({ data: html });
+    const list = await fetchCodeChefProblems('alice');
+    expect(list).toHaveLength(2);
+    expect(list[0].id).toBe('ABC');
+    expect(list[0].title).toBe('Alpha');
+    expect(list[0].url).toMatch(/ABC/);
+    expect(list[0].solvedAt instanceof Date).toBe(true);
+  });
+
+  it('throws on network error', async () => {
     axios.get.mockRejectedValueOnce(new Error('fail'));
-    const count = await fetchCodeChefSolvedCount('err');
-    expect(count).toBe(0);
+    await expect(fetchCodeChefProblems('err')).rejects.toThrow('User not found');
   });
 });
