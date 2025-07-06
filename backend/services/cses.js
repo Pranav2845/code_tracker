@@ -4,60 +4,46 @@ import { load } from 'cheerio';
 const BASE = 'https://cses.fi';
 
 /**
- * Return full CSES problem list as a map by problem id.
+ * Return CSES problem list as an array (order matters!).
  */
-async function fetchCSESProblemMap() {
+async function fetchCSESProblemList() {
   const { data: html } = await axios.get(`${BASE}/problemset/`);
   const $ = load(html);
-  const problems = {};
+  const problems = [];
   $('table tr').each((_, el) => {
     const link = $(el).find('a[href^="/problemset/task/"]');
     if (!link.length) return;
     const href = link.attr('href');
     const id = href.split('/').filter(Boolean).pop();
-    problems[id] = {
+    problems.push({
       id,
       title: link.text().trim(),
       url: `${BASE}${href}`,
-    };
+    });
   });
   return problems;
 }
 
 /**
- * Parse the user's grid page and extract solved problem IDs from solved cells.
+ * Parse user's solved grid and return array of solved cell indices.
  */
-async function fetchCSESSolvedProblemIDs(userId) {
+async function fetchSolvedGridIndices(userId) {
   const { data: html } = await axios.get(`${BASE}/problemset/user/${userId}`);
   const $ = load(html);
-  const solvedIDs = [];
-
-  // Parse grid cells for solved problems
-  $('table td').each((_, el) => {
+  const indices = [];
+  $('table td').each((i, el) => {
     const cell = $(el);
-    // Is this cell solved? CSES uses a green check icon or sometimes a "✓"
     const isSolved =
       cell.find('img[alt*="check" i],img[alt*="solved" i]').length ||
       cell.text().trim() === '✓' ||
-      cell.hasClass('full'); // Sometimes solved problems have 'full' class
-
-    if (isSolved) {
-      const link = cell.find('a[href^="/problemset/task/"]');
-      if (link.length) {
-        const href = link.attr('href');
-        const id = href.split('/').filter(Boolean).pop();
-        if (id) solvedIDs.push(id);
-      }
-    }
+      cell.hasClass('full');
+    if (isSolved) indices.push(i);
   });
-
-  // Fallback: also try to parse the "Solved tasks: X/Y" just in case
-  // (not needed for the name mapping, just for count)
-  return solvedIDs;
+  return indices;
 }
 
 /**
- * Find CSES numeric user id for username (by search)
+ * Find numeric CSES user id for a username (searches all pages).
  */
 export async function findCSESUserId(username, maxPages = 10) {
   const search = username.trim().toLowerCase();
@@ -78,26 +64,30 @@ export async function findCSESUserId(username, maxPages = 10) {
 }
 
 /**
- * Return solved problems (id, title, url) for username or userId
+ * Return solved problems (id, title, url) for username or userId.
  */
 export async function fetchCSESProblems(usernameOrId) {
   const userId = /^\d+$/.test(usernameOrId)
     ? Number(usernameOrId)
     : await findCSESUserId(usernameOrId);
 
-  const [problemMap, solvedIDs] = await Promise.all([
-    fetchCSESProblemMap(),
-    fetchCSESSolvedProblemIDs(userId),
-  ]);
+  let problemList, solvedIndices;
+  try {
+    [problemList, solvedIndices] = await Promise.all([
+      fetchCSESProblemList(),
+      fetchSolvedGridIndices(userId),
+    ]);
+  } catch (err) {
+    console.error('⚠️ fetchCSESProblems failed:', err?.message || err);
+    return [];
+  }
 
-  // Map each solved ID to its problem info
-  return solvedIDs
-    .map(id => problemMap[id])
-    .filter(Boolean);
+  // Map indices to problems
+  return solvedIndices.map(idx => problemList[idx]).filter(Boolean);
 }
 
 /**
- * Get the solved count for a user (from "Solved tasks: X/Y" line)
+ * Get solved count for user from "Solved tasks: X/Y"
  */
 export async function fetchCSESSolvedCount(usernameOrId) {
   const userId = /^\d+$/.test(usernameOrId)
@@ -105,12 +95,9 @@ export async function fetchCSESSolvedCount(usernameOrId) {
     : await findCSESUserId(usernameOrId);
   const { data: html } = await axios.get(`${BASE}/problemset/user/${userId}`);
   const $ = load(html);
-  // Match "Solved tasks: X/Y"
   const match = $('body').text().match(/Solved tasks:\s*(\d+)\s*\/\s*(\d+)/i);
-  if (match) {
-    return Number(match[1]);
-  }
-  // Fallback: count solved problems from grid
+  if (match) return Number(match[1]);
+  // fallback: count solved cells
   let solvedCount = 0;
   $('table td').each((_, el) => {
     const cell = $(el);
@@ -121,4 +108,25 @@ export async function fetchCSESSolvedCount(usernameOrId) {
     if (isSolved) solvedCount++;
   });
   return solvedCount;
+}
+
+/**
+ * Read the "Submission count" value from user profile.
+ */
+export async function fetchCSESSubmissionCount(usernameOrId) {
+  const userId = /^\d+$/.test(usernameOrId)
+    ? Number(usernameOrId)
+    : await findCSESUserId(usernameOrId);
+  try {
+    const { data: html } = await axios.get(`${BASE}/user/${userId}`);
+    const $ = load(html);
+    const label = $('td,th')
+      .filter((_, el) => $(el).text().trim() === 'Submission count:')
+      .first();
+    const text = label.next().text().trim();
+    const m = text.match(/\d+/);
+    return m ? Number(m[0]) : 0;
+  } catch (err) {
+    return 0;
+  }
 }
