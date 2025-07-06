@@ -112,6 +112,9 @@ const Dashboard = () => {
     hour: "numeric", minute: "numeric", hour12: true
   }).format(d);
 
+  // Only show connected platforms with their problems
+  const connectedPlatforms = dashboardData?.platforms?.filter(p => p.isConnected) || [];
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -245,37 +248,52 @@ const Dashboard = () => {
               <h2 className="text-lg font-semibold mb-4">
                 Questions Solved by Platform
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {dashboardData.platforms.map(p => (
-                  <div
-                    key={p.id}
-                    className="bg-surface dark:bg-gray-800 rounded-lg p-4 flex flex-col"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-text-secondary">
-                        {p.name}
-                      </span>
-                      <span className="text-xl font-bold text-text-primary">
-                        {p.problemsSolved}
-                      </span>
-                    </div>
-                    <ul className="mt-2 space-y-1 text-sm list-disc list-inside">
-                      {(dashboardData.problemsMap?.[p.id] || []).map(q => (
-                        <li key={q.id} className="truncate">
-                          <a
-                            href={q.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            {q.title}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
+              {connectedPlatforms.length === 0 ? (
+                <p className="text-sm text-text-secondary">
+                  Connect a platform to see solved problems.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {connectedPlatforms.map(p => {
+                    const problems = dashboardData.problemsMap?.[p.id] || [];
+                    return (
+                      <div
+                        key={p.id}
+                        className="bg-surface border rounded p-4 shadow-sm flex flex-col h-60"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-text-secondary">
+                            {p.name}
+                          </span>
+                          <span className="text-xl font-bold text-text-primary">
+                            {p.problemsSolved}
+                          </span>
+                        </div>
+                        <div className="flex-1 overflow-y-auto mt-2">
+                          {problems.length === 0 ? (
+                            <p className="text-sm text-text-secondary">No problems solved yet.</p>
+                          ) : (
+                            <ul className="space-y-1 text-sm list-disc list-inside">
+                              {problems.map(q => (
+                                <li key={q.id} className="truncate">
+                                  <a
+                                    href={q.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline"
+                                  >
+                                    {q.title}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </section>
           )}
         </div>
