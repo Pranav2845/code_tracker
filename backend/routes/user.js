@@ -9,7 +9,9 @@ import {
   getContributionStats,
   getCSESSubmissionCount,
   getCode360TotalCount,
+   getCode360SolvedProblems,
   getCodeChefTotalCount,
+
   changePassword
 } from '../controllers/userController.js';
 
@@ -24,6 +26,7 @@ router.get   ('/analytics', getDashboardAnalytics);
 router.get   ('/contributions', getContributionStats);
 router.get   ('/cses/submissions', getCSESSubmissionCount);
 router.post  ('/change-password', changePassword);
+router.get   ('/code360/problems/:username', getCode360SolvedProblems);
 router.get   ('/code360/count/:username', getCode360TotalCount);
 router.get   ('/codechef/count/:username', getCodeChefTotalCount);
 export default router;

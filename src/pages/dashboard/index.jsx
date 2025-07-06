@@ -12,7 +12,7 @@ import PlatformStatus from "./components/PlatformStatus";
 import SkeletonCard from "./components/SkeletonCard";
 import EventTracker from "./components/EventTracker";
 import SolvedQuestions from "./components/SolvedQuestions";
-
+import { fetchCode360SolvedProblems } from "../../api/code360";
 const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -35,7 +35,24 @@ const Dashboard = () => {
       const contestsRes = await axios.get("/contests");
 
       const { totalSolved, byPlatform } = statsRes.data;
-      const allProblems = problemsRes.data;
+            let allProblems = problemsRes.data;
+
+      if (connections.code360?.handle) {
+        try {
+          const cnProblems = await fetchCode360SolvedProblems(connections.code360.handle);
+          if (Array.isArray(cnProblems)) {
+            const mapped = cnProblems.map(p => ({
+              _id: p.id,
+              platform: 'code360',
+              title: p.title,
+              url: p.url || '#',
+            }));
+            allProblems = allProblems.filter(pr => pr.platform !== 'code360').concat(mapped);
+          }
+        } catch (err) {
+          console.error('Error fetching Code360 problems:', err);
+        }
+      }
       const { platformActivity: rawActivity, topicStrength: rawStrength } = analyticsRes.data;
 
       const upcomingContests = Array.isArray(contestsRes.data)

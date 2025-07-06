@@ -11,6 +11,7 @@ import {
   fetchCode360SolvedCount,
   fetchCode360ContributionStats,
   fetchCode360ProfileTotalCount,
+   fetchCode360Problems,
 } from '../services/code360.js';
 import { fetchHackerRankSolvedCount } from '../services/hackerrank.js';
 import { fetchCodeChefSolvedCount } from '../services/codechef.js';
@@ -411,6 +412,28 @@ export const getCode360TotalCount = async (req, res) => {
   } catch (err) {
     console.error('❌ getCode360TotalCount error:', err);
     res.status(500).json({ message: 'Failed to fetch Code360 total count' });
+  }
+};
+
+/**
+ * GET /api/user/code360/problems/:username
+ * Fetches solved problems for the given Code360 profile.
+ */
+export const getCode360SolvedProblems = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const problems = await fetchCode360Problems(username);
+    const list = Array.isArray(problems)
+      ? problems.map((p) => ({
+          id: p.id,
+          title: p.title,
+          url: p.url,
+        }))
+      : [];
+    res.json({ problems: list });
+  } catch (err) {
+    console.error('❌ getCode360SolvedProblems error:', err);
+    res.status(500).json({ message: 'Failed to fetch Code360 problems' });
   }
 };
 
