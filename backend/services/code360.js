@@ -68,7 +68,8 @@ function mapProblem(p) {
       p.title ??
       p.problemTitle ??
       p.problemName ??
-      p.problem_name
+      p.problem_name ??
+      p.offering_id
     ),
     title:
       p.title ||
@@ -92,44 +93,74 @@ function mapProblem(p) {
 }
 
 // Recursively finds a problem array in a possibly nested object
-function findProblems(obj) {
+function findProblemArray(obj) {
   if (!obj || typeof obj !== 'object') return null;
   if (Array.isArray(obj)) {
-    if (obj.length && obj[0]?.problem_name && obj[0]?.link !== undefined)
+    if (
+      obj.every(
+        (o) =>
+          typeof o === 'object' &&
+          (
+            o.title ||
+            o.problem_title ||
+            o.problemTitle ||
+            o.problemName ||
+            o.problem_name ||
+            o.problemId ||
+            o.problem_id ||
+            o.slug ||
+            o.level ||
+            o.topics
+          )
+      )
+    ) {
       return obj;
-    for (const item of obj) {
-      const found = findProblems(item);
+    }
+    for (const el of obj) {
+      const found = findProblemArray(el);
       if (found) return found;
     }
-  } else {
-    for (const val of Object.values(obj)) {
-      const found = findProblems(val);
-      if (found) return found;
-    }
+    return null;
+  }
+  for (const val of Object.values(obj)) {
+    const found = findProblemArray(val);
+    if (found) return found;
   }
   return null;
 }
 
-// --- Scraping fallback, now using robust __NEXT_DATA__ parsing ---
+// --- Scraping fallback, robust __NEXT_DATA__ parsing with mapProblem ---
 async function scrapeCode360SolvedProblems(username) {
   const url = `https://www.naukri.com/code360/profile/${encodeURIComponent(username)}`;
   const { data: html } = await axios.get(url, AXIOS_OPTS);
   const $ = cheerio.load(html);
 
   const nextData = $('#__NEXT_DATA__').html();
-  if (!nextData) throw new Error('Could not find embedded React data!');
-  const json = JSON.parse(nextData);
+  if (nextData) {
+    try {
+      const json = JSON.parse(nextData);
+      const arr = findProblemArray(json);
+      if (Array.isArray(arr)) {
+        return arr.map(mapProblem);
+      }
+    } catch (err) {
+      console.warn('⚠️ parse __NEXT_DATA__ failed:', err.message);
+    }
+  }
 
-  const arr = findProblems(json);
-  if (!arr) throw new Error('Solved problems array not found!');
+  // Fallback: extract visible problem titles from the page
+  const titles = new Set();
+  $('a[href*="/problems/"]').each((i, el) => {
+    const t = $(el).text().trim();
+    if (t) titles.add(t);
+  });
 
-  return arr.map((p) => ({
-    id: String(p.offering_id || p.id),
-    title: p.problem_name,
-    url: p.link || '#',
-    solvedAt: p.solved_at ? new Date(p.solved_at) : new Date(),
+  return Array.from(titles).map((t) => ({
+    id: t,
+    title: t,
     difficulty: 'Unknown',
     tags: [],
+    solvedAt: new Date(),
   }));
 }
 
@@ -153,14 +184,7 @@ export async function fetchCode360Problems(username) {
 
       const arr = data?.data?.problem_submissions || [];
       arr.forEach((p) => {
-        problems.push({
-          id: String(p.offering_id),
-          title: p.problem_name,
-          url: p.link || '#',
-          solvedAt: p.solved_at ? new Date(p.solved_at) : new Date(),
-          difficulty: 'Unknown',
-          tags: [],
-        });
+        problems.push(mapProblem(p));
       });
 
       totalPages = data?.data?.total_pages || 1;
