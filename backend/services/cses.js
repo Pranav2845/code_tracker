@@ -30,34 +30,91 @@ export async function findCSESUserId(username, maxPages = 10) {
 }
 
 /**
- * (Optional) Scrape individual solved problems.
+ * Scrape and return the master CSES problem list in page order.
  */
-export async function fetchCSESProblems(username) {
-  const userId = /^\d+$/.test(username)
-    ? Number(username)
-    : await findCSESUserId(username);
-
-  const { data: html } = await axios.get(`${BASE}/user/${userId}`);
+export async function fetchCSESProblemList() {
+  const { data: html } = await axios.get(`${BASE}/problemset/`);
   const $ = load(html);
   const problems = [];
-  $('a[href^="/problemset/task/"]').each((_, el) => {
-    const link = $(el);
-    const id = link.attr('href').split('/').pop();
-    const dateText = link.closest('tr').find('td').last().text().trim();
+  $('table tr').each((_, el) => {
+    const link = $(el).find('a[href^="/problemset/task/"]').first();
+    if (!link.length) return;
+    const href = link.attr('href');
+    const id = href.split('/').filter(Boolean).pop();
     problems.push({
       id,
       title: link.text().trim(),
-      difficulty: 'Unknown',
-      tags: [],
-      solvedAt: dateText ? new Date(dateText) : new Date(),
-       url: `${BASE}/problemset/task/${id}`,
+      url: `${BASE}${href}`,
     });
   });
   return problems;
 }
 
 /**
- * Scrape and return the total “problems solved” count.
+ * Fetch solved grid for a user: which indices are solved, and the solved count.
+ */
+async function fetchSolvedGrid(userId) {
+  const { data: html } = await axios.get(`${BASE}/problemset/user/${userId}`);
+  const $ = load(html);
+
+  // Find solved indices (cells with checkmark, green bg, or special img)
+  const solvedIndices = [];
+  $('table td').each((i, el) => {
+    const cell = $(el);
+    const hasCheck = cell.find('img[alt*="check" i],img[alt*="solved" i]').length;
+    const green = cell.css ? cell.css('background-color') === 'green' : false;
+    const text = cell.text().trim();
+    if (hasCheck || text === '✓' || text === '✔') {
+      solvedIndices.push(i);
+    }
+  });
+
+  // Get solved count from "Solved tasks: X/400"
+  let solvedCount = solvedIndices.length;
+  let totalCount = $('table td').length;
+  const solvedText = $('body').text();
+  const m = solvedText.match(/Solved tasks:\s*(\d+)\s*\/\s*(\d+)/i);
+  if (m) {
+    solvedCount = Number(m[1]);
+    totalCount = Number(m[2]);
+  }
+
+  return { solvedIndices, solvedCount, totalCount };
+}
+
+/**
+ * Get array of solved problems (name, id, url) for a given username or userId.
+ */
+export async function fetchCSESProblems(username) {
+  const userId = /^\d+$/.test(username)
+    ? Number(username)
+    : await findCSESUserId(username);
+
+  const [problemList, grid] = await Promise.all([
+    fetchCSESProblemList(),
+    fetchSolvedGrid(userId),
+  ]);
+
+  const problems = [];
+  grid.solvedIndices.forEach(idx => {
+    const item = problemList[idx];
+    if (item) {
+      problems.push({
+        id: item.id,
+        title: item.title,
+        difficulty: 'Unknown',
+        tags: [],
+        solvedAt: null,
+        url: item.url,
+      });
+    }
+  });
+
+  return problems;
+}
+
+/**
+ * Scrape and return the total “problems solved” count from the solved grid page.
  * Throws if the user doesn’t exist or the profile page is not valid.
  */
 export async function fetchCSESSolvedCount(username) {
@@ -65,25 +122,20 @@ export async function fetchCSESSolvedCount(username) {
     ? Number(username)
     : await findCSESUserId(username);
 
-  const { data: html } = await axios.get(`${BASE}/user/${userId}`);
-  const $ = load(html);
+  const { solvedCount } = await fetchSolvedGrid(userId);
+  return solvedCount;
+}
 
-  // Parse the “Submission count:” field instead of counting task links
-  const label = $('td,th')
-    .filter((_, el) => $(el).text().trim() === 'Submission count:')
-    .first();
+/**
+ * Scrape and return the total problems count (always 400 for CSES, but parsed live).
+ */
+export async function fetchCSESTotalCount(username) {
+  const userId = /^\d+$/.test(username)
+    ? Number(username)
+    : await findCSESUserId(username);
 
-  if (!label.length) {
-    throw new Error('User not found');
-  }
-
-  const text = label.next().text().trim();
-  const m = text.match(/\d+/);
-  if (!m) {
-    throw new Error('Could not parse submission count');
-  }
-
-  return Number(m[0]);
+  const { totalCount } = await fetchSolvedGrid(userId);
+  return totalCount;
 }
 
 /**
@@ -98,7 +150,6 @@ export async function fetchCSESSubmissionCount(username) {
   const { data: html } = await axios.get(`${BASE}/user/${userId}`);
   const $ = load(html);
 
-  // Look for the “Submission count:” label in the info table
   const label = $('td,th')
     .filter((_, el) => $(el).text().trim() === 'Submission count:')
     .first();

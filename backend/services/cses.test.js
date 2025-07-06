@@ -1,7 +1,12 @@
-//backend/services/cses.js
+// backend/services/cses.test.js
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { findCSESUserId, fetchCSESProblems, fetchCSESSolvedCount, fetchCSESSubmissionCount } from './cses.js';
+import {
+  findCSESUserId,
+  fetchCSESProblems,
+  fetchCSESSolvedCount,
+  fetchCSESSubmissionCount,
+} from './cses.js';
 
 vi.mock('axios');
 
@@ -14,7 +19,6 @@ describe('findCSESUserId', () => {
     const listHtml = '<table><tr><td><a href="/user/42">alice</a></td></tr></table>';
     axios.get.mockResolvedValueOnce({ data: listHtml });
     const id = await findCSESUserId('alice');
-    // PATCH: now expects a number, not a string
     expect(id).toBe(42);
     expect(axios.get).toHaveBeenCalledWith('https://cses.fi/list/user/1');
   });
@@ -33,26 +37,36 @@ describe('findCSESUserId', () => {
 });
 
 describe('fetchCSESProblems', () => {
-  it('fetches solved problems when numeric id provided', async () => {
-    const html = '<table><tr><td><a href="/problemset/task/10">A</a></td><td>2024-01-01</td></tr></table>';
-    axios.get.mockResolvedValueOnce({ data: html });
+  it('maps solved grid indices to problem titles', async () => {
+    const listHtml = '<table>' +
+      '<tr><td><a href="/problemset/task/1">P1</a></td></tr>' +
+      '<tr><td><a href="/problemset/task/2">P2</a></td></tr>' +
+      '<tr><td><a href="/problemset/task/3">P3</a></td></tr>' +
+      '</table>';
+
+    const gridHtml = '<div>Solved tasks: 2/3</div>' +
+      '<table><tr><td class="done"></td><td></td><td class="done"></td></tr></table>';
+
+    axios.get
+      .mockResolvedValueOnce({ data: listHtml })
+      .mockResolvedValueOnce({ data: gridHtml });
+
     const problems = await fetchCSESProblems('55');
-    expect(problems).toHaveLength(1);
-    expect(problems[0].id).toBe('10');
-    expect(axios.get).toHaveBeenCalledWith('https://cses.fi/user/55');
+    expect(problems).toHaveLength(2);
+    expect(problems[0].title).toBe('P1');
+    expect(problems[1].title).toBe('P3');
+    expect(axios.get).toHaveBeenNthCalledWith(1, 'https://cses.fi/problemset/');
+    expect(axios.get).toHaveBeenNthCalledWith(2, 'https://cses.fi/problemset/user/55');
   });
 });
 
 describe('fetchCSESSolvedCount', () => {
-  it('counts solved problems from profile page', async () => {
-    const html = `
-      <a href="/problemset/task/1">One</a>
-      <a href="/problemset/task/2">Two</a>
-      <a href="/problemset/task/3">Three</a>`;
-    axios.get.mockResolvedValueOnce({ data: html });
+  it('reads the solved task count from the grid page', async () => {
+    const gridHtml = '<div>Solved tasks: 2/400</div><table></table>';
+    axios.get.mockResolvedValueOnce({ data: gridHtml });
     const count = await fetchCSESSolvedCount('42');
-    expect(count).toBe(3);
-    expect(axios.get).toHaveBeenCalledWith('https://cses.fi/user/42');
+    expect(count).toBe(2);
+    expect(axios.get).toHaveBeenCalledWith('https://cses.fi/problemset/user/42');
   });
 });
 
@@ -70,7 +84,7 @@ describe('fetchCSESSubmissionCount', () => {
     const count = await fetchCSESSubmissionCount('1');
     expect(count).toBe(0);
   });
-  
+
   it('returns 0 on network error', async () => {
     axios.get.mockRejectedValueOnce(new Error('network fail'));
     const count = await fetchCSESSubmissionCount('2');
