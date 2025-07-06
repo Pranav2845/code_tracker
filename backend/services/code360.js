@@ -2,6 +2,7 @@
 
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import fs from 'fs';
 
 const BASE_URL = 'https://www.naukri.com/code360/api/v3/public_section';
 const MAX_RETRIES = 3;
@@ -58,148 +59,65 @@ async function fetchUserId(username) {
   return id;
 }
 
-function mapProblem(p) {
-  return {
-    id: String(
-      p.id ??
-      p.problem_id ??
-      p.problemId ??
-      p.slug ??
-      p.title ??
-      p.problemTitle ??
-      p.problemName ??
-      p.problem_name ??
-      p.offering_id
-    ),
-    title:
-      p.title ||
-      p.problem_title ||
-      p.problemTitle ||
-      p.problemName ||
-      p.problem_name ||
-      p.slug ||
-      '',
-    difficulty: p.difficulty || p.level || 'Unknown',
-    tags: p.tags || p.topics || [],
-    solvedAt: p.solved_at ? new Date(p.solved_at) : new Date(),
-    url:
-      p.link ||
-      (p.slug
-        ? `https://www.naukri.com/code360/problems/${p.slug}`
-        : p.problem_slug
-        ? `https://www.naukri.com/code360/problems/${p.problem_slug}`
-        : undefined),
-  };
-}
-
-// Recursively finds a problem array in a possibly nested object
-function findProblemArray(obj) {
-  if (!obj || typeof obj !== 'object') return null;
-  if (Array.isArray(obj)) {
-    if (
-      obj.every(
-        (o) =>
-          typeof o === 'object' &&
-          (
-            o.title ||
-            o.problem_title ||
-            o.problemTitle ||
-            o.problemName ||
-            o.problem_name ||
-            o.problemId ||
-            o.problem_id ||
-            o.slug ||
-            o.level ||
-            o.topics
-          )
-      )
-    ) {
-      return obj;
-    }
-    for (const el of obj) {
-      const found = findProblemArray(el);
-      if (found) return found;
-    }
-    return null;
-  }
-  for (const val of Object.values(obj)) {
-    const found = findProblemArray(val);
-    if (found) return found;
-  }
-  return null;
-}
-
-// --- Scraping fallback, robust __NEXT_DATA__ parsing with mapProblem ---
-async function scrapeCode360SolvedProblems(username) {
+// --- Scraping only: get solved problems from public profile HTML ---
+export async function fetchCode360Problems(username) {
   const url = `https://www.naukri.com/code360/profile/${encodeURIComponent(username)}`;
   const { data: html } = await axios.get(url, AXIOS_OPTS);
-  const $ = cheerio.load(html);
 
-  const nextData = $('#__NEXT_DATA__').html();
-  if (nextData) {
-    try {
-      const json = JSON.parse(nextData);
-      const arr = findProblemArray(json);
-      if (Array.isArray(arr)) {
-        return arr.map(mapProblem);
-      }
-    } catch (err) {
-      console.warn('⚠️ parse __NEXT_DATA__ failed:', err.message);
-    }
+  // 1. DEBUG: Dump HTML for inspection
+  try {
+    fs.writeFileSync('code360-profile.html', html); // You can open this file!
+  } catch (err) {
+    console.warn('Failed to write HTML for debug:', err.message);
   }
 
-  // Fallback: extract visible problem titles from the page
-  const titles = new Set();
-  $('a[href*="/problems/"]').each((i, el) => {
-    const t = $(el).text().trim();
-    if (t) titles.add(t);
+  // 2. Extract solved problems
+  const $ = cheerio.load(html);
+  const problems = [];
+  // Loop through .submission-item containers (for each solved problem)
+  $('.submission-item').each((i, el) => {
+    // Problem name
+    const problemName = $(el)
+      .find('.problem-name-container .problem-name')
+      .first()
+      .text()
+      .trim();
+
+    // Problem link (if available)
+    let problemLink = '';
+    const anchor = $(el).find('a[href*="/problems/"]').first();
+    if (anchor.length) {
+      const href = anchor.attr('href');
+      problemLink = href.startsWith('http') ? href : `https://www.naukri.com${href}`;
+    }
+    // Fallback: generate slug from name
+    if (!problemLink && problemName) {
+      const slug = problemName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      problemLink = `https://www.naukri.com/code360/problems/${slug}`;
+    }
+
+    if (problemName) {
+      problems.push({
+        id: problemName,
+        title: problemName,
+        url: problemLink,
+        difficulty: '', // Not visible
+        tags: [],
+        solvedAt: null, // Not visible
+      });
+    }
   });
 
-  return Array.from(titles).map((t) => ({
-    id: t,
-    title: t,
-    difficulty: 'Unknown',
-    tags: [],
-    solvedAt: new Date(),
-  }));
+  return problems;
 }
 
-// --- Main exported function: Try API, else fall back to scrape ---
-export async function fetchCode360Problems(username) {
-  try {
-    const problems = [];
-    const baseUrl = `${BASE_URL}/profile/view_solved_problems`;
+export { fetchCode360Problems as scrapeCode360SolvedProblems };
 
-    let page = 1;
-    let totalPages = 1;
-
-    do {
-      const differentiator = Date.now();
-      const baseParams =
-        `request_differentiator=${differentiator}&app_context=publicsection&naukri_request=true`;
-      const url = `${baseUrl}?page=${page}&screen_name=${encodeURIComponent(
-        username
-      )}&${baseParams}`;
-      const { data } = await axios.get(url, AXIOS_OPTS);
-
-      const arr = data?.data?.problem_submissions || [];
-      arr.forEach((p) => {
-        problems.push(mapProblem(p));
-      });
-
-      totalPages = data?.data?.total_pages || 1;
-      page += 1;
-    } while (page <= totalPages);
-
-    return problems;
-  } catch (err) {
-    console.warn(
-      `⚠️ fetchCode360Problems API failed for ${username}, falling back to HTML scrape:`,
-      err.message
-    );
-    return await scrapeCode360SolvedProblems(username);
-  }
-}
+// --- The rest (stats etc.) can use API as before ---
 
 export async function fetchCode360ContributionStats(username) {
   const id = await fetchUserId(username);
@@ -258,6 +176,3 @@ export async function fetchCode360ProfileTotalCount(username) {
     return null;
   }
 }
-
-// Optionally export the scrape fallback for direct use:
-export { scrapeCode360SolvedProblems };
