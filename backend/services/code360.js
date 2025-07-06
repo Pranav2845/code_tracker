@@ -157,82 +157,37 @@ async function scrapeCode360SolvedProblems(username) {
 
 // ✅ Corrected fetchCode360Problems function
 export async function fetchCode360Problems(username) {
-  try {
-    const baseParams =
-      'request_differentiator=1751613875507&app_context=publicsection&naukri_request=true';
+    const problems = [];
+  const baseParams =
+    'request_differentiator=1751613875507&app_context=publicsection&naukri_request=true';
+  const baseUrl = `${BASE_URL}/profile/view_solved_problems`;
 
-    const id = await fetchUserId(username);
-    let url = `${BASE_URL}/profile/solved_problems?user_id=${id}&${baseParams}`;
-    console.log('[fetchCode360Problems] resolved id:', id);
-    console.log('[fetchCode360Problems] request url:', url);
+  let page = 1;
+  let totalPages = 1;
 
-    let data = await getWithRetry(url);
-    let list = data?.data?.problems || data?.problems;
+  do {
+    const url = `${baseUrl}?page=${page}&screen_name=${encodeURIComponent(
+      username
+    )}&${baseParams}`;
+    const { data } = await axios.get(url, AXIOS_OPTS);
 
-    if (Array.isArray(list) && list.length === 0) {
-      console.log(
-        '[fetchCode360Problems] empty list for',
-        username,
-        'url:',
-        url
-      );
-    }
+    const arr = data?.data?.problem_submissions || [];
+    arr.forEach((p) => {
+      problems.push({
+        id: String(p.offering_id),
+        title: p.problem_name,
+        url: p.link || '#',
+        solvedAt: p.solved_at ? new Date(p.solved_at) : undefined,
+        difficulty: 'Unknown',
+        tags: [],
+      });
+    });
 
-    if (!Array.isArray(list) || list.length === 0) {
-      const found = findProblemArray(data);
-      if (Array.isArray(found) && found.length > 0) {
-        list = found;
-      }
-    }
-    if (!Array.isArray(list) || list.length === 0) {
-      url = `${BASE_URL}/profile/solved_problems?uuid=${encodeURIComponent(
-        username
-      )}&${baseParams}`;
-      console.log('[fetchCode360Problems] retry url:', url);
-      data = await getWithRetry(url);
-      list = data?.data?.problems || data?.problems;
-      if (Array.isArray(list) && list.length === 0) {
-        console.log(
-          '[fetchCode360Problems] empty list for',
-          username,
-          'url:',
-          url
-        );
-      }
-      if (!Array.isArray(list) || list.length === 0) {
-        const found = findProblemArray(data);
-        if (Array.isArray(found) && found.length > 0) {
-          list = found;
-        }
-      }
-    }
-    if (!Array.isArray(list) || list.length === 0) {
-      console.log(
-        '[fetchCode360Problems] API returned no problem data:',
-        JSON.stringify(data).slice(0, 500)
-      );
-      try {
-        const scraped = await scrapeCode360SolvedProblems(username);
+    totalPages = data?.data?.total_pages || 1;
+    page += 1;
+  } while (page <= totalPages);
 
-        if (Array.isArray(scraped) && scraped.length > 0) {
-          return scraped;
-        }
-      } catch (e) {
-        console.warn('⚠️ scrapeCode360SolvedProblems failed:', e.message);
-      }
-    }
-
-    return Array.isArray(list) ? list.map(mapProblem) : [];
-  } catch (err) {
-    console.warn('⚠️ fetchCode360Problems API failed:', err.message);
-    try {
-      const scraped = await scrapeCode360SolvedProblems(username);
-      if (Array.isArray(scraped)) return scraped;
-    } catch (e) {
-      console.warn('⚠️ scrapeCode360SolvedProblems failed:', e.message);
-    }
-    throw err;
-  }
+  return problems;
 }
 
 // ✅ Corrected fetchCode360ContributionStats function

@@ -60,7 +60,6 @@ describe('fetchCode360SolvedCount', () => {
   });
 
   it('returns 0 on error', async () => {
-
     axios.get.mockRejectedValue(new Error('nope'));
     const count = await fetchCode360SolvedCount('err');
     expect(count).toBe(0);
@@ -95,154 +94,52 @@ describe('fetchCode360SubmissionCount', () => {
 });
 
 describe('fetchCode360Problems', () => {
-  it('maps problem data', async () => {
+  it('fetches paginated submissions', async () => {
     axios.get
-      .mockResolvedValueOnce({ data: { data: { user_id: 'uu' } } })
       .mockResolvedValueOnce({
         data: {
           data: {
-            problems: [
+            problem_submissions: [
               {
-                id: 1,
-                title: 'Prob',
-                difficulty: 'Easy',
-                tags: ['dp'],
+                offering_id: 1,
+                problem_name: 'A',
                 solved_at: '2024-01-01T00:00:00Z',
+                link: 'l1',
               },
             ],
+            total_pages: 2,
           },
         },
-      });
-    const list = await fetchCode360Problems('user');
-    expect(list.length).toBe(1);
-    expect(list[0].title).toBe('Prob');
-    expect(list[0].solvedAt instanceof Date).toBe(true);
-  });
-
-  it('handles problemName field', async () => {
-    axios.get
-      .mockResolvedValueOnce({ data: { data: { user_id: 'pname' } } })
+      })
       .mockResolvedValueOnce({
         data: {
           data: {
-            problems: [
+            problem_submissions: [
               {
-                problemName: 'ByName',
-                difficulty: 'Hard',
+                offering_id: 2,
+                problem_name: 'B',
+                link: 'l2',
               },
             ],
+            total_pages: 2,
           },
         },
       });
 
-    const list = await fetchCode360Problems('pname');
-    expect(list).toHaveLength(1);
-    expect(list[0].title).toBe('ByName');
-    expect(list[0].id).toBe('ByName');
-  });
-
-   it('maps problemId level and topics fields', async () => {
-    axios.get
-      .mockResolvedValueOnce({ data: { data: { user_id: 'pid' } } })
-      .mockResolvedValueOnce({
-        data: {
-          data: {
-            problems: [
-              {
-                problemId: 9,
-                level: 'Medium',
-                topics: ['graph'],
-                solved_at: '2024-01-02T00:00:00Z',
-              },
-            ],
-          },
-        },
-      });
-
-    const list = await fetchCode360Problems('pid');
-    expect(list).toHaveLength(1);
-    expect(list[0].id).toBe('9');
-    expect(list[0].difficulty).toBe('Medium');
-    expect(list[0].tags).toEqual(['graph']);
-    expect(list[0].title).toBe('');
-  });
-
-  it('detects nested arrays with slug field', async () => {
-    axios.get
-      .mockResolvedValueOnce({ data: { data: { user_id: 'sid' } } })
-      .mockResolvedValueOnce({
-        data: {
-          data: {
-            wrapper: {
-              arr: [
-                {
-                  slug: 'slug-problem',
-                  level: 'Hard',
-                },
-              ],
-            },
-          },
-        },
-      });
-
-    const list = await fetchCode360Problems('sid');
-    expect(list).toHaveLength(1);
-    expect(list[0].id).toBe('slug-problem');
-    expect(list[0].title).toBe('slug-problem');
-    expect(list[0].difficulty).toBe('Hard');
-  });
-  it('reads nested problems from API response', async () => {
-    axios.get
-      .mockResolvedValueOnce({ data: { data: { user_id: 'nid' } } })
-      
-      .mockResolvedValueOnce({
-        data: {
-          data: {
-            outer: {
-              inner: {
-                list: [
-                  {
-                    id: 2,
-                    title: 'Nested',
-                  },
-                ],
-              },
-            },
-          },
-        },
-      });
-
-    const list = await fetchCode360Problems('nested');
-    expect(list).toHaveLength(1);
-    expect(list[0].title).toBe('Nested');
-    expect(axios.get).toHaveBeenCalledTimes(2);
-  });
-
-   it('scrapes profile page when API fails', async () => {
-    const html = `
-      <script id="__NEXT_DATA__" type="application/json">{"problems":[{"id":5,"title":"Scraped"}]}</script>
-    `;
-    axios.get
-      .mockRejectedValueOnce(new Error('fail1'))
-      .mockRejectedValueOnce(new Error('fail2'))
-      .mockRejectedValueOnce(new Error('fail3'))
-      .mockResolvedValueOnce({ data: html });
-    const list = await fetchCode360Problems('scraper');
-    expect(list).toHaveLength(1);
-    expect(list[0].title).toBe('Scraped');
-  });
-
-   it('scrapes profile page when API returns empty list', async () => {
-    const html = `
-      <script id="__NEXT_DATA__" type="application/json">{"problems":[{"id":7,"title":"Fallback"}]}</script>
-    `;
-    axios.get
-      .mockResolvedValueOnce({ data: { data: { user_id: 'uid' } } })
-      .mockResolvedValueOnce({ data: { data: { problems: [] } } })
-      .mockResolvedValueOnce({ data: html });
-    const list = await fetchCode360Problems('empty');
-    expect(list).toHaveLength(1);
-    expect(list[0].title).toBe('Fallback');
+    const list = await fetchCode360Problems('name');
+    expect(list).toHaveLength(2);
+    expect(list[0].title).toBe('A');
+    expect(list[1].id).toBe('2');
+    expect(axios.get).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('/view_solved_problems?page=1'),
+      expect.anything()
+    );
+    expect(axios.get).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('/view_solved_problems?page=2'),
+      expect.anything()
+    );
   });
 
   it('throws when lookup fails', async () => {
