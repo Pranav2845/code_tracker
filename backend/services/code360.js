@@ -36,9 +36,10 @@ async function getWithRetry(url, options = {}, retries = MAX_RETRIES) {
 
 // Robust user id fetcher with improved fallbacks
 async function fetchUserId(username) {
+  const differentiator = Date.now();
   const url = `${BASE_URL}/profile/user_details?uuid=${encodeURIComponent(
     username
-  )}&request_differentiator=1751613875507&app_context=publicsection&naukri_request=true`;
+   )}&request_differentiator=${differentiator}&app_context=publicsection&naukri_request=true`;
 
   const data = await getWithRetry(url);
 
@@ -171,8 +172,9 @@ async function scrapeCode360SolvedProblems(username) {
 export async function fetchCode360Problems(username) {
   try {
     const problems = [];
+    const differentiator = Date.now();
     const baseParams =
-      'request_differentiator=1751613875507&app_context=publicsection&naukri_request=true';
+      `request_differentiator=${differentiator}&app_context=publicsection&naukri_request=true`;
     const baseUrl = `${BASE_URL}/profile/view_solved_problems`;
 
     let page = 1;
