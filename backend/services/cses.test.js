@@ -58,6 +58,15 @@ describe('fetchCSESProblems', () => {
     expect(axios.get).toHaveBeenNthCalledWith(1, 'https://cses.fi/problemset/');
     expect(axios.get).toHaveBeenNthCalledWith(2, 'https://cses.fi/problemset/user/55');
   });
+  
+  it('returns empty array on network error', async () => {
+    axios.get.mockRejectedValueOnce(new Error('fail'));
+    axios.get.mockResolvedValueOnce({ data: '<table></table>' });
+    const list = await fetchCSESProblems('99');
+    expect(Array.isArray(list)).toBe(true);
+    expect(list.length).toBe(0);
+  });
+  
 });
 
 describe('fetchCSESSolvedCount', () => {
@@ -67,6 +76,16 @@ describe('fetchCSESSolvedCount', () => {
     const count = await fetchCSESSolvedCount('42');
     expect(count).toBe(2);
     expect(axios.get).toHaveBeenCalledWith('https://cses.fi/problemset/user/42');
+  });
+  
+  it('handles JSON script data when text is missing', async () => {
+    const gridHtml =
+      '<script type="application/json">{"solved_tasks":5,"total_tasks":400}</script>' +
+      '<table></table>';
+    axios.get.mockResolvedValueOnce({ data: gridHtml });
+    const count = await fetchCSESSolvedCount('77');
+    expect(count).toBe(5);
+    expect(axios.get).toHaveBeenCalledWith('https://cses.fi/problemset/user/77');
   });
 });
 

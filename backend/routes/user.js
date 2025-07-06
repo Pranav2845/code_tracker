@@ -5,6 +5,7 @@ import {
   updateUserProfile,
   updatePlatforms,
   getUserStats,
+  getCSESSolvedProblems,
   getDashboardAnalytics,
   getContributionStats,
   getCSESSubmissionCount,
@@ -29,4 +30,5 @@ router.post  ('/change-password', changePassword);
 router.get   ('/code360/problems/:username', getCode360SolvedProblems);
 router.get   ('/code360/count/:username', getCode360TotalCount);
 router.get   ('/codechef/count/:username', getCodeChefTotalCount);
+router.get('/cses/problems/:handle', getCSESSolvedProblems);
 export default router;

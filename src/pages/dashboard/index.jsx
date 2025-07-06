@@ -1,5 +1,3 @@
-// src/pages/dashboard/index.jsx
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -13,6 +11,8 @@ import SkeletonCard from "./components/SkeletonCard";
 import EventTracker from "./components/EventTracker";
 import SolvedQuestions from "./components/SolvedQuestions";
 import { fetchCode360SolvedProblems } from "../../api/code360";
+import { fetchCSESSolvedProblems } from "../../api/cses"; // <--- add this line
+
 const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -35,8 +35,9 @@ const Dashboard = () => {
       const contestsRes = await axios.get("/contests");
 
       const { totalSolved, byPlatform } = statsRes.data;
-            let allProblems = problemsRes.data;
+      let allProblems = problemsRes.data;
 
+      // --- Fetch Code360 problems ---
       if (connections.code360?.handle) {
         try {
           const cnProblems = await fetchCode360SolvedProblems(connections.code360.handle);
@@ -53,6 +54,25 @@ const Dashboard = () => {
           console.error('Error fetching Code360 problems:', err);
         }
       }
+
+      // --- Fetch CSES problems ---
+      if (connections.cses?.handle) {
+        try {
+          const csesProblems = await fetchCSESSolvedProblems(connections.cses.handle);
+          if (Array.isArray(csesProblems)) {
+            const mapped = csesProblems.map(p => ({
+              _id: p.id,
+              platform: 'cses',
+              title: p.title,
+              url: p.url || '#',
+            }));
+            allProblems = allProblems.filter(pr => pr.platform !== 'cses').concat(mapped);
+          }
+        } catch (err) {
+          console.error('Error fetching CSES problems:', err);
+        }
+      }
+
       const { platformActivity: rawActivity, topicStrength: rawStrength } = analyticsRes.data;
 
       const upcomingContests = Array.isArray(contestsRes.data)
@@ -150,9 +170,11 @@ const Dashboard = () => {
             <span className="text-sm text-text-secondary">
               Last updated: {formatTime(lastUpdated)}
             </span>
+            {/* Data refreshes every 5 minutes */}
             <button
               onClick={handleRefresh}
               disabled={isLoading}
+              title="Data updates every 5 minutes"
               className="p-2 rounded hover:bg-background disabled:opacity-50"
             >
               <Icon

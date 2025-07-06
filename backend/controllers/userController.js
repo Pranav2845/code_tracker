@@ -5,13 +5,17 @@ import Problem from '../models/Problem.js';
 import PlatformAccount from '../models/PlatformAccount.js';
 import bcrypt from 'bcryptjs';
 import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
-import { fetchCSESSolvedCount, fetchCSESSubmissionCount } from '../services/cses.js';
+import {
+  fetchCSESSolvedCount,
+  fetchCSESSubmissionCount,
+  fetchCSESProblems
+} from '../services/cses.js';
 import { fetchGFGSolvedCount } from '../services/gfg.js';
 import {
   fetchCode360SolvedCount,
   fetchCode360ContributionStats,
   fetchCode360ProfileTotalCount,
-   fetchCode360Problems,
+  fetchCode360Problems,
 } from '../services/code360.js';
 import { fetchHackerRankSolvedCount } from '../services/hackerrank.js';
 import { fetchCodeChefSolvedCount } from '../services/codechef.js';
@@ -397,6 +401,28 @@ export const getCSESSubmissionCount = async (req, res) => {
   } catch (err) {
     console.error('❌ getCSESSubmissionCount error:', err);
     res.status(500).json({ message: 'Failed to fetch CSES submission count' });
+  }
+};
+
+/**
+ * GET /api/user/cses/problems/:handle
+ * Fetches solved problems for the given CSES profile.
+ */
+export const getCSESSolvedProblems = async (req, res) => {
+  try {
+    const { handle } = req.params;
+    const problems = await fetchCSESProblems(handle);
+    const list = Array.isArray(problems)
+      ? problems.map((p) => ({
+          id: p.id,
+          title: p.title,
+          url: p.url,
+        }))
+      : [];
+    res.json({ problems: list });
+  } catch (err) {
+    console.error('❌ getCSESSolvedProblems error:', err);
+    res.status(500).json({ message: 'Failed to fetch CSES problems' });
   }
 };
 
