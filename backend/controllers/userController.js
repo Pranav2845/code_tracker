@@ -486,6 +486,8 @@ export const getCodeChefSolvedProblems = async (req, res) => {
   try {
     const { username } = req.params;
     const problems = await fetchCodeChefProblems(username);
+    // Add this line to debug:
+    console.log('CodeChef problems for', username, problems);
     const list = Array.isArray(problems)
       ? problems.map((p) => ({ id: p.id, title: p.title, url: p.url }))
       : [];
@@ -495,6 +497,7 @@ export const getCodeChefSolvedProblems = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch CodeChef problems' });
   }
 };
+
 
 /**
  * GET /api/contests

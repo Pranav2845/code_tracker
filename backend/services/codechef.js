@@ -1,15 +1,15 @@
-// backend/services/codechef.js
-
+// File: backend/services/codechef.js
 import axios from 'axios';
 import { load } from 'cheerio';
+
+// Use the recent activity API URL
+const RECENT_URL = (username) =>
+  `https://www.codechef.com/recent/user?page=1&user_handle=${encodeURIComponent(username)}`;
 
 const PROFILE_URL = (username) =>
   `https://www.codechef.com/users/${encodeURIComponent(username)}`;
 
-/**
- * Scrape the CodeChef profile page to get the total problems solved.
- * Throws if the profile page looks like “not found”.
- */
+// Exported: Fetch CodeChef solved count (from profile page)
 export async function fetchCodeChefSolvedCount(username) {
   let html;
   try {
@@ -19,44 +19,69 @@ export async function fetchCodeChefSolvedCount(username) {
     throw new Error('User not found');
   }
 
-  // This check is still safe as a quick "profile exists" gate:
+  // Gate: check if user exists (simple marker check)
   if (!/user-details/i.test(html)) {
     throw new Error('User not found');
   }
 
-  // Extract “Total Problems Solved: N” if available (optional fallback)
+  // Match "Total Problems Solved: N"
   const m = html.match(/Total Problems Solved:\s*(\d+)/i);
   return m ? parseInt(m[1], 10) : 0;
 }
 
-/**
- * Fetches a user's recent solved problems from their CodeChef profile Recent Activity section.
- * Returns: [{ id, title, url }]
- */
+// Exported: Fetch CodeChef recent accepted problems
 export async function fetchCodeChefProblems(username) {
-  let html;
+  let data;
   try {
-    const resp = await axios.get(PROFILE_URL(username));
-    html = resp.data;
+    const resp = await axios.get(RECENT_URL(username));
+    data = resp.data;
   } catch {
     throw new Error('User not found');
   }
 
-  const $ = load(html);
-  const problems = [];
-
-  // Find the "Recent Activity" table and extract problem titles and URLs
-  $('section:contains("Recent Activity") table tbody tr').each((_, el) => {
-    const problemLink = $(el).find('td:nth-child(2) a');
-    const title = problemLink.text().trim();
-    const href = problemLink.attr('href');
-    if (title && href) {
-      problems.push({
-        id: title, // Use title as id for recent, since it's unique enough
-        title,
-        url: href.startsWith('http') ? href : `https://www.codechef.com${href}`
-      });
+  // Extract and parse the "content" property (which is an HTML string)
+  let content;
+  try {
+    if (typeof data === 'string') {
+      // If the response is JSON as a string, parse it
+      data = JSON.parse(data);
     }
+    content = data?.content || '';
+  } catch (e) {
+    content = '';
+  }
+
+  // Unescape & clean up HTML
+  content = content
+    .replace(/\\n/g, '\n')
+    .replace(/\\"/g, '"')
+    .replace(/\\\//g, '/')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+
+  const $ = load(content);
+
+  const problems = [];
+  $('tr').each((_, el) => {
+    // Problem link is always in the 2nd <td>
+    const link = $(el).find('td').eq(1).find('a[href*="/problems/"]');
+    if (!link.length) return;
+
+    const href = link.attr('href');
+    const title = link.text().trim();
+
+    // Result: check if accepted (in the 3rd <td>)
+    const resultTd = $(el).find('td').eq(2);
+    const accepted = resultTd.text().includes('(100)');
+    if (!accepted) return; // Only count AC
+
+    problems.push({
+      id: title,
+      title,
+      url: href.startsWith('http') ? href : `https://www.codechef.com${href}`,
+      // Optionally, add time: $(el).find('td').eq(0).text().trim()
+    });
   });
 
   return problems;

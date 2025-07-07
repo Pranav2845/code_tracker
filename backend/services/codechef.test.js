@@ -1,4 +1,4 @@
-// File: backend/services/codechef.js
+// backend/services/codechef.test.js
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
 import { fetchCodeChefSolvedCount, fetchCodeChefProblems } from './codechef.js';
@@ -32,19 +32,19 @@ describe('fetchCodeChefSolvedCount', () => {
 });
 
 describe('fetchCodeChefProblems', () => {
-  it('scrapes solved problems', async () => {
-    const html = `
-      <section class="rating-data-section problems-solved">
-        <a href="/problems/ABC">Alpha</a>
-        <a href="/problems/XYZ">Xyz</a>
-      </section>`;
-    axios.get.mockResolvedValueOnce({ data: html });
+  it('scrapes recent problems from recent activity JSON', async () => {
+    // Only mock the new recent-activity JSON structure, not the old profile HTML!
+    const snippet =
+      '<tr><td><span data-epoch="1700000000"></span></td><td><a href="/problems/ABC">Alpha</a></td></tr>';
+    axios.get.mockResolvedValueOnce({ data: { content: snippet } });
+
     const list = await fetchCodeChefProblems('alice');
-    expect(list).toHaveLength(2);
+    expect(list).toHaveLength(1);
     expect(list[0].id).toBe('ABC');
     expect(list[0].title).toBe('Alpha');
     expect(list[0].url).toMatch(/ABC/);
     expect(list[0].solvedAt instanceof Date).toBe(true);
+    expect(list[0].solvedAt.getTime()).toBe(1700000000 * 1000);
   });
 
   it('throws on network error', async () => {
