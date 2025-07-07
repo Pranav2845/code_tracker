@@ -13,6 +13,7 @@ import EventTracker from "./components/EventTracker";
 import SolvedQuestions from "./components/SolvedQuestions";
 import { fetchCode360SolvedProblems } from "../../api/code360";
 import { fetchCSESSolvedProblems } from "../../api/cses"; // <--- add this line
+import { fetchCodeChefSolvedProblems } from "../../api/codechef";
 
 const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +72,24 @@ const Dashboard = () => {
           }
         } catch (err) {
           console.error('Error fetching CSES problems:', err);
+        }
+      }
+
+      // --- Fetch CodeChef problems ---
+      if (connections.codechef?.handle) {
+        try {
+          const ccProblems = await fetchCodeChefSolvedProblems(connections.codechef.handle);
+          if (Array.isArray(ccProblems)) {
+            const mapped = ccProblems.map(p => ({
+              _id: p.id,
+              platform: 'codechef',
+              title: p.title,
+              url: p.url || '#',
+            }));
+            allProblems = allProblems.filter(pr => pr.platform !== 'codechef').concat(mapped);
+          }
+        } catch (err) {
+          console.error('Error fetching CodeChef problems:', err);
         }
       }
 

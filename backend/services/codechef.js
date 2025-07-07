@@ -29,6 +29,8 @@ export async function fetchCodeChefSolvedCount(username) {
   return m ? parseInt(m[1], 10) : 0;
 }
 
+
+
 // Exported: Fetch CodeChef recent accepted problems
 export async function fetchCodeChefProblems(username) {
   let data;
@@ -43,7 +45,6 @@ export async function fetchCodeChefProblems(username) {
   let content;
   try {
     if (typeof data === 'string') {
-      // If the response is JSON as a string, parse it
       data = JSON.parse(data);
     }
     content = data?.content || '';
@@ -51,7 +52,6 @@ export async function fetchCodeChefProblems(username) {
     content = '';
   }
 
-  // Unescape & clean up HTML
   content = content
     .replace(/\\n/g, '\n')
     .replace(/\\"/g, '"')
@@ -62,27 +62,31 @@ export async function fetchCodeChefProblems(username) {
 
   const $ = load(content);
 
+  // Use a Set to keep unique titles
+  const seen = new Set();
   const problems = [];
+
   $('tr').each((_, el) => {
-    // Problem link is always in the 2nd <td>
     const link = $(el).find('td').eq(1).find('a[href*="/problems/"]');
     if (!link.length) return;
 
     const href = link.attr('href');
     const title = link.text().trim();
 
-    // Result: check if accepted (in the 3rd <td>)
     const resultTd = $(el).find('td').eq(2);
     const accepted = resultTd.text().includes('(100)');
-    if (!accepted) return; // Only count AC
+    if (!accepted) return;
+
+    if (seen.has(title)) return; // skip duplicates
+    seen.add(title);
 
     problems.push({
       id: title,
       title,
       url: href.startsWith('http') ? href : `https://www.codechef.com${href}`,
-      // Optionally, add time: $(el).find('td').eq(0).text().trim()
     });
   });
 
   return problems;
 }
+
