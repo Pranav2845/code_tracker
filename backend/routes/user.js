@@ -1,4 +1,4 @@
-// backend/routes/userRoutes.js
+// backend/routes/user.js
 import express from 'express';
 import {
   getUserProfile,
@@ -11,8 +11,7 @@ import {
   getCSESSubmissionCount,
   getCode360TotalCount,
   getCode360SolvedProblems,
-  getCodeChefTotalCount,
-  getCodeChefSolvedProblems,
+
   changePassword
 } from '../controllers/userController.js';
 
@@ -29,8 +28,6 @@ router.get   ('/cses/submissions', getCSESSubmissionCount);
 router.post  ('/change-password', changePassword);
 router.get   ('/code360/problems/:username', getCode360SolvedProblems);
 router.get   ('/code360/count/:username', getCode360TotalCount);
-router.get   ('/codechef/count/:username', getCodeChefTotalCount);
-router.get   ('/codechef/problems/:username', getCodeChefSolvedProblems);
 router.get   ('/cses/problems/:handle', getCSESSolvedProblems);
 
 export default router;
