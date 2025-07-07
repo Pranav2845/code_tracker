@@ -1,3 +1,4 @@
+// File: scripts/csesSolved.js
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
@@ -5,11 +6,11 @@ const BASE = 'https://cses.fi';
 
 async function fetchSolvedProblems(userId) {
   const url = `${BASE}/problemset/user/${userId}`;
-  const { data: html } = await axios.get(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.0.0 Safari/537.36'
-    }
-  });
+  const { data: html } = await axios.get(url);
+
+  // Log the full HTML so you can inspect what it actually looks like!
+  console.log(html); 
+  
   const $ = cheerio.load(html);
 
   const solved = [];
