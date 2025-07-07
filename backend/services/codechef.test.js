@@ -52,6 +52,18 @@ describe('fetchCodeChefProblems', () => {
     expect(list[0].solvedAt.getTime()).toBe(1700000000 * 1000);
   });
 
+  it('falls back to <title> when h3.notranslate missing', async () => {
+    const snippet =
+      '<tr><td><span data-epoch="1700000100"></span></td><td><a href="/problems/DEF">DEF</a></td></tr>';
+    const pageHtml = '<title>Problem - Add Two Numbers | CodeChef</title>';
+    axios.get.mockResolvedValueOnce({ data: { content: snippet } });
+    axios.get.mockResolvedValueOnce({ data: pageHtml });
+
+    const list = await fetchCodeChefProblems('alice');
+    expect(list).toHaveLength(1);
+    expect(list[0].title).toBe('Add Two Numbers');
+  });
+
   it('throws on network error', async () => {
     axios.get.mockRejectedValueOnce(new Error('fail'));
     await expect(fetchCodeChefProblems('err')).rejects.toThrow('User not found');

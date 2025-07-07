@@ -20,7 +20,17 @@ async function fetchProblemTitle(url) {
     const { data: html } = await axios.get(url, AXIOS_OPTS);
     const $ = load(html);
     // Title is in <h3 class="notranslate"> under .problem-statement
-    const title = $('.problem-statement h3.notranslate').first().text().trim();
+    let title = $('.problem-statement h3.notranslate').first().text().trim();
+
+    if (!title) {
+      // Fallback to the <title> element if h3 is missing
+      title = $('title').first().text().trim();
+      title = title
+        .replace(/\s*\|\s*CodeChef.*$/i, '')
+        .replace(/^Problem\s*-\s*/i, '')
+        .trim();
+    }
+
     return title || null;
   } catch (e) {
     // If failed to fetch, just fallback to null
