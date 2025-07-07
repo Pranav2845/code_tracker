@@ -7,9 +7,9 @@ import bcrypt from 'bcryptjs';
 import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
 import {
   fetchCSESSolvedCount,
-  fetchCSESSubmissionCount,
   fetchCSESProblems
 } from '../services/cses.js';
+
 import { fetchGFGSolvedCount } from '../services/gfg.js';
 import {
   fetchCode360SolvedCount,

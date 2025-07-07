@@ -1,4 +1,3 @@
-// backend/server.js
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -10,6 +9,7 @@ import platformRoutes from './routes/platform.js';
 import problemRoutes  from './routes/problem.js';
 import contestRoutes  from './routes/contests.js';
 
+import publicRoutes   from './routes/public.js'; // <-- add this
 import authMiddleware from './middleware/auth.js';
 import { notFound, errorHandler } from './utils/errorHandler.js';
 
@@ -29,6 +29,9 @@ app.use('/api/auth', authRoutes);
 app.get('/api', (req, res) => {
   res.json({ message: 'API is running' });
 });
+
+// 3.5️⃣ Public endpoints (must be BEFORE authMiddleware)
+app.use('/api', publicRoutes);
 
 // 4️⃣ Protect everything below this line
 app.use('/api', authMiddleware);

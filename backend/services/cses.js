@@ -1,10 +1,11 @@
+// File: backend/services/cses.js
 import axios from 'axios';
 import { load } from 'cheerio';
 
 const BASE = 'https://cses.fi';
 
 /**
- * Return CSES problem list as an array (order matters!).
+ * Get the master problem list (id, title, url) for mapping.
  */
 async function fetchCSESProblemList() {
   const { data: html } = await axios.get(`${BASE}/problemset/`);
@@ -25,21 +26,30 @@ async function fetchCSESProblemList() {
 }
 
 /**
- * Parse user's solved grid and return array of solved cell indices.
+ * Parse user's solved grid and return array of solved problem IDs.
+ * (Does NOT rely on cell index; finds the href/task ID.)
  */
-async function fetchSolvedGridIndices(userId) {
+async function fetchSolvedProblemIds(userId) {
   const { data: html } = await axios.get(`${BASE}/problemset/user/${userId}`);
   const $ = load(html);
-  const indices = [];
+  const solvedIds = [];
   $('table td').each((i, el) => {
     const cell = $(el);
     const isSolved =
       cell.find('img[alt*="check" i],img[alt*="solved" i]').length ||
       cell.text().trim() === '✓' ||
-      cell.hasClass('full');
-    if (isSolved) indices.push(i);
+      cell.find('a.full').length;
+    if (isSolved) {
+      // Try to extract the problem link/task ID from the cell
+      const link = cell.find('a[href^="/problemset/task/"]');
+      if (link.length) {
+        const href = link.attr('href');
+        const id = href?.split('/').filter(Boolean).pop();
+        if (id) solvedIds.push(id);
+      }
+    }
   });
-  return indices;
+  return solvedIds;
 }
 
 /**
@@ -65,25 +75,27 @@ export async function findCSESUserId(username, maxPages = 10) {
 
 /**
  * Return solved problems (id, title, url) for username or userId.
+ * This is the function your API should call!
  */
 export async function fetchCSESProblems(usernameOrId) {
   const userId = /^\d+$/.test(usernameOrId)
     ? Number(usernameOrId)
     : await findCSESUserId(usernameOrId);
 
-  let problemList, solvedIndices;
+  let problemList, solvedIds;
   try {
-    [problemList, solvedIndices] = await Promise.all([
+    [problemList, solvedIds] = await Promise.all([
       fetchCSESProblemList(),
-      fetchSolvedGridIndices(userId),
+      fetchSolvedProblemIds(userId),
     ]);
   } catch (err) {
     console.error('⚠️ fetchCSESProblems failed:', err?.message || err);
     return [];
   }
 
-  // Map indices to problems
-  return solvedIndices.map(idx => problemList[idx]).filter(Boolean);
+  // Map by ID (not index)
+  const problemMap = Object.fromEntries(problemList.map(p => [p.id, p]));
+  return solvedIds.map(id => problemMap[id]).filter(Boolean);
 }
 
 /**
@@ -104,29 +116,8 @@ export async function fetchCSESSolvedCount(usernameOrId) {
     const isSolved =
       cell.find('img[alt*="check" i],img[alt*="solved" i]').length ||
       cell.text().trim() === '✓' ||
-      cell.hasClass('full');
+      cell.find('a.full').length;
     if (isSolved) solvedCount++;
   });
   return solvedCount;
-}
-
-/**
- * Read the "Submission count" value from user profile.
- */
-export async function fetchCSESSubmissionCount(usernameOrId) {
-  const userId = /^\d+$/.test(usernameOrId)
-    ? Number(usernameOrId)
-    : await findCSESUserId(usernameOrId);
-  try {
-    const { data: html } = await axios.get(`${BASE}/user/${userId}`);
-    const $ = load(html);
-    const label = $('td,th')
-      .filter((_, el) => $(el).text().trim() === 'Submission count:')
-      .first();
-    const text = label.next().text().trim();
-    const m = text.match(/\d+/);
-    return m ? Number(m[0]) : 0;
-  } catch (err) {
-    return 0;
-  }
 }

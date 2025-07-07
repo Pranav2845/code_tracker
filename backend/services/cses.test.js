@@ -5,7 +5,7 @@ import {
   findCSESUserId,
   fetchCSESProblems,
   fetchCSESSolvedCount,
-  fetchCSESSubmissionCount,
+  // fetchCSESSubmissionCount, // If you have this in your code
 } from './cses.js';
 
 vi.mock('axios');
@@ -37,15 +37,21 @@ describe('findCSESUserId', () => {
 });
 
 describe('fetchCSESProblems', () => {
-  it('maps solved grid indices to problem titles', async () => {
-    const listHtml = '<table>' +
-      '<tr><td><a href="/problemset/task/1">P1</a></td></tr>' +
-      '<tr><td><a href="/problemset/task/2">P2</a></td></tr>' +
-      '<tr><td><a href="/problemset/task/3">P3</a></td></tr>' +
+  it('returns solved problems by ID, not grid index', async () => {
+    const listHtml =
+      '<table>' +
+        '<tr><td><a href="/problemset/task/1">P1</a></td></tr>' +
+        '<tr><td><a href="/problemset/task/2">P2</a></td></tr>' +
+        '<tr><td><a href="/problemset/task/3">P3</a></td></tr>' +
       '</table>';
 
-    const gridHtml = '<div>Solved tasks: 2/3</div>' +
-      '<table><tr><td class="done"></td><td></td><td class="done"></td></tr></table>';
+    // User has solved P1 and P3 (with a.full in cell)
+    const gridHtml =
+      '<table><tr>' +
+        '<td><a href="/problemset/task/1" class="full">✓</a></td>' +
+        '<td>-</td>' +
+        '<td><a href="/problemset/task/3" class="full">✓</a></td>' +
+      '</tr></table>';
 
     axios.get
       .mockResolvedValueOnce({ data: listHtml })
@@ -58,7 +64,7 @@ describe('fetchCSESProblems', () => {
     expect(axios.get).toHaveBeenNthCalledWith(1, 'https://cses.fi/problemset/');
     expect(axios.get).toHaveBeenNthCalledWith(2, 'https://cses.fi/problemset/user/55');
   });
-  
+
   it('returns empty array on network error', async () => {
     axios.get.mockRejectedValueOnce(new Error('fail'));
     axios.get.mockResolvedValueOnce({ data: '<table></table>' });
@@ -66,7 +72,6 @@ describe('fetchCSESProblems', () => {
     expect(Array.isArray(list)).toBe(true);
     expect(list.length).toBe(0);
   });
-  
 });
 
 describe('fetchCSESSolvedCount', () => {
@@ -77,18 +82,32 @@ describe('fetchCSESSolvedCount', () => {
     expect(count).toBe(2);
     expect(axios.get).toHaveBeenCalledWith('https://cses.fi/problemset/user/42');
   });
-  
-  it('handles JSON script data when text is missing', async () => {
+
+  it('handles JSON script data as fallback', async () => {
     const gridHtml =
-      '<script type="application/json">{"solved_tasks":5,"total_tasks":400}</script>' +
+      '<script type="application/json">{ "solved_tasks":5, "total_tasks":400 }</script>' +
       '<table></table>';
     axios.get.mockResolvedValueOnce({ data: gridHtml });
     const count = await fetchCSESSolvedCount('77');
     expect(count).toBe(5);
     expect(axios.get).toHaveBeenCalledWith('https://cses.fi/problemset/user/77');
   });
+
+  it('returns fallback count by counting solved cells', async () => {
+    const gridHtml =
+      '<table><tr>' +
+        '<td><a href="/problemset/task/1" class="full">✓</a></td>' +
+        '<td>-</td>' +
+        '<td><a href="/problemset/task/2" class="full">✓</a></td>' +
+      '</tr></table>';
+    axios.get.mockResolvedValueOnce({ data: gridHtml });
+    const count = await fetchCSESSolvedCount('55');
+    expect(count).toBe(2);
+  });
 });
 
+/*
+// If you have a fetchCSESSubmissionCount function, you can add:
 describe('fetchCSESSubmissionCount', () => {
   it('parses submission count from profile page', async () => {
     const html = '<table><tr><td>Submission count:</td><td>123</td></tr></table>';
@@ -110,3 +129,5 @@ describe('fetchCSESSubmissionCount', () => {
     expect(count).toBe(0);
   });
 });
+*/
+
