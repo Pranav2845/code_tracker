@@ -32,18 +32,55 @@ vi.mock('../services/hackerrank.js', () => ({
   fetchHackerRankSolvedCount: vi.fn()
 }));
 vi.mock('../services/codechef.js', () => ({
-  fetchCodeChefSolvedCount: vi.fn()
+    fetchCodeChefSolvedCount: vi.fn(),
+  fetchCodeChefProblems: vi.fn()
 }));
 vi.mock('../services/contests.js', () => ({
   fetchUpcomingContests: vi.fn()
 }));
 
 const Problem = (await import('../models/Problem.js')).default;
-const { getUserStats } = await import('../controllers/userController.js');
+const { getUserStats, getCodeChefSolvedProblems } = await import('../controllers/userController.js');
 const { fetchCSESSolvedCount } = await import('../services/cses.js');
+const { fetchCodeChefProblems } = await import('../services/codechef.js');
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+describe('getCodeChefSolvedProblems', () => {
+  it('returns list of problems', async () => {
+    fetchCodeChefProblems.mockResolvedValue([
+      { id: 'A', title: 'Alpha', url: 'u' },
+      { id: 'B', title: 'Beta', url: 'v' }
+    ]);
+
+    const req = { params: { username: 'chef' } };
+    const res = { json: vi.fn(), status: vi.fn().mockReturnThis() };
+
+    await getCodeChefSolvedProblems(req, res);
+
+    expect(fetchCodeChefProblems).toHaveBeenCalledWith('chef');
+    expect(res.json).toHaveBeenCalledWith({
+      problems: [
+        { id: 'A', title: 'Alpha', url: 'u' },
+        { id: 'B', title: 'Beta', url: 'v' }
+      ]
+    });
+  });
+
+  it('handles fetch errors', async () => {
+    fetchCodeChefProblems.mockRejectedValue(new Error('fail'));
+    const req = { params: { username: 'bad' } };
+    const res = { json: vi.fn(), status: vi.fn().mockReturnThis() };
+
+    await getCodeChefSolvedProblems(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Failed to fetch CodeChef problems'
+    });
+  });
 });
 
 describe('getUserStats', () => {

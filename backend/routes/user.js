@@ -12,7 +12,7 @@ import {
   getCode360TotalCount,
    getCode360SolvedProblems,
   getCodeChefTotalCount,
-
+ getCodeChefSolvedProblems,
   changePassword
 } from '../controllers/userController.js';
 
@@ -30,5 +30,6 @@ router.post  ('/change-password', changePassword);
 router.get   ('/code360/problems/:username', getCode360SolvedProblems);
 router.get   ('/code360/count/:username', getCode360TotalCount);
 router.get   ('/codechef/count/:username', getCodeChefTotalCount);
+router.get   ('/codechef/problems/:username', getCodeChefSolvedProblems);
 router.get('/cses/problems/:handle', getCSESSolvedProblems);
 export default router;
