@@ -35,13 +35,18 @@ describe('fetchCodeChefProblems', () => {
   it('scrapes recent problems from recent activity JSON', async () => {
     // Only mock the new recent-activity JSON structure, not the old profile HTML!
     const snippet =
-      '<tr><td><span data-epoch="1700000000"></span></td><td><a href="/problems/ABC">Alpha</a></td></tr>';
+      '<tr><td><span data-epoch="1700000000"></span></td><td><a href="/problems/ABC">ABC</a></td></tr>';
+    const pageHtml =
+      '<div class="problem-statement"><h3 class="notranslate">Find maximum in an Array</h3></div>';
+
+    // First mock is for recent activity, second for the problem page
     axios.get.mockResolvedValueOnce({ data: { content: snippet } });
+    axios.get.mockResolvedValueOnce({ data: pageHtml });
 
     const list = await fetchCodeChefProblems('alice');
     expect(list).toHaveLength(1);
     expect(list[0].id).toBe('ABC');
-    expect(list[0].title).toBe('Alpha');
+    expect(list[0].title).toBe('Find maximum in an Array');
     expect(list[0].url).toMatch(/ABC/);
     expect(list[0].solvedAt instanceof Date).toBe(true);
     expect(list[0].solvedAt.getTime()).toBe(1700000000 * 1000);
