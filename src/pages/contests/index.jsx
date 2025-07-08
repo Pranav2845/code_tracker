@@ -17,7 +17,7 @@ const Contests = () => {
 
   useEffect(() => {
     axios
-      .get('/api/contests')
+      .get('/contests')
       .then((res) => {
         setContests(Array.isArray(res.data?.upcoming) ? res.data.upcoming : []);
       })
