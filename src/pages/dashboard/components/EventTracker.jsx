@@ -13,7 +13,7 @@ const EventTracker = ({ contests, title = 'Upcoming Contests', emptyText = 'No u
       <h2 className="font-semibold mb-2">{title}</h2>
       <ul className="divide-y divide-border">
         {contests.map((c) => (
-          <li key={`${c.site}-${c.name}`} className="py-2 flex justify-between items-center">
+          <li key={`${c.platform}-${c.name}`} className="py-2 flex justify-between items-center">
             <div>
               <p className="font-medium">{c.name}</p>
               <p className="text-xs text-text-secondary">
