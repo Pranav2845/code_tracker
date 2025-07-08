@@ -1,61 +1,90 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { fetchAllContests, fetchUpcomingContests } from './contests.js';
 
 vi.mock('axios');
+vi.mock('../models/Contest.js', () => ({
+  default: { updateOne: vi.fn(), find: vi.fn() }
+}));
+
+const Contest = (await import('../models/Contest.js')).default;
+const {
+  fetchCodeforcesContests,
+  fetchLeetCodeContests,
+  fetchAtCoderContests,
+  refreshAllContests,
+  fetchAllContests,
+  fetchUpcomingContests,
+} = await import('./contests.js');
 
 beforeEach(() => {
-  vi.resetAllMocks();
+  vi.clearAllMocks();
 });
 
+describe('fetchCodeforcesContests', () => {
+  it('maps API response', async () => {
+    axios.get.mockResolvedValueOnce({
+      data: { status: 'OK', result: [{ id: 1, name: 'CF', startTimeSeconds: 0, durationSeconds: 60 }] }
+    });
+    const list = await fetchCodeforcesContests();
+    expect(list.length).toBe(1);
+    expect(list[0]).toMatchObject({ platform: 'codeforces', name: 'CF' });
+  });
+});
+
+describe('fetchLeetCodeContests', () => {
+  it('parses contest list', async () => {
+    axios.get.mockResolvedValueOnce({ data: { contests: [{ title: 'Weekly', title_slug: 'w', start_time: 0, duration: 60 }] } });
+    const list = await fetchLeetCodeContests();
+    expect(list.length).toBe(1);
+    expect(list[0]).toMatchObject({ platform: 'leetcode', name: 'Weekly' });
+    expect(list[0].url).toContain('w');
+  });
+});
+
+describe('fetchAtCoderContests', () => {
+  it('scrapes tables', async () => {
+    const html = `<table id="contest-table-upcoming"><tbody><tr><td>2024-01-01 10:00</td><td><a href="/contests/abc">ABC</a></td><td>01:00</td></tr></tbody></table><table id="contest-table-recent"><tbody></tbody></table>`;
+    axios.get.mockResolvedValueOnce({ data: html });
+    const list = await fetchAtCoderContests();
+    expect(list.length).toBe(1);
+    expect(list[0]).toMatchObject({ platform: 'atcoder', name: 'ABC' });
+  });
+});
+
+describe('refreshAllContests', () => {
+  it('upserts contests from all sources', async () => {
+    const html = `<table id="contest-table-upcoming"><tbody></tbody></table><table id="contest-table-recent"><tbody></tbody></table>`;
+    axios.get
+      .mockResolvedValueOnce({ data: { status: 'OK', result: [{ id: 1, name: 'CF', startTimeSeconds: 0, durationSeconds: 60 }] } })
+      .mockResolvedValueOnce({ data: { contests: [] } })
+      .mockResolvedValueOnce({ data: html });
+
+    const list = await refreshAllContests();
+    expect(Array.isArray(list)).toBe(true);
+    expect(Contest.updateOne).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Optional: Test fetchAllContests and fetchUpcomingContests with mocked Contest.find
 describe('fetchAllContests', () => {
-  it('separates upcoming and past contests', async () => {
-    const future = new Date(Date.now() + 3600_000).toISOString();
-    const past = new Date(Date.now() - 3600_000).toISOString();
-    axios.get.mockResolvedValueOnce({ data: [
-      { name: 'Future', site: 'CF', url: 'u', start_time: future, end_time: future },
-      { name: 'Past', site: 'CF', url: 'p', start_time: past, end_time: past }
-    ] });
+  it('returns upcoming and past contests from DB', async () => {
+    const now = new Date();
+    Contest.find
+      .mockResolvedValueOnce([{ name: 'future', endTime: new Date(now.getTime() + 10000) }])
+      .mockResolvedValueOnce([{ name: 'past', endTime: new Date(now.getTime() - 10000) }]);
     const res = await fetchAllContests();
     expect(Array.isArray(res.upcoming)).toBe(true);
     expect(Array.isArray(res.past)).toBe(true);
-    expect(res.upcoming[0].name).toBe('Future');
-    expect(res.past[0].name).toBe('Past');
+    expect(res.upcoming[0].name).toBe('future');
+    expect(res.past[0].name).toBe('past');
   });
 });
 
 describe('fetchUpcomingContests', () => {
-  it('filters and maps upcoming contests', async () => {
-    const future = new Date(Date.now() + 3600_000).toISOString();
-    const past = new Date(Date.now() - 3600_000).toISOString();
-    axios.get.mockResolvedValueOnce({ data: [
-      { name: 'Future', site: 'CF', url: 'u', start_time: future, end_time: future },
-      { name: 'Past', site: 'CF', url: 'p', start_time: past, end_time: past }
-    ] });
+  it('returns only upcoming contests', async () => {
+    Contest.find.mockResolvedValueOnce([{ name: 'future', endTime: new Date(Date.now() + 10000) }]);
     const res = await fetchUpcomingContests();
-    expect(res.length).toBe(1);
-    expect(res[0].name).toBe('Future');
-    expect(res[0].site).toBe('CF');
-    expect(res[0].startTime instanceof Date).toBe(true);
-    expect(axios.get).toHaveBeenCalledWith('https://kontests.net/api/v1/all');
-  });
-
-  it('sorts contests by start time', async () => {
-    const soon = new Date(Date.now() + 3600_000).toISOString();
-    const later = new Date(Date.now() + 7200_000).toISOString();
-    axios.get.mockResolvedValueOnce({ data: [
-      { name: 'B', site: 'CF', url: '', start_time: later, end_time: later },
-      { name: 'A', site: 'CF', url: '', start_time: soon, end_time: soon }
-    ] });
-    const list = await fetchUpcomingContests();
-    expect(list[0].name).toBe('A');
-    expect(list[1].name).toBe('B');
-  });
-
-  it('returns empty array on error', async () => {
-    axios.get.mockRejectedValueOnce(new Error('fail'));
-    const list = await fetchUpcomingContests();
-    expect(Array.isArray(list)).toBe(true);
-    expect(list.length).toBe(0);
+    expect(Array.isArray(res)).toBe(true);
+    expect(res[0].name).toBe('future');
   });
 });

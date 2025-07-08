@@ -20,7 +20,8 @@ import {
 import { fetchHackerRankSolvedCount } from '../services/hackerrank.js';
 import { fetchCodeChefSolvedCount, fetchCodeChefProblems } from '../services/codechef.js';
 import { fetchCFSolvedCount } from '../services/codeforces.js';
-import { fetchAllContests } from '../services/contests.js';
+import Contest from '../models/Contest.js';
+import { refreshAllContests } from '../services/contests.js';
 
 /**
  * GET /api/user/profile
@@ -505,10 +506,23 @@ export const getCodeChefSolvedProblems = async (req, res) => {
  */
 export const getContests = async (req, res) => {
   try {
-    const contests = await fetchAllContests();
-    res.json(contests);
+        const now = new Date();
+    const upcoming = await Contest.find({ startTime: { $gte: now } })
+      .sort({ startTime: 1 });
+    const past = await Contest.find({ startTime: { $lt: now } })
+      .sort({ startTime: -1 });
+    res.json({ upcoming, past });
   } catch (err) {
      console.error('❌ getContests error:', err);
     res.status(500).json({ message: 'Failed to fetch contests' });
+  }
+};
+export const refreshContests = async (req, res) => {
+  try {
+    const list = await refreshAllContests();
+    res.json({ refreshed: list.length });
+  } catch (err) {
+    console.error('❌ refreshContests error:', err);
+    res.status(500).json({ message: 'Failed to refresh contests' });
   }
 };

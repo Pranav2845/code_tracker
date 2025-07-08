@@ -1,49 +1,109 @@
+// backend/services/contests.js
 import axios from 'axios';
+import * as cheerio from 'cheerio';
+import Contest from '../models/Contest.js'; // Make sure you have this model
 
-const SITES = new Set([
-  'LeetCode',
-  'CodeForces',
-  'HackerRank',
-  'GeeksforGeeks',
-  'Coding Ninjas',
-  'CSES',
-  'CodeChef'
-]);
+// Fetch Codeforces contests via API
+export async function fetchCodeforcesContests() {
+  const { data } = await axios.get('https://codeforces.com/api/contest.list');
+  if (data.status !== 'OK') throw new Error(data.comment || 'Codeforces API error');
+  return data.result.map(c => {
+    const start = new Date(c.startTimeSeconds * 1000);
+    const end = new Date((c.startTimeSeconds + c.durationSeconds) * 1000);
+    return {
+      platform: 'codeforces',
+      name: c.name,
+      url: `https://codeforces.com/contest/${c.id}`,
+      startTime: start,
+      endTime: end,
+      duration: c.durationSeconds,
+    };
+  });
+}
 
-// Fetch all programming contests from the public kontests.net API
-export async function fetchAllContests() {
-  try {
-    const { data } = await axios.get('https://kontests.net/api/v1/all');
-        if (!Array.isArray(data)) return { upcoming: [], past: [] };
+// Fetch LeetCode contests via API
+export async function fetchLeetCodeContests() {
+  const { data } = await axios.get('https://leetcode.com/contest/api/list/');
+  const list = Array.isArray(data.contests) ? data.contests : [];
+  return list.map(c => {
+    const start = new Date(c.start_time * 1000);
+    const end = new Date((c.start_time + c.duration) * 1000);
+    return {
+      platform: 'leetcode',
+      name: c.title,
+      url: `https://leetcode.com/contest/${c.title_slug}`,
+      startTime: start,
+      endTime: end,
+      duration: c.duration,
+    };
+  });
+}
 
-    const now = Date.now();
-      const contests = data
-      .filter(c => SITES.has(c.site))
-      .map(c => ({
-        name: c.name,
-        site: c.site,
-        url: c.url,
-        startTime: new Date(c.start_time),
-              endTime: new Date(c.end_time)
-      }));
+// Fetch AtCoder contests by scraping HTML
+export async function fetchAtCoderContests() {
+  const { data: html } = await axios.get('https://atcoder.jp/contests/?lang=en');
+  const $ = cheerio.load(html);
 
-    const upcoming = [];
-    const past = [];
-    contests.forEach(c => {
-      if (c.endTime.getTime() < now) past.push(c);
-      else upcoming.push(c);
+  function parseTable(sel) {
+    const results = [];
+    $(sel).find('tbody tr').each((_, el) => {
+      const cells = $(el).find('td');
+      const timeStr = cells.eq(0).text().trim();
+      const nameEl = cells.eq(1).find('a');
+      const durationStr = cells.eq(2).text().trim();
+      if (!nameEl.attr('href')) return;
+      const [h, m] = durationStr.split(':').map(Number);
+      const dur = (h || 0) * 3600 + (m || 0) * 60;
+      const start = new Date(`${timeStr}+09:00`);
+      const end = new Date(start.getTime() + dur * 1000);
+      results.push({
+        platform: 'atcoder',
+        name: nameEl.text().trim(),
+        url: `https://atcoder.jp${nameEl.attr('href')}`,
+        startTime: start,
+        endTime: end,
+        duration: dur,
+      });
     });
-
-    upcoming.sort((a, b) => a.startTime - b.startTime);
-    past.sort((a, b) => b.startTime - a.startTime);
-    return { upcoming, past };
-  } catch (err) {
-    console.error('❌ fetchAllContests error:', err.message);
-    return { upcoming: [], past: [] };
-  }
+    return results;
   }
 
-// Backwards compatibility for existing callers
+  return [
+    ...parseTable('#contest-table-upcoming'),
+    ...parseTable('#contest-table-recent')
+  ];
+}
+
+// Optionally, add other fetchers (CodeChef, GFG, etc.) here!
+
+// Refresh all contests and persist to MongoDB
+export async function refreshAllContests() {
+  const lists = await Promise.all([
+    fetchCodeforcesContests(),
+    fetchLeetCodeContests(),
+    fetchAtCoderContests(),
+  ]);
+  const contests = lists.flat();
+
+  for (const c of contests) {
+    await Contest.updateOne(
+      { platform: c.platform, name: c.name, startTime: c.startTime },
+      { $set: c },
+      { upsert: true }
+    );
+  }
+  return contests;
+}
+
+// Backwards compatible: fetch all from DB, split by time
+export async function fetchAllContests() {
+  const now = new Date();
+  const upcoming = await Contest.find({ endTime: { $gte: now } }).sort({ startTime: 1 });
+  const past = await Contest.find({ endTime: { $lt: now } }).sort({ startTime: -1 });
+  return { upcoming, past };
+}
+
+// For API endpoints expecting just upcoming contests
 export async function fetchUpcomingContests() {
   const { upcoming } = await fetchAllContests();
   return upcoming;
