@@ -1,91 +1,114 @@
 @import 'react-big-calendar/lib/css/react-big-calendar.css';
 
+:root {
+  --calendar-off-bg: #e7e9f0;
+  --calendar-off-text: #a0a1b2;
+}
+.dark {
+  --calendar-off-bg: #181d29;
+  --calendar-off-text: #8b8fa5;
+}
+
 /* Main calendar area */
 .rbc-calendar {
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
-  border-radius: 10px;
-  box-shadow: 0 1px 8px 0 rgba(0,0,0,0.07);
+  background-color: var(--color-surface, #181d29);
+  color: var(--color-text-primary, #f2f3f7);
+  border-radius: 18px;
+  box-shadow: 0 4px 32px 0 rgba(0,0,0,0.12);
+  border: none;
+  font-family: inherit;
 }
 
 /* Event pill style */
 .rbc-event {
-  background-color: var(--color-primary);
+  background-color: var(--color-primary, #6366f1);
   border: none;
   color: #fff;
-  padding: 2px 6px;
-  border-radius: 0.4rem;
-  font-size: 0.92em;
-  font-weight: 500;
-  transition: background 0.2s;
+  padding: 2px 10px;
+  border-radius: 0.6rem;
+  font-size: 0.99em;
+  font-weight: 600;
+  transition: background 0.18s;
 }
 
-/* Event: dark mode */
 .dark .rbc-event,
 .dark .calendar-dark .rbc-event {
-  background-color: var(--color-primary-dark);
+  background-color: var(--color-primary-dark, #5046e6);
   color: #fff;
 }
 
 /* Toolbar (top nav buttons) */
 .rbc-toolbar {
-  margin-bottom: 1.2rem;
-  font-size: 1.07em;
+  background: transparent;
+  border-radius: 12px;
+  margin-bottom: 1.8rem;
+  font-size: 1.13em;
+}
+.rbc-toolbar-label {
+  font-size: 1.25em;
+  font-weight: 600;
+  color: var(--color-primary, #6366f1);
+  letter-spacing: 0.04em;
 }
 
 .rbc-toolbar button {
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-  padding: 0.28rem 0.85rem;
-  border-radius: 0.35rem;
-  margin-right: 0.3em;
-  margin-bottom: 0.18em;
-  font-weight: 500;
-  transition: background 0.17s, color 0.17s;
+  background-color: var(--color-surface, #181d29);
+  color: var(--color-primary, #6366f1);
+  border: 1.5px solid var(--color-primary, #6366f1);
+  padding: 0.38rem 1.1rem;
+  border-radius: 0.42rem;
+  margin-right: 0.32em;
+  margin-bottom: 0.13em;
+  font-weight: 600;
+  font-size: 1em;
+  transition: background 0.16s, color 0.16s;
   outline: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15em;
 }
-
 .rbc-toolbar button.rbc-active,
 .rbc-toolbar button:hover,
 .rbc-toolbar button:focus {
-  background-color: var(--color-primary);
+  background-color: var(--color-primary, #6366f1);
   color: #fff;
 }
-
 .dark .calendar-dark .rbc-toolbar button {
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
-  border-color: var(--color-border);
+  background-color: var(--color-surface, #181d29);
+  color: var(--color-primary, #6366f1);
+  border-color: var(--color-primary, #6366f1);
 }
-
 .dark .calendar-dark .rbc-toolbar button.rbc-active,
 .dark .calendar-dark .rbc-toolbar button:hover,
 .dark .calendar-dark .rbc-toolbar button:focus {
-  background-color: var(--color-primary-dark);
+  background-color: var(--color-primary-dark, #5046e6);
   color: #fff;
 }
 
-/* "Today" cell highlight */
+/* Today highlight */
 .rbc-today {
-  background: rgba(99, 102, 241, 0.14) !important; /* subtle blue for light mode */
-  color: var(--color-text-primary) !important;
-  font-weight: bold;
+  background: rgba(99, 102, 241, 0.17) !important;
+  color: var(--color-primary, #6366f1) !important;
+  font-weight: 700;
   border-radius: 8px;
+  box-shadow: 0 0 0 2px #6366f1;
 }
-
 .dark .calendar-dark .rbc-today {
-  background: rgba(99, 102, 241, 0.38) !important; /* deeper blue for dark mode */
+  background: rgba(99, 102, 241, 0.26) !important;
   color: #fff !important;
-  font-weight: bold;
   border-radius: 8px;
   box-shadow: 0 0 0 2px #6366f1;
 }
 
-/* Remove white bg for out-of-month dates in dark mode */
-.dark .calendar-dark .rbc-off-range-bg {
-  background: #171c29;
-  color: #8b8fa5;
+/* Out of month days styling */
+.rbc-off-range-bg {
+  background: var(--calendar-off-bg) !important;
+  color: var(--calendar-off-text) !important;
+  opacity: 0.87;
+}
+.rbc-off-range {
+  color: var(--calendar-off-text) !important;
+  opacity: 0.7;
 }
 
 /* General improvements for calendar cells */
@@ -93,20 +116,20 @@
 .rbc-month-row,
 .rbc-row-bg,
 .rbc-header {
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
-/* Calendar cell hover (optional) */
-.rbc-day-bg:hover {
-  background: rgba(99, 102, 241, 0.08);
-  transition: background 0.2s;
-}
-
-/* Calendar headers */
 .rbc-header {
   background: transparent;
-  font-weight: 600;
-  font-size: 1.03em;
+  font-weight: 700;
+  font-size: 1.09em;
+  color: var(--color-primary, #6366f1);
+}
+
+/* Cell hover effect */
+.rbc-day-bg:hover {
+  background: rgba(99, 102, 241, 0.12);
+  transition: background 0.2s;
 }
 
 /* Make scrollbars match dark mode (optional, Chrome/Edge) */
