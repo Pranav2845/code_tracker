@@ -11,6 +11,7 @@ const {
   fetchCodeforcesContests,
   fetchLeetCodeContests,
   fetchAtCoderContests,
+  fetchCodeChefContests,
   refreshAllContests,
   fetchAllContests,
   fetchUpcomingContests,
@@ -51,13 +52,25 @@ describe('fetchAtCoderContests', () => {
   });
 });
 
+describe('fetchCodeChefContests', () => {
+  it('scrapes future and present tables', async () => {
+    const html = `<table id="future-contests-data"><tbody><tr><td>X</td><td><a href="/ABC">ABC Contest</a></td><td>2024-01-02 10:00</td><td>2024-01-02 12:00</td></tr></tbody></table><table id="present-contests-data"><tbody></tbody></table>`;
+    axios.get.mockResolvedValueOnce({ data: html });
+    const list = await fetchCodeChefContests();
+    expect(list.length).toBe(1);
+    expect(list[0]).toMatchObject({ platform: 'codechef', name: 'ABC Contest' });
+    expect(list[0].url).toContain('/ABC');
+  });
+});
+
 describe('refreshAllContests', () => {
   it('upserts contests from all sources', async () => {
     const html = `<table id="contest-table-upcoming"><tbody></tbody></table><table id="contest-table-recent"><tbody></tbody></table>`;
+        const chef = `<table id="future-contests-data"><tbody></tbody></table><table id="present-contests-data"><tbody></tbody></table>`;
     axios.get
       .mockResolvedValueOnce({ data: { status: 'OK', result: [{ id: 1, name: 'CF', startTimeSeconds: 0, durationSeconds: 60 }] } })
-      .mockResolvedValueOnce({ data: { contests: [] } })
-      .mockResolvedValueOnce({ data: html });
+      .mockResolvedValueOnce({ data: html })
+      .mockResolvedValueOnce({ data: chef });
 
     const list = await refreshAllContests();
     expect(Array.isArray(list)).toBe(true);

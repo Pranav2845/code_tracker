@@ -74,6 +74,37 @@ export async function fetchAtCoderContests() {
   ];
 }
 
+// Fetch CodeChef contests by scraping HTML
+export async function fetchCodeChefContests() {
+  const { data: html } = await axios.get('https://www.codechef.com/contests');
+  const $ = cheerio.load(html);
+
+  const results = [];
+  $('#future-contests-data tbody tr, #present-contests-data tbody tr').each((_, el) => {
+    const cells = $(el).find('td');
+    const nameEl = cells.eq(1).find('a');
+    if (!nameEl.attr('href')) return;
+
+    const startStr = cells.eq(2).text().trim();
+    const endStr = cells.eq(3).text().trim();
+
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+    const dur = Math.round((end.getTime() - start.getTime()) / 1000);
+
+    results.push({
+      platform: 'codechef',
+      name: nameEl.text().trim(),
+      url: nameEl.attr('href').startsWith('http') ? nameEl.attr('href') : `https://www.codechef.com${nameEl.attr('href')}`,
+      startTime: start,
+      endTime: end,
+      duration: dur,
+    });
+  });
+
+  return results;
+}
+
 // Optionally, add other fetchers (CodeChef, GFG, etc.) here!
 
 // Refresh all contests and persist to MongoDB
@@ -82,6 +113,7 @@ export async function refreshAllContests() {
     fetchCodeforcesContests(),
     fetchLeetCodeContests(),
     fetchAtCoderContests(),
+     fetchCodeChefContests(),
   ]);
   const contests = lists.flat();
 

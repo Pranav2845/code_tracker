@@ -1,16 +1,31 @@
 // src/pages/contests/index.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Header from '../../components/ui/Header';
 import ContestSearchBar from '../../components/ContestSearchBar';
 import ContestCalendar from '../../components/ContestCalendar';
+import { fetchContests } from '../../api/contests';
 
 const Contests = () => {
   const [search, setSearch] = useState('');
-  const contests = []; // replace with your data
+    const [contests, setContests] = useState([]);
+
+  useEffect(() => {
+    fetchContests()
+      .then((data) => {
+        const list = Array.isArray(data.upcoming) ? data.upcoming : [];
+        setContests(list);
+      })
+      .catch((err) => {
+        console.error('Failed to load contests:', err);
+      });
+  }, []);
 
   const filtered = useMemo(() => {
-    // ...your filtering logic
-    return contests;
+       const term = search.trim().toLowerCase();
+    if (!term) return contests;
+    return contests.filter((c) =>
+      c.name.toLowerCase().includes(term)
+    );
   }, [contests, search]);
 
   return (

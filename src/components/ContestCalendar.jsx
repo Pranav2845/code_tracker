@@ -41,11 +41,36 @@ function Toolbar({ label, onNavigate }) {
   );
 }
 
+function Event({ event }) {
+  return (
+    <div className="flex flex-col">
+      <a
+        href={event.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline"
+      >
+        {event.title}
+      </a>
+      {event.start && (
+        <time className="text-xs opacity-75">
+          {new Date(event.start).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </time>
+      )}
+    </div>
+  );
+}
+
 function ContestCalendar({ contests = [] }) {
   const events = contests.map((c) => ({
     title: c.name,
     start: new Date(c.startTime),
     end: new Date(c.endTime),
+    url: c.url,
+    platform: c.platform,
   }));
 
   return (
@@ -57,7 +82,7 @@ function ContestCalendar({ contests = [] }) {
         startAccessor="start"
         endAccessor="end"
         views={["month"]}
-        components={{ toolbar: Toolbar }}
+       components={{ toolbar: Toolbar, event: Event }}
         className="calendar-full dark:calendar-dark"
         style={{ width: '100%', height: '100%', minHeight: '500px', background: 'none', border: 'none' }}
       />
