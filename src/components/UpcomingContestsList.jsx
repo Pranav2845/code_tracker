@@ -4,11 +4,7 @@ import AddToCalendarButton from './AddToCalendarButton';
 
 function UpcomingContestsList({ contests = [] }) {
   if (!Array.isArray(contests) || contests.length === 0) {
-    return (
-      <div className="p-4 bg-surface border rounded text-text-secondary">
-        No upcoming contests
-      </div>
-    );
+     return null;
   }
 
   return (

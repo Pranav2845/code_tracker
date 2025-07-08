@@ -1,38 +1,49 @@
-/* src/styles/calender.css*/
 @import 'react-big-calendar/lib/css/react-big-calendar.css';
 
-/* Light mode overrides */
+/* Main calendar area */
 .rbc-calendar {
   background-color: var(--color-surface);
   color: var(--color-text-primary);
+  border-radius: 10px;
+  box-shadow: 0 1px 8px 0 rgba(0,0,0,0.07);
 }
 
-/* Dark mode styling */
-.dark .calendar-dark {
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
-}
-
+/* Event pill style */
 .rbc-event {
   background-color: var(--color-primary);
   border: none;
   color: #fff;
-  padding: 2px 4px;
-  border-radius: 0.25rem;
+  padding: 2px 6px;
+  border-radius: 0.4rem;
+  font-size: 0.92em;
+  font-weight: 500;
+  transition: background 0.2s;
 }
 
-.dark .rbc-event {
+/* Event: dark mode */
+.dark .rbc-event,
+.dark .calendar-dark .rbc-event {
   background-color: var(--color-primary-dark);
   color: #fff;
-  }
+}
 
-/* Toolbar styling */
+/* Toolbar (top nav buttons) */
+.rbc-toolbar {
+  margin-bottom: 1.2rem;
+  font-size: 1.07em;
+}
+
 .rbc-toolbar button {
   background-color: var(--color-surface);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
+  padding: 0.28rem 0.85rem;
+  border-radius: 0.35rem;
+  margin-right: 0.3em;
+  margin-bottom: 0.18em;
+  font-weight: 500;
+  transition: background 0.17s, color 0.17s;
+  outline: none;
 }
 
 .rbc-toolbar button.rbc-active,
@@ -53,4 +64,52 @@
 .dark .calendar-dark .rbc-toolbar button:focus {
   background-color: var(--color-primary-dark);
   color: #fff;
+}
+
+/* "Today" cell highlight */
+.rbc-today {
+  background: rgba(99, 102, 241, 0.14) !important; /* subtle blue for light mode */
+  color: var(--color-text-primary) !important;
+  font-weight: bold;
+  border-radius: 8px;
+}
+
+.dark .calendar-dark .rbc-today {
+  background: rgba(99, 102, 241, 0.38) !important; /* deeper blue for dark mode */
+  color: #fff !important;
+  font-weight: bold;
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px #6366f1;
+}
+
+/* Remove white bg for out-of-month dates in dark mode */
+.dark .calendar-dark .rbc-off-range-bg {
+  background: #171c29;
+  color: #8b8fa5;
+}
+
+/* General improvements for calendar cells */
+.rbc-month-view,
+.rbc-month-row,
+.rbc-row-bg,
+.rbc-header {
+  border-radius: 6px;
+}
+
+/* Calendar cell hover (optional) */
+.rbc-day-bg:hover {
+  background: rgba(99, 102, 241, 0.08);
+  transition: background 0.2s;
+}
+
+/* Calendar headers */
+.rbc-header {
+  background: transparent;
+  font-weight: 600;
+  font-size: 1.03em;
+}
+
+/* Make scrollbars match dark mode (optional, Chrome/Edge) */
+.dark ::-webkit-scrollbar-thumb {
+  background: #2b2d43;
 }
