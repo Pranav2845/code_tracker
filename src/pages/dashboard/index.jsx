@@ -95,8 +95,8 @@ const Dashboard = () => {
 
       const { platformActivity: rawActivity, topicStrength: rawStrength } = analyticsRes.data;
 
-      const upcomingContests = Array.isArray(contestsRes.data)
-        ? contestsRes.data.slice(0, 5)
+          const upcomingContests = Array.isArray(contestsRes.data?.upcoming)
+        ? contestsRes.data.upcoming.slice(0, 5)
         : [];
       setContests(upcomingContests);
 

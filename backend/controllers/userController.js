@@ -20,7 +20,7 @@ import {
 import { fetchHackerRankSolvedCount } from '../services/hackerrank.js';
 import { fetchCodeChefSolvedCount, fetchCodeChefProblems } from '../services/codechef.js';
 import { fetchCFSolvedCount } from '../services/codeforces.js';
-import { fetchUpcomingContests } from '../services/contests.js';
+import { fetchAllContests } from '../services/contests.js';
 
 /**
  * GET /api/user/profile
@@ -501,14 +501,14 @@ export const getCodeChefSolvedProblems = async (req, res) => {
 
 /**
  * GET /api/contests
- * Returns an array of upcoming programming contests.
+ *  Returns lists of upcoming and past programming contests.
  */
-export const getUpcomingContests = async (req, res) => {
+export const getContests = async (req, res) => {
   try {
-    const contests = await fetchUpcomingContests();
+    const contests = await fetchAllContests();
     res.json(contests);
   } catch (err) {
-    console.error('❌ getUpcomingContests error:', err);
+     console.error('❌ getContests error:', err);
     res.status(500).json({ message: 'Failed to fetch contests' });
   }
 };

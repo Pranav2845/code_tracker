@@ -36,6 +36,7 @@ vi.mock('../services/codechef.js', () => ({
   fetchCodeChefProblems: vi.fn()
 }));
 vi.mock('../services/contests.js', () => ({
+    fetchAllContests: vi.fn(),
   fetchUpcomingContests: vi.fn()
 }));
 

@@ -1,16 +1,16 @@
 import React from 'react';
 
-const EventTracker = ({ contests }) => {
+const EventTracker = ({ contests, title = 'Upcoming Contests', emptyText = 'No upcoming contests' }) => {
   if (!Array.isArray(contests) || contests.length === 0) {
     return (
       <div className="p-4 bg-surface border rounded text-text-secondary">
-        No upcoming contests
+        {emptyText}
       </div>
     );
   }
   return (
     <div className="bg-surface border rounded p-4 shadow-sm">
-      <h2 className="font-semibold mb-2">Upcoming Contests</h2>
+      <h2 className="font-semibold mb-2">{title}</h2>
       <ul className="divide-y divide-border">
         {contests.map((c) => (
           <li key={`${c.site}-${c.name}`} className="py-2 flex justify-between items-center">

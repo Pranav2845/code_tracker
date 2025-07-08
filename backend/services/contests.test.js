@@ -1,11 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { fetchUpcomingContests } from './contests.js';
+import { fetchAllContests, fetchUpcomingContests } from './contests.js';
 
 vi.mock('axios');
 
 beforeEach(() => {
   vi.resetAllMocks();
+});
+
+describe('fetchAllContests', () => {
+  it('separates upcoming and past contests', async () => {
+    const future = new Date(Date.now() + 3600_000).toISOString();
+    const past = new Date(Date.now() - 3600_000).toISOString();
+    axios.get.mockResolvedValueOnce({ data: [
+      { name: 'Future', site: 'CF', url: 'u', start_time: future, end_time: future },
+      { name: 'Past', site: 'CF', url: 'p', start_time: past, end_time: past }
+    ] });
+    const res = await fetchAllContests();
+    expect(Array.isArray(res.upcoming)).toBe(true);
+    expect(Array.isArray(res.past)).toBe(true);
+    expect(res.upcoming[0].name).toBe('Future');
+    expect(res.past[0].name).toBe('Past');
+  });
 });
 
 describe('fetchUpcomingContests', () => {
