@@ -1,0 +1,26 @@
+@import 'react-big-calendar/lib/css/react-big-calendar.css';
+
+/* Light mode overrides */
+.rbc-calendar {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+/* Dark mode styling */
+.dark .calendar-dark {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.rbc-event {
+  background-color: var(--color-primary);
+  border: none;
+  color: #fff;
+  padding: 2px 4px;
+  border-radius: 0.25rem;
+}
+
+.dark .rbc-event {
+  background-color: var(--color-primary-dark);
+  color: #fff;
+}
