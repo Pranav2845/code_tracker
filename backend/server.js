@@ -9,7 +9,7 @@ import platformRoutes from './routes/platform.js';
 import problemRoutes  from './routes/problem.js';
 import contestRoutes  from './routes/contests.js';
 
-import publicRoutes   from './routes/public.js'; // <-- add this
+import publicRoutes   from './routes/public.js';
 import authMiddleware from './middleware/auth.js';
 import { notFound, errorHandler } from './utils/errorHandler.js';
 
@@ -33,16 +33,18 @@ app.get('/api', (req, res) => {
 // 3.5️⃣ Public endpoints (must be BEFORE authMiddleware)
 app.use('/api', publicRoutes);
 
-// 4️⃣ Protect everything below this line
+// 4️⃣ Public contests route (MUST be before authMiddleware)
+app.use('/api/contests', contestRoutes);
+
+// 5️⃣ Protect everything below this line
 app.use('/api', authMiddleware);
 
-// 5️⃣ Protected resource routes
+// 6️⃣ Protected resource routes
 app.use('/api/user',     userRoutes);
 app.use('/api/platform', platformRoutes);
 app.use('/api/problems', problemRoutes);
-app.use('/api/contests', contestRoutes);
 
-// 6️⃣ 404 + error handler
+// 7️⃣ 404 + error handler
 app.use(notFound);
 app.use(errorHandler);
 
