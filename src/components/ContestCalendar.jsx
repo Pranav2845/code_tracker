@@ -34,6 +34,7 @@ function ContestCalendar({ contests = [] }) {
         events={events}
         startAccessor="start"
         endAccessor="end"
+        views={["month"]}
         className="h-full dark:calendar-dark"
       />
     </div>
