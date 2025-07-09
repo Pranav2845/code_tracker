@@ -12,8 +12,7 @@ const Contests = () => {
   useEffect(() => {
     fetchContests()
       .then((data) => {
-        const list = Array.isArray(data.upcoming) ? data.upcoming : [];
-        setContests(list);
+        setContests(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
         console.error('Failed to load contests:', err);
