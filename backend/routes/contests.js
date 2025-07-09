@@ -26,6 +26,7 @@ export function detectPlatform(url = '', fallback = '') {
   if (host.includes('hackerrank')) return 'HackerRank';
 
   return fallback;
+}
 
 // Fetch contests from CLIST API using credentials from .env
 router.get('/', async (req, res) => {
