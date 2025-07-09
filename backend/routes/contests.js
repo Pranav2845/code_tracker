@@ -8,6 +8,14 @@ import { refreshContests } from '../controllers/userController.js';
 dotenv.config();
 const router = express.Router();
 
+function detectPlatform(url = '') {
+  if (!url) return '';
+  if (url.includes('codeforces.com')) return 'Codeforces';
+  if (url.includes('leetcode.com')) return 'LeetCode';
+  if (url.includes('atcoder.jp')) return 'AtCoder';
+  if (url.includes('codechef.com')) return 'CodeChef';
+  return '';
+}
 
 // Fetch contests from CLIST API using credentials from .env
 router.get('/', async (req, res) => {
@@ -33,14 +41,18 @@ router.get('/', async (req, res) => {
         ? resp.data.objects
         : [];
 
-    const list = objects.map((c) => ({
-          platform: c.resource?.name || c.resource?.host || '',
-          name: c.event,
-          url: c.href,
-          startTime: c.start,
-          endTime: c.end,
-          duration: c.duration,
-         }));
+      const list = objects.map((c) => ({
+        id: c.id,
+        platform: c.resource?.name || c.resource?.host || detectPlatform(c.href),
+        name: c.event,
+        url: c.href,
+        startTime: c.start,
+        endTime: c.end,
+        duration: c.duration,
+        host: c.host || c.resource?.host || '',
+        resource: c.resource?.host || c.resource?.name,
+        n_problems: c.n_problems ?? null,
+       }));
 
     res.json(list);
   } catch (err) {

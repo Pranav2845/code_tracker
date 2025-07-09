@@ -11,7 +11,7 @@ function UpcomingContestsList({ contests = [] }) {
     <ul className="divide-y divide-border bg-surface border rounded">
       {contests.map((c) => (
         <li
-          key={`${c.platform}-${c.name}-${c.startTime}`}
+          key={c.id || `${c.platform}-${c.name}-${c.startTime}`}
           className="p-4 flex justify-between items-center"
         >
           <div>

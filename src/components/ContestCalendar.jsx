@@ -66,6 +66,7 @@ function Event({ event }) {
 
 function ContestCalendar({ contests = [] }) {
   const events = contests.map((c) => ({
+    id: c.id,
     title: c.name,
     start: new Date(c.startTime),
     end: new Date(c.endTime),
