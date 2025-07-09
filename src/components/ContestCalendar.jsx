@@ -38,6 +38,7 @@ const PLATFORM_LOGOS = {
   cses: '/assets/images/cses_.png',
   codechef: '/assets/images/codechef.jpeg',
   code360: '/assets/images/codingninjas.jpeg',
+  hackerrank: '/assets/images/hackerrank.webp',
 };
 
 // Custom toolbar as before
@@ -68,7 +69,7 @@ function Event({ event }) {
   return (
     <div className="calendar-event flex items-center space-x-1 relative group">
       <Image
-        src={PLATFORM_LOGOS[event.platform]}
+         src={PLATFORM_LOGOS[event.platform?.toLowerCase()]}
         alt={event.platform}
         className="w-4 h-4"
       />
@@ -102,15 +103,16 @@ function ContestCalendar({ contests = [] }) {
     start: new Date(c.startTime),
     end: new Date(c.endTime),
     url: c.url,
-    platform: c.platform,
+    platform: c.platform?.toLowerCase(),
     originalData: c,
   }));
 
   const eventPropGetter = (event) => {
-    const color = PLATFORM_COLORS[event.platform] || 'var(--color-primary)';
+    const key = event.platform?.toLowerCase();
+    const color = PLATFORM_COLORS[key] || 'var(--color-primary)';
     return {
       style: { backgroundColor: color },
-      className: event.platform,
+      className: key,
     };
   };
 

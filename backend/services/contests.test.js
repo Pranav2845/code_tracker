@@ -108,3 +108,13 @@ describe('detectPlatform fallback', () => {
     expect(platform).toBe('Custom');
   });
 });
+
+describe('detectPlatform known hosts', () => {
+  it('returns lowercase platform identifiers', () => {
+    expect(detectPlatform('https://leetcode.com/contest')).toBe('leetcode');
+    expect(detectPlatform('https://codeforces.com/contest/1')).toBe('codeforces');
+    expect(detectPlatform('https://atcoder.jp/')).toBe('atcoder');
+    expect(detectPlatform('https://codechef.com/')).toBe('codechef');
+    expect(detectPlatform('https://hackerrank.com/challenges')).toBe('hackerrank');
+  });
+});

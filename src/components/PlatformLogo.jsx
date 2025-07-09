@@ -6,9 +6,13 @@ const PLATFORM_LOGOS = {
   codeforces: '/assets/images/codeforces.png',
   atcoder: '/assets/images/atcoder.png',
   codechef: '/assets/images/codechef.jpeg',
+  gfg: '/assets/images/gfg.png',
+  hackerrank: '/assets/images/hackerrank.webp',
+  code360: '/assets/images/codingninjas.jpeg',
 };
 
 export default function PlatformLogo({ platform, className = 'w-4 h-4', ...props }) {
-  const src = PLATFORM_LOGOS[platform] || '/assets/images/no_image.png';
+   const key = platform?.toLowerCase ? platform.toLowerCase() : platform;
+  const src = PLATFORM_LOGOS[key] || '/assets/images/no_image.png';
   return <Image src={src} alt={`${platform} logo`} className={className} {...props} />;
 }

@@ -19,11 +19,11 @@ export function detectPlatform(url = '', fallback = '') {
     }
   })();
 
-  if (host.includes('codeforces')) return 'Codeforces';
-  if (host.includes('leetcode')) return 'LeetCode';
-  if (host.includes('atcoder')) return 'AtCoder';
-  if (host.includes('codechef')) return 'CodeChef';
-  if (host.includes('hackerrank')) return 'HackerRank';
+  if (host.includes('codeforces')) return 'codeforces';
+  if (host.includes('leetcode')) return 'leetcode';
+  if (host.includes('atcoder')) return 'atcoder';
+  if (host.includes('codechef')) return 'codechef';
+  if (host.includes('hackerrank')) return 'hackerrank';
 
   return fallback;
 }
@@ -37,7 +37,7 @@ router.get('/', async (req, res) => {
         },
         params: {
           format: 'json',
-          resource__in: 'codeforces.com,leetcode.com,atcoder.jp,codechef.com',
+          resource__in: 'codeforces.com,leetcode.com,atcoder.jp,codechef.com,hackerrank.com,geeksforgeeks.org,naukri.com/code360',
           upcoming: true,
           order_by: 'start',
           limit: 100,
@@ -54,7 +54,8 @@ router.get('/', async (req, res) => {
 
       const list = objects.map((c) => ({
         id: c.id,
-        platform: detectPlatform(c.href, c.resource?.name || c.resource?.host),        name: c.event,
+         platform: detectPlatform(c.href, c.resource?.name || c.resource?.host).toLowerCase(),
+        name: c.event,
         url: c.href,
         startTime: c.start,
         endTime: c.end,
