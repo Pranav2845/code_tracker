@@ -8,14 +8,24 @@ import { refreshContests } from '../controllers/userController.js';
 dotenv.config();
 const router = express.Router();
 
-function detectPlatform(url = '') {
-  if (!url) return '';
-  if (url.includes('codeforces.com')) return 'Codeforces';
-  if (url.includes('leetcode.com')) return 'LeetCode';
-  if (url.includes('atcoder.jp')) return 'AtCoder';
-  if (url.includes('codechef.com')) return 'CodeChef';
-  return '';
-}
+export function detectPlatform(url = '', fallback = '') {
+  if (!url && !fallback) return '';
+
+  const host = (() => {
+    try {
+      return new URL(url).host;
+    } catch {
+      return url;
+    }
+  })();
+
+  if (host.includes('codeforces')) return 'Codeforces';
+  if (host.includes('leetcode')) return 'LeetCode';
+  if (host.includes('atcoder')) return 'AtCoder';
+  if (host.includes('codechef')) return 'CodeChef';
+  if (host.includes('hackerrank')) return 'HackerRank';
+
+  return fallback;
 
 // Fetch contests from CLIST API using credentials from .env
 router.get('/', async (req, res) => {
@@ -43,8 +53,7 @@ router.get('/', async (req, res) => {
 
       const list = objects.map((c) => ({
         id: c.id,
-        platform: c.resource?.name || c.resource?.host || detectPlatform(c.href),
-        name: c.event,
+        platform: detectPlatform(c.href, c.resource?.name || c.resource?.host),        name: c.event,
         url: c.href,
         startTime: c.start,
         endTime: c.end,

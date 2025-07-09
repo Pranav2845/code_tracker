@@ -16,7 +16,7 @@ const {
   fetchAllContests,
   fetchUpcomingContests,
 } = await import('./contests.js');
-
+const { detectPlatform } = await import('../routes/contests.js');
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -99,5 +99,12 @@ describe('fetchUpcomingContests', () => {
     const res = await fetchUpcomingContests();
     expect(Array.isArray(res)).toBe(true);
     expect(res[0].name).toBe('future');
+  });
+});
+
+describe('detectPlatform fallback', () => {
+  it('uses provided resource name when host is unknown', () => {
+    const platform = detectPlatform('https://unknown.example.com', 'Custom');
+    expect(platform).toBe('Custom');
   });
 });

@@ -37,6 +37,14 @@
   color: #fff;
 }
 
+/* Platform specific colors */
+.rbc-event.leetcode { background-color: var(--color-leetcode); }
+.rbc-event.codeforces { background-color: var(--color-codeforces); }
+.rbc-event.gfg { background-color: var(--color-gfg); }
+.rbc-event.cses { background-color: var(--color-cses); }
+.rbc-event.codechef { background-color: var(--color-codechef); }
+.rbc-event.code360 { background-color: var(--color-code360); }
+
 /* Toolbar (top nav buttons) */
 .rbc-toolbar {
   background: transparent;
@@ -135,4 +143,24 @@
 /* Make scrollbars match dark mode (optional, Chrome/Edge) */
 .dark ::-webkit-scrollbar-thumb {
   background: #2b2d43;
+}
+
+/* Tooltip styling for calendar events */
+.calendar-event { position: relative; }
+.calendar-event .event-tooltip {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 30;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.calendar-event:hover .event-tooltip {
+  display: block;
 }
