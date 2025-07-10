@@ -24,7 +24,9 @@ export function detectPlatform(url = '', fallback = '') {
   if (host.includes('atcoder')) return 'atcoder';
   if (host.includes('codechef')) return 'codechef';
   if (host.includes('hackerrank')) return 'hackerrank';
-
+if (host.includes('geeksforgeeks')) return 'gfg';
+  if (host.includes('codingninjas.com')) return 'code360';
+  if (host.includes('naukri.com') && url.includes('/code360')) return 'code360';
   return fallback;
 }
 

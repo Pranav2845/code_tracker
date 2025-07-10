@@ -116,5 +116,8 @@ describe('detectPlatform known hosts', () => {
     expect(detectPlatform('https://atcoder.jp/')).toBe('atcoder');
     expect(detectPlatform('https://codechef.com/')).toBe('codechef');
     expect(detectPlatform('https://hackerrank.com/challenges')).toBe('hackerrank');
+     expect(detectPlatform('https://geeksforgeeks.org/contest')).toBe('gfg');
+    expect(detectPlatform('https://www.naukri.com/code360/events')).toBe('code360');
+    expect(detectPlatform('https://codingninjas.com/contest')).toBe('code360');
   });
 });

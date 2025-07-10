@@ -1,5 +1,5 @@
 // src/components/ContestCalendar.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import format from 'date-fns/format';
 import parse from 'date-fns/parse';
@@ -9,7 +9,9 @@ import enUS from 'date-fns/locale/en-US';
 import Icon from './AppIcon';
 import Image from './AppImage';
 import AddToCalendarButton from './AddToCalendarButton';
+import { contestsToCalendarEvents } from '../utils/contestEventUtils.js';
 import PlatformLogo from './PlatformLogo';
+import ContestDetailModal from './ContestDetailModal';
 import '../styles/calendar.css';
 
 const locales = { 'en-US': enUS };
@@ -67,7 +69,10 @@ function Event({ event }) {
   const start = new Date(event.start).toLocaleString();
   const end = new Date(event.end).toLocaleString();
   return (
-    <div className="calendar-event flex items-center space-x-1 relative group">
+        <button
+      type="button"
+      className="calendar-event w-full flex items-center space-x-1 relative group text-left"
+    >
       <Image
          src={PLATFORM_LOGOS[event.platform?.toLowerCase()]}
         alt={event.platform}
@@ -92,20 +97,13 @@ function Event({ event }) {
           <AddToCalendarButton contest={event.originalData} />
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
 function ContestCalendar({ contests = [] }) {
-  const events = contests.map((c) => ({
-    id: c.id,
-    title: c.name,
-    start: new Date(c.startTime),
-    end: new Date(c.endTime),
-    url: c.url,
-    platform: c.platform?.toLowerCase(),
-    originalData: c,
-  }));
+  const [selectedEvent, setSelectedEvent] = useState(null);
+   const events = contestsToCalendarEvents(contests);
 
   const eventPropGetter = (event) => {
     const key = event.platform?.toLowerCase();
@@ -115,6 +113,12 @@ function ContestCalendar({ contests = [] }) {
       className: key,
     };
   };
+
+  const handleSelectEvent = (event) => {
+    setSelectedEvent(event);
+  };
+
+  const closeModal = () => setSelectedEvent(null);
 
   return (
     // Only take full available space (let parent control height)
