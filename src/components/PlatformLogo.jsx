@@ -1,3 +1,4 @@
+// src/components/PlatformLogo.jsx
 import React from 'react';
 import Image from './AppImage';
 
@@ -12,7 +13,7 @@ const PLATFORM_LOGOS = {
 };
 
 export default function PlatformLogo({ platform, className = 'w-4 h-4', ...props }) {
-   const key = platform?.toLowerCase ? platform.toLowerCase() : platform;
+   const key = typeof platform === 'string' ? platform.toLowerCase() : '';
   const src = PLATFORM_LOGOS[key] || '/assets/images/no_image.png';
   return <Image src={src} alt={`${platform} logo`} className={className} {...props} />;
 }

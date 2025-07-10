@@ -1,4 +1,32 @@
+// src/utils/contestEventUtils.js
 import { getContestLogoUrl } from "./contestLogo.js";
+export function formatDate(date) {
+  if (!(date instanceof Date)) date = new Date(date);
+  const day = date.getDate();
+  const suffix =
+    day % 10 === 1 && day % 100 !== 11
+      ? "st"
+      : day % 10 === 2 && day % 100 !== 12
+      ? "nd"
+      : day % 10 === 3 && day % 100 !== 13
+      ? "rd"
+      : "th";
+  const month = date.toLocaleString("default", { month: "long" });
+  return `${day}${suffix} ${month}, ${date.getFullYear()}`;
+}
+
+export function formatTimeRange(start, end) {
+  const opts = { hour: "2-digit", minute: "2-digit" };
+  return `${new Date(start).toLocaleTimeString([], opts)} - ${new Date(end).toLocaleTimeString([], opts)}`;
+}
+
+export function getContestStatus(contest) {
+  if (!contest) return "";
+  return new Date(contest.endTime).getTime() > Date.now()
+    ? "Upcoming"
+    : "Contest Ended";
+}
+
 export function createAddToCalendarUrl(contest) {
   if (!contest) return '';
   const start = new Date(contest.startTime)
@@ -48,12 +76,12 @@ export function contestToCalendarEvent(contest) {
     originalData: contest,
     popupDetail: {
       title: contest.name,
-      date: start.toLocaleDateString(),
-      timeRange: `${formatTime(start)} - ${formatTime(endOriginal)}`,
+      date: formatDate(start),
+      time: formatTimeRange(start, endOriginal),
       duration: formatDuration(endOriginal.getTime() - start.getTime()),
+      status: getContestStatus(contest),
       platform: contest.platform,
       platformLogo: getContestLogoUrl(contest),
-      status: contest.status,
       url: contest.url,
       addToCalendarUrl: createAddToCalendarUrl(contest),
     },

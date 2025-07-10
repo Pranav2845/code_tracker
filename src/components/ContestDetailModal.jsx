@@ -1,9 +1,45 @@
+// src/components/ContestDetailModal.jsx
+
 import React, { useEffect, useRef } from "react";
 import Icon from "./AppIcon";
 import AddToCalendarButton from "./AddToCalendarButton";
 import PlatformLogo from "./PlatformLogo";
 
-function ContestDetailModal({ event, onClose }) {
+function formatDate(date) {
+  if (!(date instanceof Date)) date = new Date(date);
+  const day = date.getDate();
+  const suffix =
+    day % 10 === 1 && day % 100 !== 11
+      ? "st"
+      : day % 10 === 2 && day % 100 !== 12
+      ? "nd"
+      : day % 10 === 3 && day % 100 !== 13
+      ? "rd"
+      : "th";
+  const month = date.toLocaleString("default", { month: "long" });
+  return `${day}${suffix} ${month}, ${date.getFullYear()}`;
+}
+
+function formatTimeRange(start, end) {
+  const opts = { hour: "2-digit", minute: "2-digit" };
+  return `${new Date(start).toLocaleTimeString([], opts)} – ${new Date(end).toLocaleTimeString([], opts)}`;
+}
+
+function formatDuration(ms) {
+  const totalMinutes = Math.round(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours && minutes) return `${hours} hrs ${minutes} mins`;
+  if (hours) return `${hours} hrs`;
+  return `${minutes} mins`;
+}
+
+function getStatusText(event) {
+  if (!event?.end) return "";
+  return new Date(event.end).getTime() > Date.now() ? "Upcoming" : "Contest Ended";
+}
+
+export default function ContestDetailModal({ event, onClose }) {
   const modalRef = useRef(null);
   const initialFocusRef = useRef(null);
 
@@ -27,57 +63,96 @@ function ContestDetailModal({ event, onClose }) {
 
   if (!event) return null;
 
-  const { title, start, end, url, platform, originalData } = event;
-  const popupDetail = originalData?.popupDetail;
+  // Fallback for backwards compatibility (in case you don't have popupDetail in originalData)
+  const popupDetail = event.popupDetail || event.originalData?.popupDetail || {};
+
+  // Allow fallback to event fields if popupDetail not available
+  const title = popupDetail.title || event.title;
+  const date = popupDetail.date || formatDate(event.start);
+  const time = popupDetail.time || formatTimeRange(event.start, event.end);
+  const duration = popupDetail.duration || formatDuration(new Date(event.end) - new Date(event.start));
+  const status = popupDetail.status || getStatusText(event);
+  const url = popupDetail.url || event.url;
+  const platform = popupDetail.platform || event.platform;
+  const platformLogo = popupDetail.platformLogo;
+  const addToCalendarUrl = popupDetail.addToCalendarUrl;
+
+  const isEnded = status.toLowerCase().includes("ended");
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div
         ref={modalRef}
-        className="bg-surface rounded-lg shadow-xl w-full max-w-md animate-scale-in"
+        className="bg-surface rounded-xl shadow-xl w-full max-w-md animate-pop relative"
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
+        style={{ maxHeight: "95vh", overflowY: "auto" }}
       >
-        <div className="flex items-start justify-between p-6 border-b border-border">
-          <div className="flex items-center space-x-2">
-            <PlatformLogo platform={platform} className="w-6 h-6" />
-            <h2 id="modal-title" className="text-xl font-semibold text-text-primary">
-              {title}
-            </h2>
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          ref={initialFocusRef}
+          className="absolute top-3 right-3 text-text-tertiary hover:text-primary rounded-full p-1"
+          aria-label="Close modal"
+        >
+          <Icon name="X" size={22} />
+        </button>
+
+        {/* Modal Content */}
+        <div className="p-6">
+          {/* Header: Logo + Title */}
+          <div className="flex items-center gap-2 mb-3">
+            <PlatformLogo platform={platform} className="w-7 h-7" />
+            <h2 id="modal-title" className="text-lg font-bold">{title}</h2>
           </div>
-          <button
-            onClick={onClose}
-            ref={initialFocusRef}
-            className="text-text-tertiary hover:text-text-primary rounded-full p-1"
-            aria-label="Close modal"
-          >
-            <Icon name="X" size={20} />
-          </button>
-        </div>
-        <div className="p-6 space-y-4">
-          <div className="text-sm text-text-secondary space-y-1">
-            <p>
-              {new Date(start).toLocaleString()} - {new Date(end).toLocaleString()}
-            </p>
-            {popupDetail && <p className="whitespace-pre-line">{popupDetail}</p>}
-          </div>
-          <div className="flex justify-between items-center">
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary py-2 px-4 flex items-center text-sm"
-            >
-              <Icon name="ExternalLink" size={16} className="mr-2" />
-              Visit Contest
-            </a>
-            <AddToCalendarButton contest={originalData} />
+          <div className="space-y-3 text-base">
+            <div className="flex items-center gap-2">
+              <Icon name="Calendar" size={17} className="opacity-80" />
+              <span>{date}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Icon name="Clock" size={17} className="opacity-80" />
+              <span>{time}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Icon name="AlarmClock" size={17} className="opacity-80" />
+              <span>{duration}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={17} className={`opacity-90 ${isEnded ? "text-red-500" : "text-green-500"}`} />
+              <span className={isEnded ? "text-red-500 font-semibold" : "text-green-500 font-semibold"}>
+                {status}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 break-all">
+              <Icon name="ExternalLink" size={17} className="opacity-80" />
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline flex items-center gap-1"
+              >
+                {url}
+              </a>
+            </div>
+            <div className="flex items-center gap-2">
+              <PlatformLogo platform={platform} className="w-4 h-4" />
+              <span className="font-medium">{platform}</span>
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <a
+                href={addToCalendarUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline font-medium"
+              >
+                Add to Calendar
+              </a>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-export default ContestDetailModal;

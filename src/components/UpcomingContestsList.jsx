@@ -4,13 +4,21 @@ import AddToCalendarButton from './AddToCalendarButton';
 import PlatformLogo from './PlatformLogo';
 
 function UpcomingContestsList({ contests = [] }) {
-  if (!Array.isArray(contests) || contests.length === 0) {
-     return null;
+  const upcoming = Array.isArray(contests)
+    ? contests.filter((c) => new Date(c.endTime) > new Date())
+    : [];
+
+  if (upcoming.length === 0) {
+    return (
+      <div className="p-4 bg-surface border rounded text-text-secondary">
+        No upcoming contests
+      </div>
+    );
   }
 
   return (
     <ul className="divide-y divide-border bg-surface border rounded">
-      {contests.map((c) => (
+      {upcoming.map((c) => (
         <li
           key={c.id || `${c.platform}-${c.name}-${c.startTime}`}
           className="p-4 flex justify-between items-center"

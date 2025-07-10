@@ -133,7 +133,9 @@ function ContestCalendar({ contests = [] }) {
         eventPropGetter={eventPropGetter}
         className="calendar-full dark:calendar-dark"
         style={{ width: '100%', height: '100%', minHeight: '500px', background: 'none', border: 'none' }}
+        onSelectEvent={handleSelectEvent}
       />
+       <ContestDetailModal event={selectedEvent} onClose={closeModal} />
     </div>
   );
 }

@@ -1,5 +1,13 @@
+// src/utils/contestEventUtils.test.js
 import { describe, it, expect } from 'vitest';
-import { contestToCalendarEvent, contestsToCalendarEvents, createAddToCalendarUrl } from './contestEventUtils.js';
+import {
+  contestToCalendarEvent,
+  contestsToCalendarEvents,
+  createAddToCalendarUrl,
+  formatDate,
+  formatTimeRange,
+  getContestStatus,
+} from './contestEventUtils.js';
 
 const baseContest = {
   id: 1,
@@ -18,6 +26,9 @@ describe('contestToCalendarEvent', () => {
     expect(evt.end.toISOString()).toBe(baseContest.endTime);
     expect(evt.allDay).toBe(false);
     expect(evt.popupDetail.addToCalendarUrl).toContain('google.com/calendar');
+    expect(evt.popupDetail.date).toBe(formatDate(new Date(baseContest.startTime)));
+    expect(evt.popupDetail.time).toBe(formatTimeRange(new Date(baseContest.startTime), new Date(baseContest.endTime)));
+    expect(evt.popupDetail.status).toBe(getContestStatus(baseContest));
   });
 
   it('handles contests spanning days', () => {
