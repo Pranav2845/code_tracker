@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDateIST } from '../../../utils/contestEventUtils.js';
 
 const EventTracker = ({ contests, title = 'Upcoming Contests', emptyText = 'No upcoming contests' }) => {
   if (!Array.isArray(contests) || contests.length === 0) {
@@ -17,7 +18,7 @@ const EventTracker = ({ contests, title = 'Upcoming Contests', emptyText = 'No u
             <div>
               <p className="font-medium">{c.name}</p>
               <p className="text-xs text-text-secondary">
-                {new Date(c.startTime).toLocaleString()}
+                {formatDateIST(c.startTime)}
               </p>
             </div>
             <a

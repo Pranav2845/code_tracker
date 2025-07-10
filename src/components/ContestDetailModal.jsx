@@ -4,26 +4,7 @@ import React, { useEffect, useRef } from "react";
 import Icon from "./AppIcon";
 import AddToCalendarButton from "./AddToCalendarButton";
 import PlatformLogo from "./PlatformLogo";
-
-function formatDate(date) {
-  if (!(date instanceof Date)) date = new Date(date);
-  const day = date.getDate();
-  const suffix =
-    day % 10 === 1 && day % 100 !== 11
-      ? "st"
-      : day % 10 === 2 && day % 100 !== 12
-      ? "nd"
-      : day % 10 === 3 && day % 100 !== 13
-      ? "rd"
-      : "th";
-  const month = date.toLocaleString("default", { month: "long" });
-  return `${day}${suffix} ${month}, ${date.getFullYear()}`;
-}
-
-function formatTimeRange(start, end) {
-  const opts = { hour: "2-digit", minute: "2-digit" };
-  return `${new Date(start).toLocaleTimeString([], opts)} – ${new Date(end).toLocaleTimeString([], opts)}`;
-}
+import { formatDateIST, formatTimeRangeIST } from "../utils/contestEventUtils.js";
 
 function formatDuration(ms) {
   const totalMinutes = Math.round(ms / 60000);
@@ -68,8 +49,8 @@ export default function ContestDetailModal({ event, onClose }) {
 
   // Allow fallback to event fields if popupDetail not available
   const title = popupDetail.title || event.title;
-  const date = popupDetail.date || formatDate(event.start);
-  const time = popupDetail.time || formatTimeRange(event.start, event.end);
+  const date = popupDetail.date || formatDateIST(event.start);
+  const time = popupDetail.time || formatTimeRangeIST(event.start, event.end);
   const duration = popupDetail.duration || formatDuration(new Date(event.end) - new Date(event.start));
   const status = popupDetail.status || getStatusText(event);
   const url = popupDetail.url || event.url;

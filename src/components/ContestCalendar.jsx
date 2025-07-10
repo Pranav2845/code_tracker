@@ -9,7 +9,11 @@ import enUS from 'date-fns/locale/en-US';
 import Icon from './AppIcon';
 import Image from './AppImage';
 import AddToCalendarButton from './AddToCalendarButton';
-import { contestsToCalendarEvents } from '../utils/contestEventUtils.js';
+import {
+  contestsToCalendarEvents,
+  formatDateIST,
+  formatTimeRangeIST,
+} from '../utils/contestEventUtils.js';
 import PlatformLogo from './PlatformLogo';
 import ContestDetailModal from './ContestDetailModal';
 import '../styles/calendar.css';
@@ -66,8 +70,11 @@ function Toolbar({ label, onNavigate }) {
 }
 
 function Event({ event }) {
-  const start = new Date(event.start).toLocaleString();
-  const end = new Date(event.end).toLocaleString();
+    const dateLabel = formatDateIST(event.start);
+  const timeLabel = formatTimeRangeIST(
+    event.originalData.startTime,
+    event.originalData.endTime,
+  );
   return (
         <button
       type="button"
@@ -83,7 +90,7 @@ function Event({ event }) {
       <div className="event-tooltip absolute left-0 z-10 hidden group-hover:block bg-surface shadow-xl border rounded p-3 min-w-[220px] text-xs">
         <p className="font-semibold mb-1">{event.title}</p>
         <p className="text-xs opacity-80 mb-2">
-          {start} - {end}
+          {dateLabel} | {timeLabel}
         </p>
         <div className="flex items-center space-x-2">
           <a

@@ -6,6 +6,8 @@ import {
   createAddToCalendarUrl,
   formatDate,
   formatTimeRange,
+   formatDateIST,
+  formatTimeRangeIST,
   getContestStatus,
 } from './contestEventUtils.js';
 
@@ -43,5 +45,17 @@ describe('contestsToCalendarEvents', () => {
     const events = contestsToCalendarEvents([baseContest]);
     expect(events.length).toBe(1);
     expect(events[0].title).toBe(baseContest.name);
+  });
+  });
+
+describe('IST formatting helpers', () => {
+  it('formats date in IST', () => {
+    expect(formatDateIST('2024-01-01T10:00:00.000Z')).toBe('1st January, 2024');
+  });
+
+  it('formats time range in IST', () => {
+    expect(
+      formatTimeRangeIST('2024-01-01T10:00:00.000Z', '2024-01-01T12:00:00.000Z'),
+    ).toBe('03:30 PM - 05:30 PM');
   });
 });

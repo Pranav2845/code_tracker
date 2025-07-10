@@ -2,7 +2,7 @@
 import React from 'react';
 import AddToCalendarButton from './AddToCalendarButton';
 import PlatformLogo from './PlatformLogo';
-
+import { formatDateIST } from '../utils/contestEventUtils.js';
 function UpcomingContestsList({ contests = [] }) {
   const upcoming = Array.isArray(contests)
     ? contests.filter((c) => new Date(c.endTime) > new Date())
@@ -28,7 +28,7 @@ function UpcomingContestsList({ contests = [] }) {
             <div>
               <p className="font-medium">{c.name}</p>
               <p className="text-xs text-text-secondary">
-                {new Date(c.startTime).toLocaleString()} - {c.platform}
+                 {formatDateIST(c.startTime)} - {c.platform}
               </p>
             </div>
           </div>

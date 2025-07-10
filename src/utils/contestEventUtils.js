@@ -15,9 +15,33 @@ export function formatDate(date) {
   return `${day}${suffix} ${month}, ${date.getFullYear()}`;
 }
 
+export function formatDateIST(date) {
+  if (!(date instanceof Date)) date = new Date(date);
+  const dayNum = Number(
+    new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', day: 'numeric' }).format(date),
+  );
+  const suffix =
+    dayNum % 10 === 1 && dayNum % 100 !== 11
+      ? 'st'
+      : dayNum % 10 === 2 && dayNum % 100 !== 12
+      ? 'nd'
+      : dayNum % 10 === 3 && dayNum % 100 !== 13
+      ? 'rd'
+      : 'th';
+  const month = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', month: 'long' }).format(date);
+  const year = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', year: 'numeric' }).format(date);
+  return `${dayNum}${suffix} ${month}, ${year}`;
+}
+
 export function formatTimeRange(start, end) {
   const opts = { hour: "2-digit", minute: "2-digit" };
   return `${new Date(start).toLocaleTimeString([], opts)} - ${new Date(end).toLocaleTimeString([], opts)}`;
+}
+
+export function formatTimeRangeIST(start, end) {
+  const opts = { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" };
+  const fmt = new Intl.DateTimeFormat("en-US", opts);
+  return `${fmt.format(new Date(start))} - ${fmt.format(new Date(end))}`;
 }
 
 export function getContestStatus(contest) {
@@ -52,6 +76,12 @@ export function formatDuration(ms) {
   if (hours) return `${hours}h`;
   return `${minutes}m`;
 }
+
+export function formatDateIST(date) {
+  if (!(date instanceof Date)) date = new Date(date);
+  return date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+}
+
 
 export function contestToCalendarEvent(contest) {
   if (!contest) return null;
