@@ -5,8 +5,8 @@ import Image from './AppImage';
 const PLATFORM_LOGOS = {
   leetcode: '/assets/images/leetcode.png',
   codeforces: '/assets/images/codeforces.png',
-  atcoder: '/assets/images/atcoder.png',
-  codechef: '/assets/images/codechef.jpeg',
+  atcoder: '/assets/images/atcoder.webp',
+  codechef: '/assets/images/codechef.png',
   gfg: '/assets/images/gfg.png',
   hackerrank: '/assets/images/hackerrank.webp',
   code360: '/assets/images/codingninjas.jpeg',

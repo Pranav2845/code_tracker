@@ -1,8 +1,8 @@
 // src/utils/contestEventUtils.js
 import { getContestLogoUrl } from "./contestLogo.js";
-import * as dateFnsTz from "date-fns-tz";
-
-const { format: tzFormat, utcToZonedTime, zonedTimeToUtc } = dateFnsTz;
+import tzFormat from "date-fns-tz/format";
+import utcToZonedTime from "date-fns-tz/utcToZonedTime";
+import zonedTimeToUtc from "date-fns-tz/zonedTimeToUtc";
 
 export const IST_TIMEZONE = "Asia/Kolkata";
 
