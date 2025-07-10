@@ -74,6 +74,66 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Fetch both upcoming and past contests from CLIST
+router.get('/all', async (req, res) => {
+  try {
+    const headers = {
+      Authorization: `ApiKey ${process.env.CLIST_USERNAME}:${process.env.CLIST_API_KEY}`,
+    };
+    const baseParams = {
+      format: 'json',
+      resource__in:
+        'codeforces.com,leetcode.com,atcoder.jp,codechef.com,hackerrank.com,geeksforgeeks.org,naukri.com/code360',
+      order_by: 'start',
+      limit: 100,
+    };
+
+    const [upcomingResp, pastResp] = await Promise.all([
+      axios.get('https://clist.by/api/v4/contest/', {
+        headers,
+        params: { ...baseParams, upcoming: true },
+      }),
+      axios.get('https://clist.by/api/v4/contest/', {
+        headers,
+        params: {
+          ...baseParams,
+          upcoming: false,
+          start__lt: new Date().toISOString(),
+        },
+      }),
+    ]);
+
+    const extract = (resp) =>
+      Array.isArray(resp.data)
+        ? resp.data
+        : Array.isArray(resp.data?.objects)
+        ? resp.data.objects
+        : [];
+
+    const mapList = (objs) =>
+      objs.map((c) => ({
+        id: c.id,
+        platform: detectPlatform(c.href, c.resource?.name || c.resource?.host).toLowerCase(),
+        name: c.event,
+        url: c.href,
+        startTime: c.start,
+        endTime: c.end,
+        duration: c.duration,
+        host: c.host || c.resource?.host || '',
+        resource: c.resource?.host || c.resource?.name,
+        n_problems: c.n_problems ?? null,
+      }));
+
+    const upcoming = mapList(extract(upcomingResp));
+    const past = mapList(extract(pastResp));
+
+    res.json({ upcoming, past });
+  } catch (err) {
+    console.error('❌ CLIST contests fetch error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Manual refresh of contests stored in DB (optional)
 router.post('/refresh', refreshContests);
 

@@ -59,7 +59,7 @@ describe('IST formatting helpers', () => {
     expect(
       formatTimeRangeIST('2024-01-01T10:00:00.000Z', '2024-01-01T12:00:00.000Z'),
     ).toBe('03:30 PM - 05:30 PM');
-  
+   });
   it('handles ISO strings with trailing Z', () => {
     expect(formatDateIST('2024-01-01T10:00:00Z')).toBe('1st January, 2024');
     expect(
@@ -76,5 +76,4 @@ describe('IST formatting helpers', () => {
       ),
     ).toBe('10:00 AM - 12:00 PM');
   });
-});
 });

@@ -4,24 +4,28 @@ import AddToCalendarButton from './AddToCalendarButton';
 import PlatformLogo from './PlatformLogo';
 import { formatDateIST, parseContestTimeToUTC } from '../utils/contestEventUtils.js';
 
-function UpcomingContestsList({ contests = [] }) {
-   // Only show contests that haven't started yet
+function UpcomingContestsList({ contests = [], past = false }) {
   const now = new Date();
-  const upcoming = Array.isArray(contests)
-     ? contests.filter((c) => parseContestTimeToUTC(c.startTime) > now)
-    : [];
+  let list = Array.isArray(contests) ? contests : [];
+  
+  // Filter by time based on 'past' prop
+  if (past) {
+    list = list.filter((c) => parseContestTimeToUTC(c.endTime) <= now);
+  } else {
+    list = list.filter((c) => parseContestTimeToUTC(c.startTime) > now);
+  }
 
-  if (upcoming.length === 0) {
+  if (list.length === 0) {
     return (
       <div className="p-4 bg-surface border rounded text-text-secondary">
-        No upcoming contests
+        {past ? 'No past contests' : 'No upcoming contests'}
       </div>
     );
   }
 
   return (
     <ul className="divide-y divide-border bg-surface border rounded">
-      {upcoming.map((c) => (
+      {list.map((c) => (
         <li
           key={c.id || `${c.platform}-${c.name}-${c.startTime}`}
           className="p-4 flex justify-between items-center"
@@ -31,7 +35,7 @@ function UpcomingContestsList({ contests = [] }) {
             <div>
               <p className="font-medium">{c.name}</p>
               <p className="text-xs text-text-secondary">
-                 {formatDateIST(c.startTime)} - {c.platform}
+                {formatDateIST(c.startTime)} - {c.platform}
               </p>
             </div>
           </div>

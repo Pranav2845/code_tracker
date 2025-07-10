@@ -2,10 +2,13 @@
 import axios from 'axios';
 
 /**
- * Fetch upcoming contests from the backend.
- * Returns an array of contest objects.
+ * Fetch upcoming and past contests from the backend.
+ * Returns an object { upcoming: [], past: [] }.
  */
 export async function fetchContests() {
-  const { data } = await axios.get('/contests');
-   return Array.isArray(data) ? data : [];
+   const { data } = await axios.get('/contests/all');
+  return {
+    upcoming: Array.isArray(data?.upcoming) ? data.upcoming : [],
+    past: Array.isArray(data?.past) ? data.past : [],
+  };
 }
