@@ -9,6 +9,12 @@ export function parseContestTimeToUTC(dateStr) {
   return zonedTimeToUtc(dateStr, IST_TIMEZONE);
 }
 
+// Format a Date object in UTC as "13th July, 2025"
+export function formatDate(date) {
+  if (!(date instanceof Date)) date = new Date(date);
+  return tzFormat(date, "do MMMM, yyyy", { timeZone: "UTC" });
+}
+
 // Format Date object as "13th July, 2025" in IST
 export function formatDateIST(date) {
   if (!(date instanceof Date)) date = parseContestTimeToUTC(date);
