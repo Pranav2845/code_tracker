@@ -1,3 +1,4 @@
+// src/pages/contests/index.jsx
 import React, { useState, useMemo, useEffect } from 'react';
 import Header from '../../components/ui/Header';
 import ContestSearchBar from '../../components/ContestSearchBar';
@@ -7,6 +8,7 @@ import PlatformFilter from '../../components/PlatformFilter';
 import { fetchContests } from '../../api/contests';
 import { parseContestTimeToUTC } from '../../utils/contestEventUtils.js';
 
+// Utility to split contests into upcoming, ongoing, and past
 function splitContests(contests, now) {
   const all = Array.isArray(contests)
     ? contests
@@ -16,17 +18,21 @@ function splitContests(contests, now) {
       ];
   const upcoming = [];
   const past = [];
+  const ongoing = [];
   const nowMs = typeof now === 'number' ? now : new Date(now).getTime();
   const oneYearAgo = nowMs - 365 * 24 * 60 * 60 * 1000;
   for (const c of all) {
+    const startMs = parseContestTimeToUTC(c.startTime).getTime();
     const endMs = parseContestTimeToUTC(c.endTime).getTime();
     if (endMs < nowMs) {
       if (endMs >= oneYearAgo) past.push(c);
-    } else {
+    } else if (startMs > nowMs) {
       upcoming.push(c);
+    } else {
+      ongoing.push(c);
     }
   }
-  return { upcoming, past };
+  return { upcoming, past, ongoing };
 }
 
 const Contests = () => {
@@ -36,11 +42,13 @@ const Contests = () => {
   const [view, setView] = useState('upcoming');
   const [now, setNow] = useState(Date.now());
 
+  // Update "now" every minute to auto-refresh ongoing/past/upcoming split
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(id);
   }, []);
 
+  // Fetch contests on mount
   useEffect(() => {
     fetchContests()
       .then((data) => {
@@ -54,22 +62,27 @@ const Contests = () => {
       });
   }, []);
 
-  const { upcoming, past } = useMemo(
+  // Split into upcoming, past, ongoing
+  const { upcoming, past, ongoing } = useMemo(
     () => splitContests(contests, now),
     [contests, now]
   );
 
-  // All unique platforms across both lists
-  const platformOptions = useMemo(
-    () =>
-      Array.from(new Set([...upcoming, ...past].map((c) => c.platform))).sort(),
-    [upcoming, past]
-  );
+  // All unique platforms
+  const platformOptions = useMemo(() => {
+    const raw = Array.isArray(contests)
+      ? contests
+      : [
+          ...(Array.isArray(contests.upcoming) ? contests.upcoming : []),
+          ...(Array.isArray(contests.past) ? contests.past : []),
+        ];
+    return Array.from(new Set(raw.map((c) => c.platform))).sort();
+  }, [contests]);
 
-  // List panel: filtered by current view (upcoming/past), search & platform
+  // List panel: filtered by view (upcoming or past), plus search & platform
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const list = view === 'past' ? past : upcoming;
+    const list = view === 'past' ? past : [...upcoming, ...ongoing];
     return list.filter((c) => {
       const matchesSearch = !term || c.name.toLowerCase().includes(term);
       const matchesPlatform =
@@ -77,12 +90,12 @@ const Contests = () => {
         selectedPlatforms.includes(c.platform);
       return matchesSearch && matchesPlatform;
     });
-  }, [upcoming, past, search, selectedPlatforms, view]);
+  }, [upcoming, past, ongoing, search, selectedPlatforms, view]);
 
-  // Calendar panel: filtered by search & platform (never by view)
+  // Calendar: always show all (upcoming, ongoing, past), filtered by search/platform only
   const calendarContests = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const list = [...upcoming, ...past];
+    const list = [...upcoming, ...ongoing, ...past];
     return list.filter((c) => {
       const matchesSearch = !term || c.name.toLowerCase().includes(term);
       const matchesPlatform =
@@ -90,7 +103,7 @@ const Contests = () => {
         selectedPlatforms.includes(c.platform);
       return matchesSearch && matchesPlatform;
     });
-  }, [upcoming, past, search, selectedPlatforms]);
+  }, [upcoming, past, ongoing, search, selectedPlatforms]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
