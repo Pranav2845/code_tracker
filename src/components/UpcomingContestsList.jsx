@@ -5,8 +5,10 @@ import PlatformLogo from './PlatformLogo';
 import { formatDateIST, parseContestTimeToUTC } from '../utils/contestEventUtils.js';
 
 function UpcomingContestsList({ contests = [] }) {
+   // Only show contests that haven't started yet
+  const now = new Date();
   const upcoming = Array.isArray(contests)
-    ? contests.filter((c) => parseContestTimeToUTC(c.endTime) > new Date())
+     ? contests.filter((c) => parseContestTimeToUTC(c.startTime) > now)
     : [];
 
   if (upcoming.length === 0) {

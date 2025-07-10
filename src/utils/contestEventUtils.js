@@ -1,20 +1,18 @@
 // src/utils/contestEventUtils.js
 import { getContestLogoUrl } from "./contestLogo.js";
-import tzFormat from "date-fns-tz/format";
-import utcToZonedTime from "date-fns-tz/utcToZonedTime";
-import zonedTimeToUtc from "date-fns-tz/zonedTimeToUtc";
+import { format as tzFormat, utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 
 export const IST_TIMEZONE = "Asia/Kolkata";
 
-// Parse any time string as IST and return UTC Date object
+// Parse any time string (UTC or local) and return a UTC Date object
 export function parseContestTimeToUTC(dateStr) {
-   if (dateStr instanceof Date) return dateStr;
+  if (dateStr instanceof Date) return dateStr;
   if (typeof dateStr === "string") {
     // If timezone info like 'Z' or an offset is present, parse normally
     if (/Z|[+-]\d{2}:?\d{2}$/.test(dateStr)) {
       return new Date(dateStr);
     }
-    // Otherwise treat string as IST
+    // Otherwise, treat string as IST
     return zonedTimeToUtc(dateStr, IST_TIMEZONE);
   }
   return new Date(dateStr);
@@ -35,7 +33,7 @@ export function formatDateIST(date) {
 
 // Format as "08:00 PM - 09:30 PM" in IST
 export function formatTimeRangeIST(start, end) {
-   start = parseContestTimeToUTC(start);
+  start = parseContestTimeToUTC(start);
   end = parseContestTimeToUTC(end);
   const startZoned = utcToZonedTime(start, IST_TIMEZONE);
   const endZoned = utcToZonedTime(end, IST_TIMEZONE);
@@ -74,13 +72,21 @@ export function formatDuration(ms) {
   return `${minutes}m`;
 }
 
-// Always parse string as UTC-IST, for consistent display
+// Returns a Date in IST for display in calendar
 function getDisplayDate(dateStr) {
-  return parseContestTimeToUTC(dateStr);
+  const utc = parseContestTimeToUTC(dateStr);
+  // This gives a Date object corresponding to IST, but the JS Date is still in system local time,
+  // which is what most calendar components expect!
+  return utcToZonedTime(utc, IST_TIMEZONE);
 }
 
 export function contestToCalendarEvent(contest) {
   if (!contest) return null;
+  // UTC times for accurate popups, IST for calendar display
+  const startUtc = parseContestTimeToUTC(contest.startTime);
+  const endUtc = parseContestTimeToUTC(contest.endTime);
+
+  // These are Date objects in IST (for calendar cells)
   const start = getDisplayDate(contest.startTime);
   const endOriginal = getDisplayDate(contest.endTime);
 
@@ -92,7 +98,7 @@ export function contestToCalendarEvent(contest) {
     eventEnd.setHours(0, 0, 0, 0);
   }
 
-  const event = {
+  return {
     id: contest.id,
     title: contest.name,
     start,
@@ -103,9 +109,9 @@ export function contestToCalendarEvent(contest) {
     originalData: contest,
     popupDetail: {
       title: contest.name,
-      date: formatDateIST(start), // Always IST
-      time: formatTimeRangeIST(start, endOriginal), // Always IST
-      duration: formatDuration(endOriginal.getTime() - start.getTime()),
+      date: formatDateIST(startUtc), // Always IST
+      time: formatTimeRangeIST(startUtc, endUtc), // Always IST
+      duration: formatDuration(endUtc.getTime() - startUtc.getTime()),
       status: getContestStatus(contest),
       platform: contest.platform,
       platformLogo: getContestLogoUrl(contest),
@@ -113,8 +119,6 @@ export function contestToCalendarEvent(contest) {
       addToCalendarUrl: createAddToCalendarUrl(contest),
     },
   };
-
-  return event;
 }
 
 export function contestsToCalendarEvents(contests = []) {
