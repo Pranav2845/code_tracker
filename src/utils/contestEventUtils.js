@@ -8,7 +8,16 @@ export const IST_TIMEZONE = "Asia/Kolkata";
 
 // Parse any time string as IST and return UTC Date object
 export function parseContestTimeToUTC(dateStr) {
-  return zonedTimeToUtc(dateStr, IST_TIMEZONE);
+   if (dateStr instanceof Date) return dateStr;
+  if (typeof dateStr === "string") {
+    // If timezone info like 'Z' or an offset is present, parse normally
+    if (/Z|[+-]\d{2}:?\d{2}$/.test(dateStr)) {
+      return new Date(dateStr);
+    }
+    // Otherwise treat string as IST
+    return zonedTimeToUtc(dateStr, IST_TIMEZONE);
+  }
+  return new Date(dateStr);
 }
 
 // Format a Date object in UTC as "13th July, 2025"
@@ -19,15 +28,15 @@ export function formatDate(date) {
 
 // Format Date object as "13th July, 2025" in IST
 export function formatDateIST(date) {
-  if (!(date instanceof Date)) date = parseContestTimeToUTC(date);
+  date = parseContestTimeToUTC(date);
   const zoned = utcToZonedTime(date, IST_TIMEZONE);
   return tzFormat(zoned, "do MMMM, yyyy", { timeZone: IST_TIMEZONE });
 }
 
 // Format as "08:00 PM - 09:30 PM" in IST
 export function formatTimeRangeIST(start, end) {
-  if (!(start instanceof Date)) start = parseContestTimeToUTC(start);
-  if (!(end instanceof Date)) end = parseContestTimeToUTC(end);
+   start = parseContestTimeToUTC(start);
+  end = parseContestTimeToUTC(end);
   const startZoned = utcToZonedTime(start, IST_TIMEZONE);
   const endZoned = utcToZonedTime(end, IST_TIMEZONE);
   return (
