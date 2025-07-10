@@ -2,10 +2,11 @@
 import React from 'react';
 import AddToCalendarButton from './AddToCalendarButton';
 import PlatformLogo from './PlatformLogo';
-import { formatDateIST } from '../utils/contestEventUtils.js';
+import { formatDateIST, parseContestTimeToUTC } from '../utils/contestEventUtils.js';
+
 function UpcomingContestsList({ contests = [] }) {
   const upcoming = Array.isArray(contests)
-    ? contests.filter((c) => new Date(c.endTime) > new Date())
+    ? contests.filter((c) => parseContestTimeToUTC(c.endTime) > new Date())
     : [];
 
   if (upcoming.length === 0) {

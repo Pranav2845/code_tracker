@@ -2,14 +2,14 @@
 
 import React from 'react';
 import Icon from './AppIcon';
+import { parseContestTimeToUTC } from '../utils/contestEventUtils.js';
 
 function AddToCalendarButton({ contest }) {
   const handleClick = () => {
     if (!contest) return;
-    const start = new Date(contest.startTime)
-      .toISOString()
+    const start = parseContestTimeToUTC(contest.startTime)      .toISOString()
       .replace(/[-:]|\.\d{3}/g, '');
-    const end = new Date(contest.endTime)
+    const end = parseContestTimeToUTC(contest.endTime)
       .toISOString()
       .replace(/[-:]|\.\d{3}/g, '');
     const url =

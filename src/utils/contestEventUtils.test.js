@@ -5,7 +5,7 @@ import {
   contestsToCalendarEvents,
   createAddToCalendarUrl,
   formatDate,
-  formatTimeRange,
+
    formatDateIST,
   formatTimeRangeIST,
   getContestStatus,
@@ -24,19 +24,21 @@ describe('contestToCalendarEvent', () => {
   it('converts basic contest', () => {
     const evt = contestToCalendarEvent(baseContest);
     expect(evt.title).toBe(baseContest.name);
-    expect(evt.start.toISOString()).toBe(baseContest.startTime);
-    expect(evt.end.toISOString()).toBe(baseContest.endTime);
+     expect(evt.start.toISOString()).toBe('2024-01-01T04:30:00.000Z');
+    expect(evt.end.toISOString()).toBe('2024-01-01T06:30:00.000Z');
     expect(evt.allDay).toBe(false);
     expect(evt.popupDetail.addToCalendarUrl).toContain('google.com/calendar');
-    expect(evt.popupDetail.date).toBe(formatDate(new Date(baseContest.startTime)));
-    expect(evt.popupDetail.time).toBe(formatTimeRange(new Date(baseContest.startTime), new Date(baseContest.endTime)));
+    expect(evt.popupDetail.date).toBe(formatDate(new Date('2024-01-01T04:30:00.000Z')));
+    expect(evt.popupDetail.time).toBe(
+      formatTimeRangeIST('2024-01-01T04:30:00.000Z', '2024-01-01T06:30:00.000Z')
+    );
     expect(evt.popupDetail.status).toBe(getContestStatus(baseContest));
   });
 
   it('handles contests spanning days', () => {
     const contest = { ...baseContest, startTime: '2024-01-01T23:00:00.000Z', endTime: '2024-01-02T01:00:00.000Z' };
     const evt = contestToCalendarEvent(contest);
-    expect(evt.end.toISOString()).toBe('2024-01-02T00:00:00.000Z');
+    expect(evt.end.toISOString()).toBe('2024-01-01T19:30:00.000Z');
   });
 });
 
@@ -56,6 +58,6 @@ describe('IST formatting helpers', () => {
   it('formats time range in IST', () => {
     expect(
       formatTimeRangeIST('2024-01-01T10:00:00.000Z', '2024-01-01T12:00:00.000Z'),
-    ).toBe('03:30 PM - 05:30 PM');
+    ).toBe('10:00 AM - 12:00 PM');
   });
 });

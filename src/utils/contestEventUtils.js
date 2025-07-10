@@ -1,62 +1,48 @@
 // src/utils/contestEventUtils.js
 import { getContestLogoUrl } from "./contestLogo.js";
+import { format as tzFormat, utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 
-export function formatDate(date) {
-  if (!(date instanceof Date)) date = new Date(date);
-  const day = date.getDate();
-  const suffix =
-    day % 10 === 1 && day % 100 !== 11
-      ? "st"
-      : day % 10 === 2 && day % 100 !== 12
-      ? "nd"
-      : day % 10 === 3 && day % 100 !== 13
-      ? "rd"
-      : "th";
-  const month = date.toLocaleString("default", { month: "long" });
-  return `${day}${suffix} ${month}, ${date.getFullYear()}`;
+export const IST_TIMEZONE = "Asia/Kolkata";
+
+// Parse any time string as IST and return UTC Date object
+export function parseContestTimeToUTC(dateStr) {
+  return zonedTimeToUtc(dateStr, IST_TIMEZONE);
 }
 
-// Format a JS Date as "13th July, 2025" in IST
+// Format Date object as "13th July, 2025" in IST
 export function formatDateIST(date) {
-  if (!(date instanceof Date)) date = new Date(date);
-  const dayNum = Number(
-    new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', day: 'numeric' }).format(date),
-  );
-  const suffix =
-    dayNum % 10 === 1 && dayNum % 100 !== 11
-      ? 'st'
-      : dayNum % 10 === 2 && dayNum % 100 !== 12
-      ? 'nd'
-      : dayNum % 10 === 3 && dayNum % 100 !== 13
-      ? 'rd'
-      : 'th';
-  const month = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', month: 'long' }).format(date);
-  const year = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', year: 'numeric' }).format(date);
-  return `${dayNum}${suffix} ${month}, ${year}`;
+  if (!(date instanceof Date)) date = parseContestTimeToUTC(date);
+  const zoned = utcToZonedTime(date, IST_TIMEZONE);
+  return tzFormat(zoned, "do MMMM, yyyy", { timeZone: IST_TIMEZONE });
 }
 
 // Format as "08:00 PM - 09:30 PM" in IST
 export function formatTimeRangeIST(start, end) {
-  const opts = { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true };
-  const fmt = new Intl.DateTimeFormat("en-US", opts);
-  return `${fmt.format(new Date(start))} – ${fmt.format(new Date(end))}`;
+  if (!(start instanceof Date)) start = parseContestTimeToUTC(start);
+  if (!(end instanceof Date)) end = parseContestTimeToUTC(end);
+  const startZoned = utcToZonedTime(start, IST_TIMEZONE);
+  const endZoned = utcToZonedTime(end, IST_TIMEZONE);
+  return (
+    tzFormat(startZoned, "hh:mm a", { timeZone: IST_TIMEZONE }) +
+    " - " +
+    tzFormat(endZoned, "hh:mm a", { timeZone: IST_TIMEZONE })
+  );
 }
 
 export function getContestStatus(contest) {
   if (!contest) return "";
-  return new Date(contest.endTime).getTime() > Date.now()
-    ? "Upcoming"
-    : "Contest Ended";
+  const endUtc = parseContestTimeToUTC(contest.endTime);
+  return endUtc.getTime() > Date.now() ? "Upcoming" : "Contest Ended";
 }
 
 export function createAddToCalendarUrl(contest) {
-  if (!contest) return '';
-  const start = new Date(contest.startTime)
+  if (!contest) return "";
+  const start = parseContestTimeToUTC(contest.startTime)
     .toISOString()
-    .replace(/[-:]|\.\d{3}/g, '');
-  const end = new Date(contest.endTime)
+    .replace(/[-:]|\.\d{3}/g, "");
+  const end = parseContestTimeToUTC(contest.endTime)
     .toISOString()
-    .replace(/[-:]|\.\d{3}/g, '');
+    .replace(/[-:]|\.\d{3}/g, "");
   return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
     contest.name,
   )}&dates=${start}/${end}&details=${encodeURIComponent(contest.url)}&sf=true&output=xml`;
@@ -71,9 +57,9 @@ export function formatDuration(ms) {
   return `${minutes}m`;
 }
 
-// Helper: for all platforms, always show IST (optional: restrict to leetcode only)
+// Always parse string as UTC-IST, for consistent display
 function getDisplayDate(dateStr) {
-  return new Date(dateStr);
+  return parseContestTimeToUTC(dateStr);
 }
 
 export function contestToCalendarEvent(contest) {
@@ -82,13 +68,13 @@ export function contestToCalendarEvent(contest) {
   const endOriginal = getDisplayDate(contest.endTime);
 
   let eventEnd = endOriginal;
+  // If contest spans days, only show first day in calendar (for correct cell coloring)
   if (start.toDateString() !== endOriginal.toDateString()) {
     eventEnd = new Date(start);
     eventEnd.setDate(eventEnd.getDate() + 1);
     eventEnd.setHours(0, 0, 0, 0);
   }
 
-  // --- THIS is the important part ---
   const event = {
     id: contest.id,
     title: contest.name,
@@ -100,9 +86,8 @@ export function contestToCalendarEvent(contest) {
     originalData: contest,
     popupDetail: {
       title: contest.name,
-      // ALWAYS use IST for date and time display:
-      date: formatDateIST(start),
-      time: formatTimeRangeIST(start, endOriginal),
+      date: formatDateIST(start), // Always IST
+      time: formatTimeRangeIST(start, endOriginal), // Always IST
       duration: formatDuration(endOriginal.getTime() - start.getTime()),
       status: getContestStatus(contest),
       platform: contest.platform,

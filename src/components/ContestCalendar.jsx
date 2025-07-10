@@ -35,6 +35,8 @@ const PLATFORM_LOGOS = {
   gfg: '/assets/images/gfg.png',
   cses: '/assets/images/cses_.png',
   codechef: '/assets/images/codechef.jpeg',
+  atcoder: '/assets/images/atcoder.png',
+
   code360: '/assets/images/codingninjas.jpeg',
   hackerrank: '/assets/images/hackerrank.webp',
 };
