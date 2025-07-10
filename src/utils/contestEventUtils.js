@@ -12,8 +12,8 @@ export function parseContestTimeToUTC(dateStr) {
     if (/Z|[+-]\d{2}:?\d{2}$/.test(dateStr)) {
       return new Date(dateStr);
     }
-    // Otherwise, treat string as IST
-    return zonedTimeToUtc(dateStr, IST_TIMEZONE);
+     // CLIST times are UTC without timezone info
+    return new Date(`${dateStr}Z`);
   }
   return new Date(dateStr);
 }
@@ -60,8 +60,7 @@ export function createAddToCalendarUrl(contest) {
     .replace(/[-:]|\.\d{3}/g, "");
   return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
     contest.name,
-  )}&dates=${start}/${end}&details=${encodeURIComponent(contest.url)}&sf=true&output=xml`;
-}
+ )}&dates=${start}/${end}&details=${encodeURIComponent(contest.url)}&ctz=${IST_TIMEZONE}&sf=true&output=xml`;}
 
 export function formatDuration(ms) {
   const totalMinutes = Math.round(ms / 60000);

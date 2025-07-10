@@ -2,20 +2,12 @@
 
 import React from 'react';
 import Icon from './AppIcon';
-import { parseContestTimeToUTC } from '../utils/contestEventUtils.js';
-
+import { createAddToCalendarUrl } from '../utils/contestEventUtils.js';
 function AddToCalendarButton({ contest }) {
   const handleClick = () => {
     if (!contest) return;
-    const start = parseContestTimeToUTC(contest.startTime)      .toISOString()
-      .replace(/[-:]|\.\d{3}/g, '');
-    const end = parseContestTimeToUTC(contest.endTime)
-      .toISOString()
-      .replace(/[-:]|\.\d{3}/g, '');
-    const url =
-      `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-        contest.name,
-      )}&dates=${start}/${end}&details=${encodeURIComponent(contest.url)}&sf=true&output=xml`;
+        const url = createAddToCalendarUrl(contest);
+
     window.open(url, '_blank');
   };
 

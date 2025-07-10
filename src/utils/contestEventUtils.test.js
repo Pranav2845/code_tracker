@@ -4,6 +4,8 @@ import {
   contestToCalendarEvent,
   contestsToCalendarEvents,
   createAddToCalendarUrl,
+    parseContestTimeToUTC,
+
   formatDate,
 
    formatDateIST,
@@ -60,6 +62,12 @@ describe('IST formatting helpers', () => {
       formatTimeRangeIST('2024-01-01T10:00:00.000Z', '2024-01-01T12:00:00.000Z'),
     ).toBe('03:30 PM - 05:30 PM');
    });
+
+  it('treats timezone-less strings as UTC', () => {
+    const d = parseContestTimeToUTC('2024-01-01T10:00:00');
+    expect(d.toISOString()).toBe('2024-01-01T10:00:00.000Z');
+  });
+  
   it('handles ISO strings with trailing Z', () => {
     expect(formatDateIST('2024-01-01T10:00:00Z')).toBe('1st January, 2024');
     expect(
