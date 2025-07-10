@@ -125,8 +125,12 @@ router.get('/all', async (req, res) => {
       }));
 
     const upcoming = mapList(extract(upcomingResp));
-    const past = mapList(extract(pastResp));
+       const pastAll = mapList(extract(pastResp));
 
+    // Only include past contests from the last year
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const past = pastAll.filter((c) => new Date(c.startTime) >= oneYearAgo);
     res.json({ upcoming, past });
   } catch (err) {
     console.error('❌ CLIST contests fetch error:', err.message);

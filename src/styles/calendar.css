@@ -140,6 +140,16 @@
   border-radius: 8px;
 }
 
+/* Allow month rows to expand so every event is visible */
+.rbc-month-row {
+  min-height: 120px;
+  height: auto !important;
+}
+
+.rbc-row-content {
+  overflow: visible !important;
+}
+
 .rbc-header {
   background: transparent;
   font-weight: 700;

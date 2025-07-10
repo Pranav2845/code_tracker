@@ -123,6 +123,7 @@ function ContestCalendar({ contests = [] }) {
         startAccessor="start"
         endAccessor="end"
         views={["month"]}
+        showAllEvents
         components={{ toolbar: Toolbar, event: Event }}
         // REMOVE eventPropGetter for single color:
         // eventPropGetter={eventPropGetter}
