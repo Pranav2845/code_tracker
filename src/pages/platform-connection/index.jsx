@@ -8,6 +8,7 @@ import ConnectionModal from "./components/ConnectionModal";
 import ActionButton from "./components/ActionButton";
 import { fetchCode360ProfileTotalCount } from "../../api/code360";
 
+const DEBUG = import.meta.env.DEV;
 export default function PlatformConnection() {
   const navigate = useNavigate();
   const [platforms, setPlatforms] = useState([]);
@@ -38,7 +39,7 @@ export default function PlatformConnection() {
       });
       setPlatforms(model);
     } catch (err) {
-      console.error("❌ fetchPlatforms error:", err);
+       if (DEBUG) console.error("❌ fetchPlatforms error:", err);
     }
   }
 
@@ -63,14 +64,13 @@ export default function PlatformConnection() {
             if (platformId === 'code360') {
         try {
           const count = await fetchCode360ProfileTotalCount(username);
-          console.log('Code360 total count:', count);
+         if (DEBUG) console.log('Code360 total count:', count);
         } catch (err) {
-          console.error('❌ fetchCode360ProfileTotalCount error:', err);
-        }
+  if (DEBUG) console.error('❌ fetchCode360ProfileTotalCount error:', err);        }
       }
       closeModal();
     } catch (err) {
-      console.error("❌ sync failed:", err);
+      if (DEBUG) console.error("❌ sync failed:", err);
       const msg = err.response?.data?.message || "Sync failed—check console for details.";
       alert(msg);
       
@@ -85,7 +85,7 @@ export default function PlatformConnection() {
       await axios.patch("/user/platforms", { platforms: { [platformId]: "" } });
       await fetchPlatforms();
     } catch (err) {
-      console.error("❌ disconnect failed:", err);
+      if (DEBUG) console.error("❌ disconnect failed:", err);
       alert("Disconnect failed—check console for details.");
     }
   }

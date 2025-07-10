@@ -28,15 +28,7 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-const PLATFORM_COLORS = {
-  leetcode: 'var(--color-leetcode)',
-  codeforces: 'var(--color-codeforces)',
-  gfg: 'var(--color-gfg)',
-  cses: 'var(--color-cses)',
-  codechef: 'var(--color-codechef)',
-  code360: 'var(--color-code360)',
-};
-
+// Platform logos for event icons
 const PLATFORM_LOGOS = {
   leetcode: '/assets/images/leetcode.png',
   codeforces: '/assets/images/codeforces.png',
@@ -47,7 +39,7 @@ const PLATFORM_LOGOS = {
   hackerrank: '/assets/images/hackerrank.webp',
 };
 
-// Custom toolbar as before
+// Custom toolbar
 function Toolbar({ label, onNavigate }) {
   return (
     <div className="rbc-toolbar flex justify-between items-center mb-4 px-4 pt-2 pb-3 bg-transparent">
@@ -70,18 +62,18 @@ function Toolbar({ label, onNavigate }) {
 }
 
 function Event({ event }) {
-    const dateLabel = formatDateIST(event.start);
+  const dateLabel = formatDateIST(event.start);
   const timeLabel = formatTimeRangeIST(
     event.originalData.startTime,
     event.originalData.endTime,
   );
   return (
-        <button
+    <button
       type="button"
       className="calendar-event w-full flex items-center space-x-1 relative group text-left"
     >
       <Image
-         src={PLATFORM_LOGOS[event.platform?.toLowerCase()]}
+        src={PLATFORM_LOGOS[event.platform?.toLowerCase()]}
         alt={event.platform}
         className="w-4 h-4"
       />
@@ -110,16 +102,10 @@ function Event({ event }) {
 
 function ContestCalendar({ contests = [] }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
-   const events = contestsToCalendarEvents(contests);
+  const events = contestsToCalendarEvents(contests);
 
-  const eventPropGetter = (event) => {
-    const key = event.platform?.toLowerCase();
-    const color = PLATFORM_COLORS[key] || 'var(--color-primary)';
-    return {
-      style: { backgroundColor: color },
-      className: key,
-    };
-  };
+  // REMOVE eventPropGetter for single color scheme!
+  // const eventPropGetter = (event) => { ... }
 
   const handleSelectEvent = (event) => {
     setSelectedEvent(event);
@@ -128,7 +114,6 @@ function ContestCalendar({ contests = [] }) {
   const closeModal = () => setSelectedEvent(null);
 
   return (
-    // Only take full available space (let parent control height)
     <div className="calendar-wrapper" style={{ width: '100%', height: '100%' }}>
       <Calendar
         localizer={localizer}
@@ -137,12 +122,13 @@ function ContestCalendar({ contests = [] }) {
         endAccessor="end"
         views={["month"]}
         components={{ toolbar: Toolbar, event: Event }}
-        eventPropGetter={eventPropGetter}
+        // REMOVE eventPropGetter for single color:
+        // eventPropGetter={eventPropGetter}
         className="calendar-full dark:calendar-dark"
         style={{ width: '100%', height: '100%', minHeight: '500px', background: 'none', border: 'none' }}
         onSelectEvent={handleSelectEvent}
       />
-       <ContestDetailModal event={selectedEvent} onClose={closeModal} />
+      <ContestDetailModal event={selectedEvent} onClose={closeModal} />
     </div>
   );
 }

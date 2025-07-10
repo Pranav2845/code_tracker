@@ -3,6 +3,8 @@ import React, { useEffect } from "react";
 import axios from "axios";
 import Routes from "./Routes";
 
+const DEBUG = import.meta.env.DEV;
+
 // 1️⃣ All requests to “/api/…” will be forwarded by Vite to your backend on :4028
 axios.defaults.baseURL =
   import.meta.env.VITE_API_BASE_URL || "/api"; 
@@ -27,8 +29,12 @@ function App() {
 
     axios
       .get("/user/profile")
-      .then((res) => console.log("✅ Profile OK:", res.data))
-      .catch((err) => console.error("❌ Profile error:", err));
+      .then((res) => {
+        if (DEBUG) console.log("✅ Profile OK:", res.data);
+      })
+      .catch((err) => {
+        if (DEBUG) console.error("❌ Profile error:", err);
+      });
   }, []);
 
   return <Routes />;

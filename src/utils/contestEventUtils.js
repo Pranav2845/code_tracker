@@ -1,5 +1,6 @@
 // src/utils/contestEventUtils.js
 import { getContestLogoUrl } from "./contestLogo.js";
+
 export function formatDate(date) {
   if (!(date instanceof Date)) date = new Date(date);
   const day = date.getDate();
@@ -15,6 +16,7 @@ export function formatDate(date) {
   return `${day}${suffix} ${month}, ${date.getFullYear()}`;
 }
 
+// Format a JS Date as "13th July, 2025" in IST
 export function formatDateIST(date) {
   if (!(date instanceof Date)) date = new Date(date);
   const dayNum = Number(
@@ -33,15 +35,11 @@ export function formatDateIST(date) {
   return `${dayNum}${suffix} ${month}, ${year}`;
 }
 
-export function formatTimeRange(start, end) {
-  const opts = { hour: "2-digit", minute: "2-digit" };
-  return `${new Date(start).toLocaleTimeString([], opts)} - ${new Date(end).toLocaleTimeString([], opts)}`;
-}
-
+// Format as "08:00 PM - 09:30 PM" in IST
 export function formatTimeRangeIST(start, end) {
-  const opts = { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" };
+  const opts = { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true };
   const fmt = new Intl.DateTimeFormat("en-US", opts);
-  return `${fmt.format(new Date(start))} - ${fmt.format(new Date(end))}`;
+  return `${fmt.format(new Date(start))} – ${fmt.format(new Date(end))}`;
 }
 
 export function getContestStatus(contest) {
@@ -64,10 +62,6 @@ export function createAddToCalendarUrl(contest) {
   )}&dates=${start}/${end}&details=${encodeURIComponent(contest.url)}&sf=true&output=xml`;
 }
 
-export function formatTime(date) {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
 export function formatDuration(ms) {
   const totalMinutes = Math.round(ms / 60000);
   const hours = Math.floor(totalMinutes / 60);
@@ -77,16 +71,15 @@ export function formatDuration(ms) {
   return `${minutes}m`;
 }
 
-export function formatDateIST(date) {
-  if (!(date instanceof Date)) date = new Date(date);
-  return date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+// Helper: for all platforms, always show IST (optional: restrict to leetcode only)
+function getDisplayDate(dateStr) {
+  return new Date(dateStr);
 }
-
 
 export function contestToCalendarEvent(contest) {
   if (!contest) return null;
-  const start = new Date(contest.startTime);
-  const endOriginal = new Date(contest.endTime);
+  const start = getDisplayDate(contest.startTime);
+  const endOriginal = getDisplayDate(contest.endTime);
 
   let eventEnd = endOriginal;
   if (start.toDateString() !== endOriginal.toDateString()) {
@@ -95,6 +88,7 @@ export function contestToCalendarEvent(contest) {
     eventEnd.setHours(0, 0, 0, 0);
   }
 
+  // --- THIS is the important part ---
   const event = {
     id: contest.id,
     title: contest.name,
@@ -106,8 +100,9 @@ export function contestToCalendarEvent(contest) {
     originalData: contest,
     popupDetail: {
       title: contest.name,
-      date: formatDate(start),
-      time: formatTimeRange(start, endOriginal),
+      // ALWAYS use IST for date and time display:
+      date: formatDateIST(start),
+      time: formatTimeRangeIST(start, endOriginal),
       duration: formatDuration(endOriginal.getTime() - start.getTime()),
       status: getContestStatus(contest),
       platform: contest.platform,
