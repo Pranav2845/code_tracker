@@ -6,6 +6,7 @@ import TopicSelector from "./components/TopicSelector";
 import SummaryCard from "./components/SummaryCard";
 import DifficultyChart from "./components/DifficultyChart";
 import ProblemTable from "./components/ProblemTable";
+import AIInsights from "./components/AIInsights";
 import Icon from "../../components/AppIcon";
 
 const TopicAnalysis = () => {
@@ -153,6 +154,14 @@ const TopicAnalysis = () => {
               difficultyData={topicData.difficultyDistribution}
             />
 
+                     <AIInsights
+              stats={{
+                completionRate: topicData.completionRate,
+                averageDifficulty: topicData.averageDifficulty,
+                successRate: topicData.successRate,
+              }}
+            />
+ 
             {topicData.problems.length > 0 ? (
               <ProblemTable problems={topicData.problems} />
             ) : (

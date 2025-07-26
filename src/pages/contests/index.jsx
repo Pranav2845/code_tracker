@@ -20,12 +20,12 @@ function splitContests(contests, now) {
   const past = [];
   const ongoing = [];
   const nowMs = typeof now === 'number' ? now : new Date(now).getTime();
-  const oneYearAgo = nowMs - 365 * 24 * 60 * 60 * 1000;
+  
   for (const c of all) {
     const startMs = parseContestTimeToUTC(c.startTime).getTime();
     const endMs = parseContestTimeToUTC(c.endTime).getTime();
     if (endMs < nowMs) {
-      if (endMs >= oneYearAgo) past.push(c);
+      past.push(c);
     } else if (startMs > nowMs) {
       upcoming.push(c);
     } else {
