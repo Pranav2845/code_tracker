@@ -82,7 +82,7 @@ const LineChart = ({ data }) => {
         />
          <Line type="monotone" dataKey="hackerrank" name="HackerRank" stroke="var(--color-success)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
         <Line type="monotone" dataKey="gfg" name="GFG" stroke="var(--color-gfg)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
- <Line type="monotone" dataKey="code360" name="Code 360 by Coding Ninjas" stroke="var(--color-code360)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />        <Line type="monotone" dataKey="cses" name="CSES" stroke="var(--color-cses)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+ <Line type="monotone" dataKey="code360" name="Code 360 by Coding Ninjas" stroke="var(--color-code360)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />     
         <Line type="monotone" dataKey="codechef" name="CodeChef" stroke="var(--color-codechef)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
       </RechartsLineChart>
     </ResponsiveContainer>

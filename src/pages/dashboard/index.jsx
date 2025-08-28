@@ -12,7 +12,6 @@ import SkeletonCard from "./components/SkeletonCard";
 import EventTracker from "./components/EventTracker";
 import SolvedQuestions from "./components/SolvedQuestions";
 import { fetchCode360SolvedProblems } from "../../api/code360";
-import { fetchCSESSolvedProblems } from "../../api/cses"; // <--- add this line
 import { fetchCodeChefSolvedProblems } from "../../api/codechef";
 
 const Dashboard = () => {
@@ -57,24 +56,7 @@ const Dashboard = () => {
         }
       }
 
-      // --- Fetch CSES problems ---
-      if (connections.cses?.handle) {
-        try {
-          const csesProblems = await fetchCSESSolvedProblems(connections.cses.handle);
-          if (Array.isArray(csesProblems)) {
-            const mapped = csesProblems.map(p => ({
-              _id: p.id,
-              platform: 'cses',
-              title: p.title,
-              url: p.url || '#',
-            }));
-            allProblems = allProblems.filter(pr => pr.platform !== 'cses').concat(mapped);
-          }
-        } catch (err) {
-          console.error('Error fetching CSES problems:', err);
-        }
-      }
-
+     
       // --- Fetch CodeChef problems ---
       if (connections.codechef?.handle) {
         try {
@@ -107,7 +89,6 @@ const Dashboard = () => {
         { id: "hackerrank", name: "HackerRank", color: "var(--color-success)" },
         { id: "gfg", name: "GeeksforGeeks", color: "var(--color-gfg)" },
         { id: "code360", name: "Code 360 by Coding Ninjas", color: "var(--color-code360)" },
-        { id: "cses", name: "CSES", color: "var(--color-cses)" },
         { id: "codechef", name: "CodeChef", color: "var(--color-codechef)" }
       ].map(p => {
         const entry = byPlatform.find(({ _id }) => _id === p.id);

@@ -1,14 +1,9 @@
 // backend/controllers/userController.js
-
 import User from '../models/User.js';
 import Problem from '../models/Problem.js';
 import PlatformAccount from '../models/PlatformAccount.js';
 import bcrypt from 'bcryptjs';
 import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
-import {
-  fetchCSESSolvedCount,
-  fetchCSESProblems
-} from '../services/cses.js';
 
 import { fetchGFGSolvedCount } from '../services/gfg.js';
 import {
@@ -118,13 +113,14 @@ export const changePassword = async (req, res) => {
 };
 
 /**
- * GET /api/user/stats/local
- * Returns `{ totalSolved, byPlatform, activeDays }` purely from MongoDB (no external calls).
+ * GET /api/user/stats
+ * Returns { totalSolved, byPlatform, activeDays }.
  */
-export const getUserStatsLocal = async (req, res) => {
+export const getUserStats = async (req, res) => {
   try {
     const userId = req.user._id;
 
+    // Count solved problems per platform from DB
     const byPlatformDB = await Problem.aggregate([
       { $match: { user: userId } },
       { $group: { _id: '$platform', count: { $sum: 1 } } },
@@ -136,7 +132,7 @@ export const getUserStatsLocal = async (req, res) => {
       'hackerrank',
       'gfg',
       'code360',
-      'cses',
+      
       'codechef',
     ];
 
@@ -152,13 +148,103 @@ export const getUserStatsLocal = async (req, res) => {
       }
     });
 
+    // LeetCode
+    const leetcodeHandle = req.user.platforms?.leetcode?.handle;
+    if (leetcodeHandle) {
+      const dbCount = platformMap.leetcode;
+      try {
+        const fetched = await fetchLeetCodeSolvedCount(leetcodeHandle);
+        platformMap.leetcode = typeof fetched === 'number' ? fetched : dbCount;
+      } catch (err) {
+        console.error('❌ fetchLeetCodeSolvedCount error:', err);
+        platformMap.leetcode = dbCount;
+      }
+    }
+
+    // Codeforces
+    const cfHandle = req.user.platforms?.codeforces?.handle;
+    if (cfHandle) {
+      const dbCount = platformMap.codeforces;
+      try {
+        const fetched = await fetchCFSolvedCount(cfHandle);
+        platformMap.codeforces = typeof fetched === 'number' ? fetched : dbCount;
+      } catch (err) {
+        console.error('❌ fetchCFSolvedCount error:', err);
+        platformMap.codeforces = dbCount;
+      }
+    }
+
+  
+
+    // GeeksforGeeks
+    const gfgHandle = req.user.platforms?.gfg?.handle;
+    if (gfgHandle) {
+      const dbCount = platformMap.gfg;
+      try {
+        const fetched = await fetchGFGSolvedCount(gfgHandle);
+        platformMap.gfg = fetched || dbCount;
+      } catch (err) {
+        console.error('❌ fetchGFGSolvedCount error:', err);
+        if (typeof dbCount === 'number') platformMap.gfg = dbCount;
+      }
+    }
+
+    // CodeChef
+    const ccHandle = req.user.platforms?.codechef?.handle;
+    if (ccHandle) {
+      const dbCount = platformMap.codechef;
+      try {
+        const fetched = await fetchCodeChefSolvedCount(ccHandle);
+        platformMap.codechef = fetched || dbCount;
+      } catch (err) {
+        console.error('❌ fetchCodeChefSolvedCount error:', err);
+        if (typeof dbCount === 'number') platformMap.codechef = dbCount;
+      }
+    }
+
+    // Code360
+    const cnHandle = req.user.platforms?.code360?.handle;
+    if (cnHandle) {
+      const dbCount = platformMap.code360;
+      let count;
+      try {
+        count = await fetchCode360SolvedCount(cnHandle);
+        if (!count) {
+          count = await fetchCode360ProfileTotalCount(cnHandle);
+        }
+      } catch {
+        try {
+          count = await fetchCode360ProfileTotalCount(cnHandle);
+        } catch {
+          count = dbCount;
+        }
+      }
+      platformMap.code360 = typeof count === 'number' ? count : dbCount;
+    }
+
+    // HackerRank
+    const hrHandle = req.user.platforms?.hackerrank?.handle;
+    if (hrHandle) {
+      const dbCount = platformMap.hackerrank;
+      try {
+        const fetched = await fetchHackerRankSolvedCount(hrHandle);
+        platformMap.hackerrank = fetched || dbCount;
+      } catch (err) {
+        console.error('❌ fetchHackerRankSolvedCount error:', err);
+        if (typeof dbCount === 'number') platformMap.hackerrank = dbCount;
+      }
+    }
+
+    // Build byPlatform array
     const byPlatform = Object.entries(platformMap).map(([platform, count]) => ({
       _id: platform,
       count,
     }));
 
+    // Total solved
     const totalSolved = byPlatform.reduce((sum, p) => sum + p.count, 0);
 
+    // Active days
     const daysAgg = await Problem.aggregate([
       { $match: { user: userId } },
       {
@@ -172,131 +258,8 @@ export const getUserStatsLocal = async (req, res) => {
 
     res.json({ totalSolved, byPlatform, activeDays });
   } catch (error) {
-    console.error('❌ getUserStatsLocal error:', error);
+    console.error('❌ getUserStats error:', error);
     res.status(500).json({ message: 'Failed to fetch user stats' });
-  }
-};
-
-/**
- * GET /api/user/stats
- * Triggers background refresh of external solved counts. Responds 202 immediately.
- */
-export const getUserStats = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const accounts = await PlatformAccount.find({ user: userId });
-
-    const tasks = accounts.map((acc) =>
-      (async () => {
-        try {
-          let count;
-          const handle = acc.handle;
-          switch (acc.platform) {
-            case 'leetcode':
-              count = await fetchLeetCodeSolvedCount(handle);
-              break;
-            case 'codeforces':
-              count = await fetchCFSolvedCount(handle);
-              break;
-            case 'hackerrank':
-              count = await fetchHackerRankSolvedCount(handle);
-              break;
-            case 'gfg':
-              count = await fetchGFGSolvedCount(handle);
-              break;
-            case 'code360':
-              try {
-                count = await fetchCode360SolvedCount(handle);
-                if (!count) {
-                  count = await fetchCode360ProfileTotalCount(handle);
-                }
-              } catch {
-                try {
-                  count = await fetchCode360ProfileTotalCount(handle);
-                } catch {
-                  count = undefined;
-                }
-              }
-              break;
-            case 'cses':
-              count = await fetchCSESSolvedCount(handle);
-              break;
-            case 'codechef':
-              count = await fetchCodeChefSolvedCount(handle);
-              break;
-            default:
-              break;
-          }
-
-          if (typeof count === 'number') {
-            await PlatformAccount.updateOne(
-              { _id: acc._id },
-              {
-                solvedCount: count,
-                solvedCountUpdatedAt: new Date(),
-                lastError: undefined,
-                lastErrorAt: undefined,
-              }
-            );
-          } else {
-            throw new Error('Invalid count');
-          }
-        } catch (err) {
-          await PlatformAccount.updateOne(
-            { _id: acc._id },
-            {
-              lastError: err?.message || String(err),
-              lastErrorAt: new Date(),
-            }
-          );
-        }
-      })()
-    );
-
-    Promise.allSettled(tasks).catch((err) =>
-      console.error('❌ stats refresh error:', err)
-    );
-
-    res.status(202).json({ accepted: true });
-  } catch (err) {
-    console.error('❌ getUserStats refresh error:', err);
-    res.status(500).json({ message: 'Failed to refresh user stats' });
-  }
-};
-
-/**
- * GET /api/user/stats/cached
- * Returns cached external solved counts with TTL.
- */
-export const getUserStatsCached = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const accounts = await PlatformAccount.find({ user: userId });
-    const ttl = Number(process.env.EXT_FETCH_TTL_MIN || 60) * 60 * 1000;
-    const now = Date.now();
-
-    const byPlatform = accounts.map((acc) => {
-      let count = null;
-      if (
-        acc.solvedCountUpdatedAt &&
-        now - acc.solvedCountUpdatedAt.getTime() <= ttl
-      ) {
-        count = acc.solvedCount ?? null;
-      }
-      return {
-        _id: acc.platform,
-        count,
-        lastError: acc.lastError,
-        lastErrorAt: acc.lastErrorAt,
-      };
-    });
-
-    const totalSolved = byPlatform.reduce((sum, p) => sum + (p.count || 0), 0);
-
-    res.json({ totalSolved, byPlatform });
-  } catch (err) {
-    console.error('❌ getUserStatsCached error:', err);
-    res.status(500).json({ message: 'Failed to fetch cached stats' });
   }
 };
 
@@ -308,75 +271,77 @@ export const getDashboardAnalytics = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Monthly & platform aggregation
-    const monthly = await Problem.aggregate([
+    // Fetch monthly counts, tag counts, and total solved in one go
+    const [agg] = await Problem.aggregate([
       { $match: { user: userId } },
       {
-        $group: {
-          _id: {
-            month: { $dateToString: { format: '%Y-%m-01', date: '$solvedAt' } },
-            platform: '$platform',
-          },
-          count: { $sum: 1 },
+        $facet: {
+          monthly: [
+            {
+              $group: {
+                _id: {
+                  month:    { $dateToString: { format: '%Y-%m-01', date: '$solvedAt' } },
+                  platform: '$platform',
+                },
+                count: { $sum: 1 },
+              },
+            },
+            { $sort: { '_id.month': 1 } },
+          ],
+          tagCounts: [
+            { $unwind: '$tags' },
+            { $group: { _id: '$tags', count: { $sum: 1 } } },
+          ],
+          total: [{ $count: 'count' }],
         },
       },
-      { $sort: { '_id.month': 1 } },
     ]);
+
+    const { monthly = [], tagCounts = [], total = [] } = agg || {};
 
     let connected = Object.entries(req.user.platforms || {})
       .filter(([, p]) => p.handle)
       .map(([k]) => k);
     if (!connected.length) {
-      connected = Array.from(new Set(monthly.map((m) => m._id.platform)));
+      connected = Array.from(new Set(monthly.map(m => m._id.platform)));
     }
 
     const monthSet = new Set();
     const monthCounts = {};
-    monthly.forEach((m) => {
+    monthly.forEach(m => {
       const { month, platform } = m._id;
       monthSet.add(month);
       monthCounts[month] ??= {};
-      connected.forEach((p) => (monthCounts[month][p] = 0));
+      connected.forEach(p => (monthCounts[month][p] = 0));
       if (connected.includes(platform)) {
         monthCounts[month][platform] = m.count;
       }
     });
 
     const months = Array.from(monthSet).sort();
-    const cumulative = Object.fromEntries(connected.map((p) => [p, 0]));
+    const cumulative = Object.fromEntries(connected.map(p => [p, 0]));
     const progressData = [];
     const platformActivity = [];
-    const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-    months.forEach((month) => {
+    months.forEach(month => {
       const counts = monthCounts[month];
-      connected.forEach((p) => {
-        cumulative[p] += counts[p] || 0;
-      });
+      connected.forEach(p => { cumulative[p] += counts[p] || 0; });
 
       const progressEntry = { date: month };
-      connected.forEach((p) => {
-        progressEntry[p] = cumulative[p];
-      });
+      connected.forEach(p => { progressEntry[p] = cumulative[p]; });
       progressData.push(progressEntry);
 
       const activityEntry = { month: labels[new Date(month).getUTCMonth()] };
-      connected.forEach((p) => {
-        activityEntry[p] = counts[p] || 0;
-      });
+      connected.forEach(p => { activityEntry[p] = counts[p] || 0; });
       platformActivity.push(activityEntry);
     });
 
-    // Topic strength
-    const tagAgg = await Problem.aggregate([
-      { $match: { user: userId } },
-      { $unwind: '$tags' },
-      { $group: { _id: '$tags', count: { $sum: 1 } } },
-    ]);
-    const total = await Problem.countDocuments({ user: userId });
-    const topicStrength = tagAgg.map((t) => ({
+    // Topic strength (percent per tag of total solved)
+    const totalCount = total[0]?.count || 0;
+    const topicStrength = tagCounts.map(t => ({
       topic: t._id,
-      score: total ? Math.round((t.count / total) * 100) : 0,
+      score: totalCount ? Math.round((t.count / totalCount) * 100) : 0,
     }));
 
     res.json({ progressData, platformActivity, topicStrength });
@@ -414,27 +379,7 @@ export const getContributionStats = async (req, res) => {
   }
 };
 
-/**
- * GET /api/user/cses/problems/:handle
- * Fetches solved problems for the given CSES profile.
- */
-export const getCSESSolvedProblems = async (req, res) => {
-  try {
-    const { handle } = req.params;
-    const problems = await fetchCSESProblems(handle);
-    const list = Array.isArray(problems)
-      ? problems.map((p) => ({
-          id: p.id,
-          title: p.title,
-          url: p.url,
-        }))
-      : [];
-    res.json({ problems: list });
-  } catch (err) {
-    console.error('❌ getCSESSolvedProblems error:', err);
-    res.status(500).json({ message: 'Failed to fetch CSES problems' });
-  }
-};
+
 
 /**
  * GET /api/user/code360/count/:username
@@ -510,7 +455,7 @@ export const getCodeChefSolvedProblems = async (req, res) => {
 
 /**
  * GET /api/contests
- *  Returns lists of upcoming and past programming contests.
+ * Returns lists of upcoming and past programming contests.
  */
 export const getContests = async (req, res) => {
   try {

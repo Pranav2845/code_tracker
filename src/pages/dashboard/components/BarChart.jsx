@@ -59,7 +59,7 @@ const BarChart = ({ data }) => {
          <Bar dataKey="hackerrank" name="HackerRank" stackId="a" fill="var(--color-success)" radius={[4,4,0,0]} />
         <Bar dataKey="gfg" name="GFG" stackId="a" fill="var(--color-gfg)" radius={[4,4,0,0]} />
         <Bar dataKey="code360" name="Code 360 by Coding Ninjas" stackId="a" fill="var(--color-code360)" radius={[4,4,0,0]} />
-        <Bar dataKey="cses" name="CSES" stackId="a" fill="var(--color-cses)" radius={[4,4,0,0]} />
+       
         <Bar dataKey="codechef" name="CodeChef" stackId="a" fill="var(--color-codechef)" radius={[4,4,0,0]} />
       </RechartsBarChart>
     </ResponsiveContainer>

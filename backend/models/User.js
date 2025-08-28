@@ -11,7 +11,6 @@ const userSchema = new mongoose.Schema({
     hackerrank: { handle: String },
     gfg: { handle: String },
     code360: { handle: String },
-    cses: { handle: String },
     codechef: { handle: String }
   }
 }, { timestamps: true });

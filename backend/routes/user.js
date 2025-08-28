@@ -5,12 +5,11 @@ import {
   updateUserProfile,
   updatePlatforms,
   getUserStats,
-  getCSESSolvedProblems,
+
   getDashboardAnalytics,
   getContributionStats,
-  getUserStatsLocal,
-  getUserStatsCached,
-  getCSESSubmissionCount,
+
+ 
   getCode360TotalCount,
   getCode360SolvedProblems,
 
@@ -25,13 +24,9 @@ router.patch ('/profile',   updateUserProfile);
 router.patch ('/platforms', updatePlatforms);
 router.get   ('/stats',     getUserStats);
 router.get   ('/analytics', getDashboardAnalytics);
-router.get   ('/stats/local',  getUserStatsLocal);
-router.get   ('/stats/cached', getUserStatsCached);
 router.get   ('/contributions', getContributionStats);
-router.get   ('/cses/submissions', getCSESSubmissionCount);
 router.post  ('/change-password', changePassword);
 router.get   ('/code360/problems/:username', getCode360SolvedProblems);
 router.get   ('/code360/count/:username', getCode360TotalCount);
-router.get   ('/cses/problems/:handle', getCSESSolvedProblems);
 
 export default router;

@@ -11,10 +11,7 @@ import {
   fetchCodeChefSolvedCount,
   fetchCodeChefProblems,
 } from '../services/codechef.js';
-import {
-  fetchCSESSolvedCount,
-  fetchCSESProblems,
-} from '../services/cses.js';
+
 import {
   fetchCode360Problems,
   fetchCode360ProfileTotalCount
@@ -93,25 +90,6 @@ export const syncPlatform = async (req, res) => {
             });
           } catch {
             return res.status(404).json({ message: 'CodeChef user not found' });
-          }
-        }
-        break;
-
-      case 'cses':
-        try {
-          problems = await fetchCSESProblems(handle);
-        } catch (err) {
-          console.warn('⚠️ fetchCSESProblems failed:', err.message);
-          try {
-            const solvedCount = await fetchCSESSolvedCount(handle);
-            await Problem.deleteMany({ user: userId, platform: 'cses' });
-            return res.status(200).json({
-              message: '✅ CSES synced successfully!',
-              account,
-              importedCount: solvedCount,
-            });
-          } catch {
-            return res.status(404).json({ message: 'CSES user not found' });
           }
         }
         break;

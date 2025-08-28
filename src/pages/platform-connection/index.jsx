@@ -26,7 +26,6 @@ export default function PlatformConnection() {
         { id: "hackerrank",   name: "HackerRank",    icon: "Code2",   color: "#2EC866" },
         { id: "gfg",          name: "GeeksforGeeks", icon: "Book",    color: "#16A34A" },
           { id: "code360", name: "Code 360 by Coding Ninjas", icon: "Flame",   color: "#44230b" },
-        { id: "cses",         name: "CSES",          icon: "Layers",  color: "#0EA5E9" },
         { id: "codechef",     name: "CodeChef",      icon: "PieChart",color: "#8B5CF6" }
       ].map(p => {
         const handle = data.platforms?.[p.id]?.handle || "";
