@@ -17,7 +17,11 @@ const platformAccountSchema = new mongoose.Schema({
     required: true
   },
   handle: { type: String, required: true },
-  syncedAt: { type: Date, default: Date.now }
+  syncedAt: { type: Date, default: Date.now },
+  solvedCount: { type: Number },
+  solvedCountUpdatedAt: { type: Date },
+  lastError: { type: String },
+  lastErrorAt: { type: Date }
 }, { timestamps: true });
 
 export default mongoose.model('PlatformAccount', platformAccountSchema);

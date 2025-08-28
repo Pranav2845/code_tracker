@@ -7,7 +7,9 @@ vi.mock('../models/Problem.js', () => ({
 }));
 
 vi.mock('../models/User.js', () => ({ default: {} }));
-vi.mock('../models/PlatformAccount.js', () => ({ default: {} }));
+vi.mock('../models/PlatformAccount.js', () => ({
+  default: { find: vi.fn(), updateOne: vi.fn() }
+}));
 
 vi.mock('../services/leetcode.js', () => ({
   fetchLeetCodeSolvedCount: vi.fn()
@@ -32,17 +34,17 @@ vi.mock('../services/hackerrank.js', () => ({
   fetchHackerRankSolvedCount: vi.fn()
 }));
 vi.mock('../services/codechef.js', () => ({
-    fetchCodeChefSolvedCount: vi.fn(),
+  fetchCodeChefSolvedCount: vi.fn(),
   fetchCodeChefProblems: vi.fn()
 }));
 vi.mock('../services/contests.js', () => ({
-    fetchAllContests: vi.fn(),
+  fetchAllContests: vi.fn(),
   fetchUpcomingContests: vi.fn()
 }));
 
 const Problem = (await import('../models/Problem.js')).default;
-const { getUserStats, getCodeChefSolvedProblems } = await import('../controllers/userController.js');
-const { fetchCSESSolvedCount } = await import('../services/cses.js');
+const PlatformAccount = (await import('../models/PlatformAccount.js')).default;
+const { getUserStats, getUserStatsLocal, getCodeChefSolvedProblems } = await import('../controllers/userController.js');
 const { fetchCodeChefProblems } = await import('../services/codechef.js');
 
 beforeEach(() => {
@@ -84,27 +86,40 @@ describe('getCodeChefSolvedProblems', () => {
   });
 });
 
-describe('getUserStats', () => {
-  it('uses live CSES solved count', async () => {
+describe('getUserStatsLocal', () => {
+  it('aggregates from Problem collection', async () => {
+    // First aggregate call: byPlatform
     Problem.aggregate
       .mockResolvedValueOnce([{ _id: 'cses', count: 5 }])
+      // Second aggregate call: active days
       .mockResolvedValueOnce([{ count: 3 }]);
-    fetchCSESSolvedCount.mockResolvedValueOnce(8);
 
-    const req = { user: { _id: 'u1', platforms: { cses: { handle: 'alice' } } } };
+    const req = { user: { _id: 'u1' } };
+    const res = { json: vi.fn(), status: vi.fn().mockReturnThis() };
+
+    await getUserStatsLocal(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        totalSolved: 5,
+        activeDays: 3,
+        byPlatform: expect.arrayContaining([
+          expect.objectContaining({ _id: 'cses', count: 5 })
+        ])
+      })
+    );
+  });
+});
+
+describe('getUserStats', () => {
+  it('returns 202 accepted', async () => {
+    PlatformAccount.find.mockResolvedValue([]);
+    const req = { user: { _id: 'u1' } };
     const res = { json: vi.fn(), status: vi.fn().mockReturnThis() };
 
     await getUserStats(req, res);
 
-    expect(fetchCSESSolvedCount).toHaveBeenCalledWith('alice');
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        totalSolved: 8,
-        activeDays: 3,
-        byPlatform: expect.arrayContaining([
-          expect.objectContaining({ _id: 'cses', count: 8 })
-        ])
-      })
-    );
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalledWith({ accepted: true });
   });
 });
