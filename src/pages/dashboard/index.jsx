@@ -6,7 +6,7 @@ import Header from "../../components/ui/Header";
 import Icon from "../../components/AppIcon";
 import MetricCard from "./components/MetricCard";
 import PlatformTotalsChart from "./components/PlatformTotalsChart";
-import RadarChart from "./components/RadarChart";
+import TopicStrengthChart from "./components/TopicStrengthChart";
 import PlatformStatus from "./components/PlatformStatus";
 import SkeletonCard from "./components/SkeletonCard";
 import EventTracker from "./components/EventTracker";
@@ -265,7 +265,7 @@ const Dashboard = () => {
                   <Icon name="AlertTriangle" size={24} /> {errorMessage || "Failed to load"}
                 </div>
               ) : (
-                <RadarChart data={dashboardData.topicStrength} />
+                 <TopicStrengthChart topicStrength={dashboardData.topicStrength} />
               )}
             </div>
             <div className="text-right mt-2">

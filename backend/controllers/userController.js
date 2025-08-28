@@ -342,6 +342,7 @@ export const getDashboardAnalytics = async (req, res) => {
     const topicStrength = tagCounts.map(t => ({
       topic: t._id,
       score: totalCount ? Math.round((t.count / totalCount) * 100) : 0,
+      solved: t.count,
     }));
 
     res.json({ progressData, platformActivity, topicStrength });
