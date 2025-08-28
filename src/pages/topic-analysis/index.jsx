@@ -106,9 +106,9 @@ const TopicAnalysis = () => {
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-text-primary">Topic Analysis</h1>
+            <h1 className="text-2xl font-bold text-text-primary">Topic Analysis By AI</h1>
             <p className="text-text-secondary mt-1">
-              Analyze your performance across different coding topics
+                Get intelligent insights into your strengths and weaknesses across coding topics using AI.
             </p>
           </div>
           <button

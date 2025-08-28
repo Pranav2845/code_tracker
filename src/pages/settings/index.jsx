@@ -76,7 +76,7 @@ export default function Settings() {
   return (
      <div className="max-w-3xl mx-auto p-6 space-y-8 min-h-screen bg-background">
       <section>
-        <h1 className="text-2xl font-bold mb-4">Your Profile</h1>
+        <h1 className="text-2xl font-bold mb-4">Profile Settings</h1>
         <form onSubmit={updateProfile} className="space-y-4">
           {status.profile && <p className="text-sm text-success">{status.profile}</p>}
           <Input

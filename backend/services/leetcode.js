@@ -2,19 +2,21 @@ import axios from 'axios';
 
 const GQL_URL = 'https://leetcode.com/graphql';
 
-// GraphQL query to get recent submissions
-const RECENT_SUBMISSIONS_QUERY = `
-  query recentSubmissions($username: String!) {
-    recentSubmissionList(username: $username) {
-      title
-      titleSlug
-      timestamp
-      statusDisplay
+// Paginated submissions query
+const SUBMISSION_LIST_QUERY = `
+  query submissionList($username: String!, $limit: Int!, $offset: Int!) {
+    submissionList(username: $username, limit: $limit, offset: $offset) {
+      submissions {
+        title
+        titleSlug
+        timestamp
+        statusDisplay
+      }
+      hasNext
     }
   }
 `;
 
-// GraphQL query to get metadata for one problem
 const QUESTION_DETAIL_QUERY = `
   query getQuestionDetail($titleSlug: String!) {
     question(titleSlug: $titleSlug) {
@@ -27,7 +29,6 @@ const QUESTION_DETAIL_QUERY = `
   }
 `;
 
-// GraphQL query to get total solved counts per difficulty
 const USER_STATS_QUERY = `
   query getUserSolved($username: String!) {
     matchedUser(username: $username) {
@@ -41,23 +42,35 @@ const USER_STATS_QUERY = `
   }
 `;
 
-
-// 🔁 Fetch only Accepted submissions from recent 20
+// Fetch **all** accepted submissions via pagination
 async function fetchAcceptedSubmissions(username) {
-  const { data } = await axios.post(
-    GQL_URL,
-    {
-      query: RECENT_SUBMISSIONS_QUERY,
-      variables: { username }
-    },
-    { headers: { 'Content-Type': 'application/json' } }
-  );
+  const limit = 20;
+  let offset = 0;
+  let allItems = [];
 
-  const submissions = data?.data?.recentSubmissionList || [];
-  return submissions.filter((s) => s.statusDisplay === 'Accepted');
+  while (true) {
+    const { data } = await axios.post(
+      GQL_URL,
+      {
+        query: SUBMISSION_LIST_QUERY,
+        variables: { username, limit, offset },
+      },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+
+    const list = data?.data?.submissionList;
+    if (!list || !list.submissions || list.submissions.length === 0) break;
+
+    allItems = allItems.concat(list.submissions.filter((s) => s.statusDisplay === 'Accepted'));
+
+    if (!list.hasNext) break;
+    offset += limit;
+  }
+
+  return allItems;
 }
 
-// 📘 Fetch metadata for each problem one by one
+// Fetch metadata for each problem
 async function fetchProblemDetails(slugs) {
   const result = {};
 
@@ -65,22 +78,15 @@ async function fetchProblemDetails(slugs) {
     try {
       const { data } = await axios.post(
         GQL_URL,
-        {
-          query: QUESTION_DETAIL_QUERY,
-          variables: { titleSlug: slug }
-        },
+        { query: QUESTION_DETAIL_QUERY, variables: { titleSlug: slug } },
         { headers: { 'Content-Type': 'application/json' } }
       );
-
       const q = data.data?.question;
-      if (q) {
-        result[slug] = {
-          difficulty: q.difficulty || 'Unknown',
-          tags: q.topicTags.map((t) => t.name) || []
-        };
-      }
-    } catch (err) {
-      console.error(`❌ Failed to fetch metadata for ${slug}:`, err.message);
+      result[slug] = {
+        difficulty: q?.difficulty || 'Unknown',
+        tags: q?.topicTags?.map((t) => t.name) || []
+      };
+    } catch {
       result[slug] = { difficulty: 'Unknown', tags: [] };
     }
   }
@@ -88,11 +94,9 @@ async function fetchProblemDetails(slugs) {
   return result;
 }
 
-// ✅ Final exported function
 export async function fetchLeetCodeProblems(username) {
   const submissions = await fetchAcceptedSubmissions(username);
 
-  // Deduplicate by latest timestamp
   const uniqueBySlug = {};
   for (const s of submissions) {
     if (!uniqueBySlug[s.titleSlug] || s.timestamp > uniqueBySlug[s.titleSlug].timestamp) {
@@ -108,7 +112,6 @@ export async function fetchLeetCodeProblems(username) {
   return slugs.map((slug) => {
     const { title, timestamp } = uniqueBySlug[slug];
     const meta = detailsMap[slug] || { difficulty: 'Unknown', tags: [] };
-
     return {
       id: slug,
       title,
@@ -120,25 +123,15 @@ export async function fetchLeetCodeProblems(username) {
   });
 }
 
-// ➕ Fetch total solved count for the user
 export async function fetchLeetCodeSolvedCount(username) {
   const { data } = await axios.post(
     GQL_URL,
-    {
-      query: USER_STATS_QUERY,
-      variables: { username },
-    },
+    { query: USER_STATS_QUERY, variables: { username } },
     { headers: { 'Content-Type': 'application/json' } }
   );
 
-  const stats =
-    data?.data?.matchedUser?.submitStatsGlobal?.acSubmissionNum || [];
-  // The "acSubmissionNum" array includes an entry with difficulty "All"
-  // which already represents the user's total solved count. Prefer that
-  // value when available to avoid double counting.
+  const stats = data?.data?.matchedUser?.submitStatsGlobal?.acSubmissionNum || [];
   const totalEntry = stats.find((s) => s.difficulty === 'All');
-  if (totalEntry) {
-    return totalEntry.count || 0;
-  }
+  if (totalEntry) return totalEntry.count || 0;
   return stats.reduce((sum, s) => sum + (s.count || 0), 0);
 }

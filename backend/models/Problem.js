@@ -26,5 +26,8 @@ const problemSchema = new mongoose.Schema({
 
 // Ensure we don't store duplicates for the same problem
 problemSchema.index({ user: 1, platform: 1, problemId: 1 }, { unique: true });
-
+// Compound index to optimize time-based queries per user
+problemSchema.index({ user: 1, solvedAt: -1 });
+// Compound index to support tag-based aggregations per user
+problemSchema.index({ user: 1, tags: 1 });
 export default mongoose.model('Problem', problemSchema);
