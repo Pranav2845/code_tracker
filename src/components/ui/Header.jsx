@@ -1,13 +1,12 @@
 // src/components/ui/Header.jsx
 import React, { useState, useRef, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import Icon from "../AppIcon";
 import useTheme from "../../hooks/useTheme";
 
 function Header({ variant = "default" }) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useTheme();
-  const location = useLocation();
   const navigate = useNavigate();
   const profileRef = useRef();
 
@@ -16,10 +15,15 @@ function Header({ variant = "default" }) {
     { name: "Platform Connection", path: "/platform-connection", icon: "Link" },
     { name: "Topic Analysis", path: "/topic-analysis", icon: "BarChart2" },
     { name: "Contests", path: "/contests", icon: "Calendar" },
-     { name: "Gemini", path: "/gemini", icon: "Star" },
+    { name: "Gemini", path: "/gemini", icon: "Star" },
   ];
 
-  const isActive = (path) => location.pathname === path;
+  const navLinkClass =
+    "px-3 py-2 rounded-md text-sm font-medium transition-colors";
+  const activeClass = "bg-primary-50 text-primary";
+  const inactiveClass =
+    "text-text-secondary hover:text-text-primary hover:bg-background";
+
   const toggleProfileMenu = () => setIsProfileMenuOpen((prev) => !prev);
   const closeProfileMenu = () => setIsProfileMenuOpen(false);
 
@@ -72,18 +76,15 @@ function Header({ variant = "default" }) {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-4">
             {navigation.map((item) => (
-              <Link
+              <NavLink
                 key={item.name}
                 to={item.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive(item.path)
-                    ? "bg-primary-50 text-primary"
-                    : "text-text-secondary hover:text-text-primary hover:bg-background"
-                }`}
-                aria-current={isActive(item.path) ? "page" : undefined}
+                className={({ isActive }) =>
+                  navLinkClass + (isActive ? " " + activeClass : " " + inactiveClass)
+                }
               >
                 {item.name}
-              </Link>
+              </NavLink>
             ))}
           </nav>
 
@@ -122,11 +123,7 @@ function Header({ variant = "default" }) {
                   <span className="text-sm font-medium text-text-primary hidden lg:block">
                     Pranav Pandey
                   </span>
-                  <Icon
-                    name="ChevronDown"
-                    size={16}
-                    className="hidden lg:block"
-                  />
+                  <Icon name="ChevronDown" size={16} className="hidden lg:block" />
                 </button>
               )}
 
@@ -184,21 +181,19 @@ function Header({ variant = "default" }) {
       <div className="md:hidden" id="mobile-menu">
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
           {navigation.map((item) => (
-            <Link
+            <NavLink
               key={item.name}
               to={item.path}
-              className={`block px-3 py-2 rounded-md text-base font-medium ${
-                isActive(item.path)
-                  ? "bg-primary-50 text-primary"
-                  : "text-text-secondary hover:text-text-primary hover:bg-background"
-              }`}
-              aria-current={isActive(item.path) ? "page" : undefined}
+              className={({ isActive }) =>
+                "block px-3 py-2 rounded-md text-base font-medium " +
+                (isActive ? activeClass : inactiveClass)
+              }
             >
               <div className="flex items-center">
                 <Icon name={item.icon} size={18} className="mr-2" />
                 {item.name}
               </div>
-            </Link>
+            </NavLink>
           ))}
         </div>
       </div>
