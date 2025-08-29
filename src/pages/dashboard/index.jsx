@@ -25,7 +25,9 @@ function readCache() {
     const { data, ts } = JSON.parse(raw);
     if (Date.now() - ts > CACHE_TTL_MS) return null;
     return data;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 function writeCache(data) {
   try {
@@ -42,9 +44,14 @@ const Dashboard = () => {
   const [contests, setContests] = useState([]);
   const abortRef = useRef(null);
 
+  // ✅ initial page-load flag (overlay will use this)
+  const isFirstLoad = isLoading && !dashboardData;
+
   const setDataOnce = (data) => {
     setDashboardData(data);
     setLastUpdated(new Date());
+    setHasError(false);
+    setErrorMessage("");
     writeCache(data);
   };
 
@@ -60,7 +67,6 @@ const Dashboard = () => {
     }
 
     try {
-      // 🔄 Parallelize core requests
       const [profileRes, statsRes, problemsRes, analyticsRes, contestsRes] = await Promise.all([
         axios.get("/user/profile", { signal: controller.signal }),
         axios.get("/user/stats", { signal: controller.signal }),
@@ -74,7 +80,6 @@ const Dashboard = () => {
       let allProblems = problemsRes.data || [];
       const { platformActivity: rawActivity, topicStrength: rawStrength } = analyticsRes.data || {};
 
-      // 🎯 Optional external sources in parallel (only if handles exist)
       const code360Handle = connections.code360?.handle;
       const codechefHandle = connections.codechef?.handle;
 
@@ -102,13 +107,11 @@ const Dashboard = () => {
         allProblems = allProblems.filter((pr) => pr.platform !== "codechef").concat(mapped);
       }
 
-      // Contests (keep lightweight for header area)
       const upcomingContests = Array.isArray(contestsRes.data?.upcoming)
         ? contestsRes.data.upcoming.slice(0, 5)
         : [];
       setContests(upcomingContests);
 
-      // Platforms + solved
       const platformsMaster = [
         { id: "leetcode", name: "LeetCode", color: "var(--color-leetcode)" },
         { id: "codeforces", name: "Codeforces", color: "var(--color-codeforces)" },
@@ -159,17 +162,16 @@ const Dashboard = () => {
         problemsMap,
       });
     } catch (err) {
-      if (axios.isCancel?.(err)) return;
+      if (err?.code === "ERR_CANCELED") return;
       console.error("Error fetching dashboard data:", err);
       setHasError(true);
-      setErrorMessage(err.response?.data?.message || "Failed to load data");
+      setErrorMessage(err?.response?.data?.message || "Failed to load data");
     } finally {
       if (!background) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    // ⚡️ Show cached instantly (if present), then refresh in background
     const cached = readCache();
     if (cached) {
       setDashboardData(cached);
@@ -196,7 +198,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 py-6" aria-busy={isFirstLoad} aria-live="polite">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -225,9 +227,9 @@ const Dashboard = () => {
               <Icon name="ExternalLink" size={14} className="ml-1" />
             </Link>
           </div>
-          {isLoading && !dashboardData ? (
+          {isFirstLoad ? (
             <div className="h-16 bg-surface rounded animate-pulse" />
-          ) : hasError && !dashboardData ? (
+          ) : !dashboardData && hasError ? (
             <div className="p-4 bg-surface border rounded text-text-secondary">
               {errorMessage || "Failed to load platform data"}
             </div>
@@ -238,9 +240,9 @@ const Dashboard = () => {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-          {isLoading && !dashboardData ? (
+          {isFirstLoad ? (
             [0].map((_, i) => <SkeletonCard key={i} />)
-          ) : hasError && !dashboardData ? (
+          ) : !dashboardData && hasError ? (
             <div className="col-span-full p-4 bg-surface border rounded text-center">
               {errorMessage || "Failed to load stats"}
             </div>
@@ -264,42 +266,46 @@ const Dashboard = () => {
               <div className="flex flex-wrap gap-2 text-xs text-text-secondary">
                 {(dashboardData?.platforms || []).map((p) => (
                   <span key={p.id} className="flex items-center">
-                    <span
-                      className="w-2 h-2 rounded-full mr-1 inline-block"
-                      style={{ backgroundColor: p.color }}
-                    />
+                    <span className="w-2 h-2 rounded-full mr-1 inline-block" style={{ backgroundColor: p.color }} />
                     {p.name}
                   </span>
                 ))}
               </div>
             </div>
-            <div className="h-64">
-              <Suspense fallback={<div className="w-full h-full bg-background animate-pulse rounded" />}>
-                {dashboardData && !hasError ? (
-                  <PlatformTotalsChart data={dashboardData.progressData || []} />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-text-secondary">
-                    <Icon name="AlertTriangle" size={24} /> {errorMessage || "Failed to load"}
-                  </div>
-                )}
-              </Suspense>
-            </div>
+
+            {isFirstLoad ? (
+              <div className="h-64 w-full bg-background animate-pulse rounded" />
+            ) : !dashboardData && hasError ? (
+              <div className="h-64 flex items-center justify-center text-text-secondary">
+                <Icon name="AlertTriangle" size={24} /> {errorMessage || "Failed to load"}
+              </div>
+            ) : (
+              <div className="h-64">
+                <Suspense fallback={<div className="w-full h-full bg-background animate-pulse rounded" />}>
+                  <PlatformTotalsChart data={dashboardData?.progressData || []} />
+                </Suspense>
+              </div>
+            )}
           </div>
 
           {/* Topic Strength */}
           <div className="bg-surface border rounded p-4 shadow-sm">
             <h2 className="font-semibold mb-4">Topic Strength Analysis</h2>
-            <div className="h-64">
-              <Suspense fallback={<div className="w-full h-full bg-background animate-pulse rounded" />}>
-                {dashboardData && !hasError ? (
-                  <TopicStrengthChart topicStrength={dashboardData.topicStrength || []} />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-text-secondary">
-                    <Icon name="AlertTriangle" size={24} /> {errorMessage || "Failed to load"}
-                  </div>
-                )}
-              </Suspense>
-            </div>
+
+            {isFirstLoad ? (
+              <div className="h-64 w-full bg-background animate-pulse rounded" />
+            ) : !dashboardData && hasError ? (
+              <div className="h-64 flex items-center justify-center text-text-secondary">
+                <Icon name="AlertTriangle" size={24} /> {errorMessage || "Failed to load"}
+              </div>
+            ) : (
+              <div className="h-64">
+                <Suspense fallback={<div className="w-full h-full bg-background animate-pulse rounded" />}>
+                  <TopicStrengthChart topicStrength={dashboardData?.topicStrength || []} />
+                </Suspense>
+              </div>
+            )}
+
             <div className="text-right mt-2">
               <Link to="/topic-analysis" className="text-sm text-primary flex items-center justify-end">
                 View detailed analysis
@@ -311,9 +317,9 @@ const Dashboard = () => {
 
         {/* Questions Solved by Platform */}
         <div className="mb-6">
-          {isLoading && !dashboardData ? (
+          {isFirstLoad ? (
             <div className="h-32 bg-background animate-pulse rounded" />
-          ) : hasError && !dashboardData ? (
+          ) : !dashboardData && hasError ? (
             <div className="p-4 bg-surface border rounded text-text-secondary">
               {errorMessage || "Failed to load problems"}
             </div>
@@ -361,6 +367,19 @@ const Dashboard = () => {
           )}
         </div>
       </main>
+
+      {/* 🔵 Full-page loading overlay on first load */}
+      {isFirstLoad && (
+        <div className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex items-center gap-3 text-text-primary" role="status" aria-live="polite">
+            <svg className="animate-spin h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+            <span className="font-medium">Loading…</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
