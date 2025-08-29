@@ -16,6 +16,7 @@ function Header({ variant = "default" }) {
     { name: "Platform Connection", path: "/platform-connection", icon: "Link" },
     { name: "Topic Analysis", path: "/topic-analysis", icon: "BarChart2" },
     { name: "Contests", path: "/contests", icon: "Calendar" },
+     { name: "Gemini", path: "/gemini", icon: "Star" },
   ];
 
   const isActive = (path) => location.pathname === path;

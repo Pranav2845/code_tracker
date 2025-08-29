@@ -11,6 +11,8 @@ import contestRoutes  from './routes/contests.js';
 
 import publicRoutes   from './routes/public.js';
 import authMiddleware from './middleware/auth.js';
+import geminiRoutes   from './routes/gemini.js';
+
 import { notFound, errorHandler } from './utils/errorHandler.js';
 
 dotenv.config();
@@ -35,6 +37,8 @@ app.use('/api', publicRoutes);
 
 // 4️⃣ Public contests route (MUST be before authMiddleware)
 app.use('/api/contests', contestRoutes);
+app.use('/api/ai', geminiRoutes);
+
 
 // 5️⃣ Protect everything below this line
 app.use('/api', authMiddleware);

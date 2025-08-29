@@ -15,6 +15,7 @@ import PlatformConnection from "./pages/platform-connection";
 import Onboarding from "./pages/onboarding";
 import TopicAnalysis from "./pages/topic-analysis";
 import Contests from "./pages/contests";
+import GeminiPage from "./pages/gemini";
 import NotFound from "./pages/NotFound";
 
 const Routes = () => (
@@ -72,6 +73,14 @@ const Routes = () => (
           element={
             <PrivateRoute>
               <Contests />
+            </PrivateRoute>
+          }
+            />
+        <Route
+          path="/gemini"
+          element={
+            <PrivateRoute>
+              <GeminiPage />
             </PrivateRoute>
           }
         />
