@@ -12,8 +12,12 @@ import { fetchCode360SolvedProblems } from "../../api/code360";
 import { fetchCodeChefSolvedProblems } from "../../api/codechef";
 
 // 🚀 Lazy-load heavy widgets
-const PlatformTotalsChart = React.lazy(() => import("./components/PlatformTotalsChart"));
-const TopicStrengthChart = React.lazy(() => import("./components/TopicStrengthChart"));
+const PlatformTotalsChart = React.lazy(() =>
+  import("./components/PlatformTotalsChart")
+);
+const TopicStrengthChart = React.lazy(() =>
+  import("./components/TopicStrengthChart")
+);
 
 const CACHE_KEY = "dashboardCache:v1";
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 min
@@ -67,25 +71,31 @@ const Dashboard = () => {
     }
 
     try {
-      const [profileRes, statsRes, problemsRes, analyticsRes, contestsRes] = await Promise.all([
-        axios.get("/user/profile", { signal: controller.signal }),
-        axios.get("/user/stats", { signal: controller.signal }),
-        axios.get("/problems", { signal: controller.signal }),
-        axios.get("/user/analytics", { signal: controller.signal }),
-        axios.get("/contests", { signal: controller.signal }),
-      ]);
+      const [profileRes, statsRes, problemsRes, analyticsRes, contestsRes] =
+        await Promise.all([
+          axios.get("/user/profile", { signal: controller.signal }),
+          axios.get("/user/stats", { signal: controller.signal }),
+          axios.get("/problems", { signal: controller.signal }),
+          axios.get("/user/analytics", { signal: controller.signal }),
+          axios.get("/contests", { signal: controller.signal }),
+        ]);
 
       const connections = profileRes.data.platforms || {};
       const { totalSolved, byPlatform } = statsRes.data;
       let allProblems = problemsRes.data || [];
-      const { platformActivity: rawActivity, topicStrength: rawStrength } = analyticsRes.data || {};
+      const { platformActivity: rawActivity, topicStrength: rawStrength } =
+        analyticsRes.data || {};
 
       const code360Handle = connections.code360?.handle;
       const codechefHandle = connections.codechef?.handle;
 
       const [cnRes, ccRes] = await Promise.allSettled([
-        code360Handle ? fetchCode360SolvedProblems(code360Handle) : Promise.resolve(null),
-        codechefHandle ? fetchCodeChefSolvedProblems(codechefHandle) : Promise.resolve(null),
+        code360Handle
+          ? fetchCode360SolvedProblems(code360Handle)
+          : Promise.resolve(null),
+        codechefHandle
+          ? fetchCodeChefSolvedProblems(codechefHandle)
+          : Promise.resolve(null),
       ]);
 
       if (cnRes.status === "fulfilled" && Array.isArray(cnRes.value)) {
@@ -95,7 +105,9 @@ const Dashboard = () => {
           title: p.title,
           url: p.url || "#",
         }));
-        allProblems = allProblems.filter((pr) => pr.platform !== "code360").concat(mapped);
+        allProblems = allProblems
+          .filter((pr) => pr.platform !== "code360")
+          .concat(mapped);
       }
       if (ccRes.status === "fulfilled" && Array.isArray(ccRes.value)) {
         const mapped = ccRes.value.map((p) => ({
@@ -104,7 +116,9 @@ const Dashboard = () => {
           title: p.title,
           url: p.url || "#",
         }));
-        allProblems = allProblems.filter((pr) => pr.platform !== "codechef").concat(mapped);
+        allProblems = allProblems
+          .filter((pr) => pr.platform !== "codechef")
+          .concat(mapped);
       }
 
       const upcomingContests = Array.isArray(contestsRes.data?.upcoming)
@@ -114,10 +128,18 @@ const Dashboard = () => {
 
       const platformsMaster = [
         { id: "leetcode", name: "LeetCode", color: "var(--color-leetcode)" },
-        { id: "codeforces", name: "Codeforces", color: "var(--color-codeforces)" },
+        {
+          id: "codeforces",
+          name: "Codeforces",
+          color: "var(--color-codeforces)",
+        },
         { id: "hackerrank", name: "HackerRank", color: "var(--color-success)" },
         { id: "gfg", name: "GeeksforGeeks", color: "var(--color-gfg)" },
-        { id: "code360", name: "Code 360 by Coding Ninjas", color: "var(--color-code360)" },
+        {
+          id: "code360",
+          name: "Code 360 by Coding Ninjas",
+          color: "var(--color-code360)",
+        },
         { id: "codechef", name: "CodeChef", color: "var(--color-codechef)" },
       ];
 
@@ -144,12 +166,15 @@ const Dashboard = () => {
       }, {});
 
       const platformActivity =
-        Array.isArray(rawActivity) && rawActivity.every((d) => d && typeof d.month === "string")
+        Array.isArray(rawActivity) &&
+        rawActivity.every((d) => d && typeof d.month === "string")
           ? rawActivity
           : [];
       const topicStrength =
         Array.isArray(rawStrength) &&
-        rawStrength.every((t) => t && typeof t.topic === "string" && typeof t.score === "number")
+        rawStrength.every(
+          (t) => t && typeof t.topic === "string" && typeof t.score === "number"
+        )
           ? rawStrength
           : [];
 
@@ -179,7 +204,10 @@ const Dashboard = () => {
     }
     fetchData({ background: !!cached });
 
-    const interval = setInterval(() => fetchData({ background: true }), 5 * 60_000);
+    const interval = setInterval(
+      () => fetchData({ background: true }),
+      5 * 60_000
+    );
     return () => {
       clearInterval(interval);
       if (abortRef.current) abortRef.current.abort();
@@ -188,7 +216,11 @@ const Dashboard = () => {
 
   const handleRefresh = () => fetchData({ background: false });
   const formatTime = (d) =>
-    new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "numeric", hour12: true }).format(d);
+    new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+    }).format(d);
 
   const connectedPlatforms = useMemo(
     () => dashboardData?.platforms?.filter((p) => p.isConnected) || [],
@@ -198,22 +230,34 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="max-w-7xl mx-auto px-4 py-6" aria-busy={isFirstLoad} aria-live="polite">
+      <main
+        className="max-w-7xl mx-auto px-4 py-6"
+        aria-busy={isFirstLoad}
+        aria-live="polite"
+      >
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold">Coding Progress Dashboard</h1>
-            <p className="text-text-secondary mt-1">Track your coding practice across platforms</p>
+            <p className="text-text-secondary mt-1">
+              Track your coding practice across platforms
+            </p>
           </div>
           <div className="flex items-center space-x-3">
-            <span className="text-sm text-text-secondary">Last updated: {formatTime(lastUpdated)}</span>
+            <span className="text-sm text-text-secondary">
+              Last updated: {formatTime(lastUpdated)}
+            </span>
             <button
               onClick={handleRefresh}
               disabled={isLoading}
               title="Data updates every 5 minutes"
               className="p-2 rounded hover:bg-background disabled:opacity-50"
             >
-              <Icon name="RefreshCw" size={18} className={isLoading ? "animate-spin" : ""} />
+              <Icon
+                name="RefreshCw"
+                size={18}
+                className={isLoading ? "animate-spin" : ""}
+              />
             </button>
           </div>
         </div>
@@ -222,7 +266,10 @@ const Dashboard = () => {
         <div className="mb-6">
           <div className="flex justify-between mb-4">
             <h2 className="text-lg font-semibold">Connected Platforms</h2>
-            <Link to="/platform-connection" className="text-sm text-primary flex items-center">
+            <Link
+              to="/platform-connection"
+              className="text-sm text-primary flex items-center"
+            >
               Manage connections
               <Icon name="ExternalLink" size={14} className="ml-1" />
             </Link>
@@ -266,7 +313,10 @@ const Dashboard = () => {
               <div className="flex flex-wrap gap-2 text-xs text-text-secondary">
                 {(dashboardData?.platforms || []).map((p) => (
                   <span key={p.id} className="flex items-center">
-                    <span className="w-2 h-2 rounded-full mr-1 inline-block" style={{ backgroundColor: p.color }} />
+                    <span
+                      className="w-2 h-2 rounded-full mr-1 inline-block"
+                      style={{ backgroundColor: p.color }}
+                    />
                     {p.name}
                   </span>
                 ))}
@@ -277,12 +327,19 @@ const Dashboard = () => {
               <div className="h-64 w-full bg-background animate-pulse rounded" />
             ) : !dashboardData && hasError ? (
               <div className="h-64 flex items-center justify-center text-text-secondary">
-                <Icon name="AlertTriangle" size={24} /> {errorMessage || "Failed to load"}
+                <Icon name="AlertTriangle" size={24} />{" "}
+                {errorMessage || "Failed to load"}
               </div>
             ) : (
               <div className="h-64">
-                <Suspense fallback={<div className="w-full h-full bg-background animate-pulse rounded" />}>
-                  <PlatformTotalsChart data={dashboardData?.progressData || []} />
+                <Suspense
+                  fallback={
+                    <div className="w-full h-full bg-background animate-pulse rounded" />
+                  }
+                >
+                  <PlatformTotalsChart
+                    data={dashboardData?.progressData || []}
+                  />
                 </Suspense>
               </div>
             )}
@@ -296,18 +353,28 @@ const Dashboard = () => {
               <div className="h-64 w-full bg-background animate-pulse rounded" />
             ) : !dashboardData && hasError ? (
               <div className="h-64 flex items-center justify-center text-text-secondary">
-                <Icon name="AlertTriangle" size={24} /> {errorMessage || "Failed to load"}
+                <Icon name="AlertTriangle" size={24} />{" "}
+                {errorMessage || "Failed to load"}
               </div>
             ) : (
               <div className="h-64">
-                <Suspense fallback={<div className="w-full h-full bg-background animate-pulse rounded" />}>
-                  <TopicStrengthChart topicStrength={dashboardData?.topicStrength || []} />
+                <Suspense
+                  fallback={
+                    <div className="w-full h-full bg-background animate-pulse rounded" />
+                  }
+                >
+                  <TopicStrengthChart
+                    topicStrength={dashboardData?.topicStrength || []}
+                  />
                 </Suspense>
               </div>
             )}
 
             <div className="text-right mt-2">
-              <Link to="/topic-analysis" className="text-sm text-primary flex items-center justify-end">
+              <Link
+                to="/topic-analysis"
+                className="text-sm text-primary flex items-center justify-end"
+              >
                 View detailed analysis
                 <Icon name="ArrowRight" size={14} className="ml-1" />
               </Link>
@@ -325,22 +392,37 @@ const Dashboard = () => {
             </div>
           ) : (
             <section>
-              <h2 className="text-lg font-semibold mb-4">Questions Solved by Platform</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                Questions Solved by Platform
+              </h2>
               {connectedPlatforms.length === 0 ? (
-                <p className="text-sm text-text-secondary">Connect a platform to see solved problems.</p>
+                <p className="text-sm text-text-secondary">
+                  Connect a platform to see solved problems.
+                </p>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                // ⬅️ Wider + taller cards
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {connectedPlatforms.map((p) => {
                     const problems = dashboardData?.problemsMap?.[p.id] || [];
                     return (
-                      <div key={p.id} className="bg-surface border rounded p-4 shadow-sm flex flex-col h-60">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-text-secondary">{p.name}</span>
-                          <span className="text-xl font-bold text-text-primary">{p.problemsSolved}</span>
+                      <div
+                        key={p.id}
+                        className="bg-surface border rounded-lg p-5 shadow-sm flex flex-col h-72 md:h-80"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-base font-medium text-text-secondary">
+                            {p.name}
+                          </span>
+                          {/* ⬅️ Bigger, bolder solved count */}
+                          <span className="text-3xl font-extrabold text-text-primary">
+                            {p.problemsSolved}
+                          </span>
                         </div>
-                        <div className="flex-1 overflow-y-auto mt-2">
+                        <div className="flex-1 overflow-y-auto mt-3">
                           {problems.length === 0 ? (
-                            <p className="text-sm text-text-secondary">No problems solved yet.</p>
+                            <p className="text-sm text-text-secondary">
+                              No problems solved yet.
+                            </p>
                           ) : (
                             <ul className="space-y-1 text-sm list-disc list-inside">
                               {problems.map((q) => (
@@ -371,10 +453,29 @@ const Dashboard = () => {
       {/* 🔵 Full-page loading overlay on first load */}
       {isFirstLoad && (
         <div className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-center justify-center">
-          <div className="flex items-center gap-3 text-text-primary" role="status" aria-live="polite">
-            <svg className="animate-spin h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          <div
+            className="flex items-center gap-3 text-text-primary"
+            role="status"
+            aria-live="polite"
+          >
+            <svg
+              className="animate-spin h-6 w-6 text-primary"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
             </svg>
             <span className="font-medium">Loading…</span>
           </div>

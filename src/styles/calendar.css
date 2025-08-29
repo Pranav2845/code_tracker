@@ -68,13 +68,13 @@
 .rbc-toolbar-label {
   font-size: 1.25em;
   font-weight: 600;
-  color: #fff;
+   color: var(--color-text-primary);
   letter-spacing: 0.04em;
 }
 
 .rbc-toolbar button {
   background-color: var(--color-surface, #181d29);
-  color: #fff;
+   color: var(--color-text-primary);
   border: 1.5px solid var(--color-primary, #6366f1);
   padding: 0.38rem 1.1rem;
   border-radius: 0.42rem;
@@ -96,7 +96,7 @@
 }
 .dark .calendar-dark .rbc-toolbar button {
   background-color: var(--color-surface, #181d29);
-  color: #fff;
+  color: var(--color-text-primary);
   border-color: var(--color-primary, #6366f1);
 }
 .dark .calendar-dark .rbc-toolbar button.rbc-active,
