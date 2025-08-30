@@ -42,6 +42,17 @@ const USER_STATS_QUERY = `
   }
 `;
 
+const RECENT_AC_SUBMISSION_QUERY = `
+  query recentAcSubmissionList($username: String!, $limit: Int!) {
+    recentAcSubmissionList(username: $username, limit: $limit) {
+      id
+      title
+      titleSlug
+      timestamp
+    }
+  }
+`;
+
 // Fetch **all** accepted submissions via pagination
 async function fetchAcceptedSubmissions(username) {
   const limit = 20;
@@ -123,14 +134,24 @@ export async function fetchLeetCodeProblems(username) {
   });
 }
 
-// Fetch recent accepted submissions using alfa-leetcode-api
-export async function fetchLeetCodeSolvedProblems(username) {
-  const url = `https://alfa-leetcode-api.onrender.com/${encodeURIComponent(
-    username
-  )}/acSubmission?limit=50`;
+// Fetch recent accepted submissions via official GraphQL endpoint
+export async function fetchLeetCodeSolvedProblems(username, limit = 50) {
+  const { data } = await axios.post(
+    GQL_URL,
+    {
+      query: RECENT_AC_SUBMISSION_QUERY,
+      variables: { username, limit },
+    },
+    { headers: { 'Content-Type': 'application/json' } }
+  );
 
-  const { data } = await axios.get(url);
-  const submissions = Array.isArray(data?.submissions) ? data.submissions : [];
+  if (data.errors) {
+    const message = data.errors.map((e) => e.message).join('; ');
+    throw new Error(`GraphQL error: ${message}`);
+  }
+
+    const submissions = data?.data?.recentAcSubmissionList || [];
+
 
   return submissions.map((s) => ({
     id: s.titleSlug,

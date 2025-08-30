@@ -406,15 +406,7 @@ export const getLeetCodeSolvedProblems = async (req, res) => {
   try {
     const { username } = req.params;
     const problems = await fetchLeetCodeSolvedProblems(username);
-    const list = Array.isArray(problems)
-      ? problems.map((p) => ({
-          id: p.id,
-          title: p.title,
-          url: p.url,
-          solvedAt: p.solvedAt,
-        }))
-      : [];
-    res.json({ problems: list });
+     res.json({ problems });
   } catch (err) {
     console.error('❌ getLeetCodeSolvedProblems error:', err);
     res.status(500).json({ message: 'Failed to fetch LeetCode problems' });
