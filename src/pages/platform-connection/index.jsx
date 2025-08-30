@@ -9,6 +9,7 @@ import ActionButton from "./components/ActionButton";
 import { fetchCode360ProfileTotalCount } from "../../api/code360";
 
 const DEBUG = import.meta.env.DEV;
+
 export default function PlatformConnection() {
   const navigate = useNavigate();
   const [platforms, setPlatforms] = useState([]);
@@ -21,12 +22,12 @@ export default function PlatformConnection() {
     try {
       const { data } = await axios.get("/user/profile");
       const model = [
-       { id: "leetcode",     name: "LeetCode",      icon: "Code",    color: "#F0C02D" },
-        { id: "codeforces",   name: "Codeforces",    icon: "Terminal", color: "#339AF0" },
-        { id: "hackerrank",   name: "HackerRank",    icon: "Code2",   color: "#2EC866" },
-        { id: "gfg",          name: "GeeksforGeeks", icon: "Book",    color: "#16A34A" },
-          { id: "code360", name: "Code 360 by Coding Ninjas", icon: "Flame",   color: "#44230b" },
-        { id: "codechef",     name: "CodeChef",      icon: "PieChart",color: "#8B5CF6" }
+        { id: "leetcode",   name: "LeetCode",      icon: "Code",     color: "#F0C02D" },
+        { id: "codeforces", name: "Codeforces",    icon: "Terminal", color: "#339AF0" },
+        { id: "hackerrank", name: "HackerRank",    icon: "Code2",    color: "#2EC866" },
+        { id: "gfg",        name: "GeeksforGeeks", icon: "Book",     color: "#16A34A" },
+        { id: "code360",    name: "Code 360 by Coding Ninjas", icon: "Flame", color: "#44230b" },
+        { id: "codechef",   name: "CodeChef",      icon: "PieChart", color: "#8B5CF6" }
       ].map(p => {
         const handle = data.platforms?.[p.id]?.handle || "";
         return {
@@ -38,7 +39,7 @@ export default function PlatformConnection() {
       });
       setPlatforms(model);
     } catch (err) {
-       if (DEBUG) console.error("❌ fetchPlatforms error:", err);
+      if (DEBUG) console.error("❌ fetchPlatforms error:", err);
     }
   }
 
@@ -54,25 +55,46 @@ export default function PlatformConnection() {
   async function handleConnect(platformId, { username }) {
     setIsConnecting(true);
     try {
-      const { data } = await axios.post(`/platform/sync/${platformId}`, { handle: username });
-      // only warn on other platforms—Code360 uses the total-count API fallback
-   if (platformId !== 'code360' && data.importedCount === 0) {
-     alert(data.message || "⚠️ No problems imported. Double-check your handle and that your submissions are public.");
-   }
-      await fetchPlatforms();
-            if (platformId === 'code360') {
+      // ➤ First, attempt the sync itself
+      let data;
+      try {
+        const res = await axios.post(`/platform/sync/${platformId}`, { handle: username });
+        data = res.data;
+
+        // only warn on other platforms—Code360 uses the total-count API fallback
+        if (platformId !== "code360" && data.importedCount === 0) {
+          alert(
+            data.message ||
+              "⚠️ No problems imported. Double-check your handle and that your submissions are public."
+          );
+        }
+      } catch (err) {
+        if (DEBUG) console.error("❌ sync failed:", err);
+        const msg = err.response?.data?.message || "Sync failed—check console for details.";
+        alert(msg);
+        return; // Stop further actions if sync fails
+      }
+
+      // Optional post-sync data fetch for Code360
+      if (platformId === "code360") {
         try {
           const count = await fetchCode360ProfileTotalCount(username);
-         if (DEBUG) console.log('Code360 total count:', count);
+          if (DEBUG) console.log("Code360 total count:", count);
         } catch (err) {
-  if (DEBUG) console.error('❌ fetchCode360ProfileTotalCount error:', err);        }
+          if (DEBUG) console.error("❌ fetchCode360ProfileTotalCount error:", err);
+        }
       }
+
+      // Close the modal as soon as sync succeeds
       closeModal();
-    } catch (err) {
-      if (DEBUG) console.error("❌ sync failed:", err);
-      const msg = err.response?.data?.message || "Sync failed—check console for details.";
-      alert(msg);
-      
+
+      // ➤ Refresh the platform list separately so its failure doesn't look like a sync error
+      try {
+        await fetchPlatforms();
+      } catch (err) {
+        if (DEBUG) console.error("❌ post-sync refresh failed:", err);
+        alert("Sync succeeded, but failed to refresh platforms. Please refresh the page.");
+      }
     } finally {
       setIsConnecting(false);
     }
