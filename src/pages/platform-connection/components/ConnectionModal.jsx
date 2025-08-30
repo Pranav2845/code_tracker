@@ -1,4 +1,4 @@
-// File: src/pages/platform-connection/components/ConnectionModal.jsx
+// src/pages/platform-connection/components/ConnectionModal.jsx
 import React, { useState, useEffect, useRef } from "react";
 import Icon from "../../../components/AppIcon";
 import FormInput from "./FormInput";
@@ -12,9 +12,11 @@ const ConnectionModal = ({ platform, onClose, onConnect, isConnecting }) => {
   useEffect(() => {
     initialFocusRef.current?.focus();
 
-    const handleEscape = (e) => e.key === "Escape" && onClose();
+    const handleEscape = (e) => {
+      if (e.key === "Escape" && !isConnecting) onClose();
+    };
     const handleClickOutside = (e) => {
-      if (modalRef.current && !modalRef.current.contains(e.target)) {
+      if (modalRef.current && !modalRef.current.contains(e.target) && !isConnecting) {
         onClose();
       }
     };
@@ -28,7 +30,7 @@ const ConnectionModal = ({ platform, onClose, onConnect, isConnecting }) => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.body.style.overflow = "auto";
     };
-  }, [onClose]);
+  }, [onClose, isConnecting]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -79,6 +81,7 @@ const ConnectionModal = ({ platform, onClose, onConnect, isConnecting }) => {
             onClick={onClose}
             className="text-text-tertiary hover:text-text-primary rounded-full p-1"
             aria-label="Close modal"
+            disabled={isConnecting}
           >
             <Icon name="X" size={20} />
           </button>
@@ -90,6 +93,11 @@ const ConnectionModal = ({ platform, onClose, onConnect, isConnecting }) => {
               {platform.id === "cses"
                 ? "Enter your numeric CSES user ID to connect your account and track your progress."
                 : `Enter your ${platform.name} username to connect your account and track your progress.`}
+              {platform.id === "leetcode" && (
+                <span className="block mt-2 text-xs opacity-80">
+                  LeetCode sync may take up to a minute. We’ll keep checking in the background.
+                </span>
+              )}
             </p>
             <div className="space-y-4">
               <FormInput
@@ -133,7 +141,7 @@ const ConnectionModal = ({ platform, onClose, onConnect, isConnecting }) => {
               {isConnecting ? (
                 <>
                   <Icon name="Loader2" size={16} className="animate-spin mr-2" />
-                  Connecting...
+                  {platform.id === "leetcode" ? "Syncing…" : "Connecting..."}
                 </>
               ) : (
                 <>

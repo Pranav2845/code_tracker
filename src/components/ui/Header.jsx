@@ -1,14 +1,20 @@
 // src/components/ui/Header.jsx
-import React, { useState, useRef, useEffect } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import React from "react";
+import { Link, NavLink } from "react-router-dom";
 import Icon from "../AppIcon";
 import useTheme from "../../hooks/useTheme";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+  useUser,
+} from "@clerk/clerk-react";
 
 function Header({ variant = "default" }) {
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useTheme();
-  const navigate = useNavigate();
-  const profileRef = useRef();
+  const { user } = useUser();
 
   const navigation = [
     { name: "Dashboard", path: "/dashboard", icon: "LayoutDashboard" },
@@ -23,25 +29,6 @@ function Header({ variant = "default" }) {
   const activeClass = "bg-primary-50 text-primary";
   const inactiveClass =
     "text-text-secondary hover:text-text-primary hover:bg-background";
-
-  const toggleProfileMenu = () => setIsProfileMenuOpen((prev) => !prev);
-  const closeProfileMenu = () => setIsProfileMenuOpen(false);
-
-  function handleSignOut() {
-    sessionStorage.removeItem("token");
-    closeProfileMenu();
-    navigate("/login", { replace: true });
-  }
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        closeProfileMenu();
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   return (
     <header className="bg-surface border-b border-border">
@@ -58,6 +45,7 @@ function Header({ variant = "default" }) {
             Skip to content
           </a>
 
+          {/* Brand */}
           <div className="flex items-center">
             <Link to="/dashboard" className="flex items-center">
               <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary text-white mr-2">
@@ -80,7 +68,8 @@ function Header({ variant = "default" }) {
                 key={item.name}
                 to={item.path}
                 className={({ isActive }) =>
-                  navLinkClass + (isActive ? " " + activeClass : " " + inactiveClass)
+                  navLinkClass +
+                  (isActive ? " " + activeClass : " " + inactiveClass)
                 }
               >
                 {item.name}
@@ -88,8 +77,8 @@ function Header({ variant = "default" }) {
             ))}
           </nav>
 
-          {/* Right Icons + Profile */}
-          <div className="flex items-center relative" ref={profileRef}>
+          {/* Right side: notifications, theme, auth */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
               className="p-2 rounded-md text-text-secondary hover:text-text-primary hover:bg-background"
@@ -100,66 +89,43 @@ function Header({ variant = "default" }) {
 
             <button
               type="button"
-              className="p-2 ml-2 rounded-md text-text-secondary hover:text-text-primary hover:bg-background"
+              className="p-2 rounded-md text-text-secondary hover:text-text-primary hover:bg-background"
               aria-label="Toggle dark mode"
               onClick={() => setIsDark((d) => !d)}
             >
               <Icon name={isDark ? "Moon" : "Sun"} size={20} />
             </button>
 
-            <div className="relative ml-3 flex items-center space-x-2 p-2">
-              <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary font-medium">
-                PP
-              </div>
-
-              {variant !== "compact" && (
-                <button
-                  type="button"
-                  className="flex items-center space-x-1 focus:outline-none"
-                  aria-haspopup="true"
-                  aria-expanded={isProfileMenuOpen}
-                  onClick={toggleProfileMenu}
-                >
-                  <span className="text-sm font-medium text-text-primary hidden lg:block">
-                    Pranav Pandey
-                  </span>
-                  <Icon name="ChevronDown" size={16} className="hidden lg:block" />
-                </button>
-              )}
-
-              {isProfileMenuOpen && (
-                <div
-                  className="fixed top-16 w-64 rounded-md shadow-lg py-2 bg-surface border border-border ring-1 ring-black ring-opacity-5 z-50 animate-scale-in"
-                  style={{ maxHeight: "90vh", overflowY: "auto" }}
-                  role="menu"
-                  aria-orientation="vertical"
-                >
-                  <Link
-                    to="/profile"
-                    className="block px-4 py-2 text-sm text-text-primary hover:bg-background"
-                    role="menuitem"
-                    onClick={closeProfileMenu}
-                  >
-                    Your Profile
-                  </Link>
-                  <Link
-                    to="/settings"
-                    className="block px-4 py-2 text-sm text-text-primary hover:bg-background"
-                    role="menuitem"
-                    onClick={closeProfileMenu}
-                  >
-                    Settings
-                  </Link>
-                  <button
-                    onClick={handleSignOut}
-                    className="block w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-background"
-                    role="menuitem"
-                  >
-                    Sign out
+            {/* Auth area */}
+            <SignedOut>
+              <div className="flex items-center gap-2 ml-2">
+                <SignInButton mode="modal">
+                  <button className="px-3 py-1.5 rounded-md border border-border text-sm hover:bg-background">
+                    Sign in
                   </button>
-                </div>
-              )}
-            </div>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button className="px-3 py-1.5 rounded-md bg-primary text-white text-sm hover:opacity-90">
+                    Sign up
+                  </button>
+                </SignUpButton>
+              </div>
+            </SignedOut>
+
+            <SignedIn>
+              <div className="flex items-center gap-2 ml-2">
+                {variant !== "compact" && (
+                  <span className="text-sm font-medium text-text-primary hidden lg:block">
+                    {user?.fullName || user?.primaryEmailAddress?.emailAddress}
+                  </span>
+                )}
+                <UserButton
+                  appearance={{
+                    elements: { userButtonAvatarBox: "w-8 h-8" },
+                  }}
+                />
+              </div>
+            </SignedIn>
           </div>
 
           {/* Mobile Menu Toggle */}

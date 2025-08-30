@@ -51,28 +51,40 @@ export default function PlatformConnection() {
   const openModal  = (p) => { setCurrentPlatform(p); setIsModalOpen(true); };
   const closeModal = () => setIsModalOpen(false);
 
+  // Helper: poll /user/profile until a given platform shows connected (or timeout)
+  async function pollUntilConnected({ platformId, timeoutMs = 60000, intervalMs = 4000 }) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      try {
+        const { data } = await axios.get("/user/profile");
+        const handle = data.platforms?.[platformId]?.handle || "";
+        if (handle) {
+          // sync completed — refresh full list for counts, etc.
+          await fetchPlatforms();
+          return true;
+        }
+      } catch (e) {
+        if (DEBUG) console.error("pollUntilConnected: profile fetch failed", e);
+      }
+      // wait
+      await new Promise(r => setTimeout(r, intervalMs));
+    }
+    return false;
+  }
+
   // 3️⃣ Connect (sync) a platform
   async function handleConnect(platformId, { username }) {
     setIsConnecting(true);
     try {
-      // ➤ First, attempt the sync itself
-      let data;
-      try {
-        const res = await axios.post(`/platform/sync/${platformId}`, { handle: username });
-        data = res.data;
+      const { data } = await axios.post(`/platform/sync/${platformId}`, { handle: username });
 
-        // only warn on other platforms—Code360 uses the total-count API fallback
-        if (platformId !== "code360" && data.importedCount === 0) {
-          alert(
-            data.message ||
-              "⚠️ No problems imported. Double-check your handle and that your submissions are public."
-          );
-        }
-      } catch (err) {
-        if (DEBUG) console.error("❌ sync failed:", err);
-        const msg = err.response?.data?.message || "Sync failed—check console for details.";
-        alert(msg);
-        return; // Stop further actions if sync fails
+      // only warn on other platforms—Code360 uses the total-count API fallback
+      // 🔧 IMPORTANT CHANGE: do NOT warn for LeetCode when importedCount is 0 (sync is often delayed)
+      if (platformId !== "code360" && platformId !== "leetcode" && data.importedCount === 0) {
+        alert(
+          data.message ||
+            "⚠️ No problems imported. Double-check your handle and that your submissions are public."
+        );
       }
 
       // Optional post-sync data fetch for Code360
@@ -85,15 +97,54 @@ export default function PlatformConnection() {
         }
       }
 
-      // Close the modal as soon as sync succeeds
+      // Optimistically mark the platform as connected so the UI updates immediately
+      setPlatforms(prev =>
+        prev.map(p =>
+          p.id === platformId ? { ...p, isConnected: true, username } : p
+        )
+      );
+
+      // Close the modal as soon as sync POST succeeds
       closeModal();
 
-      // ➤ Refresh the platform list separately so its failure doesn't look like a sync error
-      try {
-        await fetchPlatforms();
-      } catch (err) {
-        if (DEBUG) console.error("❌ post-sync refresh failed:", err);
-        alert("Sync succeeded, but failed to refresh platforms. Please refresh the page.");
+      // ➤ For LeetCode, poll until the backend finishes linking (no “failed” toast on lag)
+      if (platformId === "leetcode") {
+        const ok = await pollUntilConnected({ platformId: "leetcode" });
+        if (!ok) {
+          // Timed out – show a gentle message, not an error
+          if (DEBUG) console.warn("LeetCode sync still pending after polling window.");
+          alert("LeetCode is still syncing in the background. You can continue and refresh later.");
+        }
+      }
+
+      // For other platforms, just refresh once
+      if (platformId !== "leetcode") {
+        try {
+          await fetchPlatforms();
+        } catch (err) {
+          if (DEBUG) console.error("❌ post-sync refresh failed:", err);
+          alert("Sync succeeded, but failed to refresh platforms. Please refresh the page.");
+        }
+      }
+    } catch (err) {
+      // If LeetCode POST is flaky: treat transient issues as background sync instead of hard fail
+      if (platformId === "leetcode") {
+        if (DEBUG) console.error("LeetCode sync POST error (treating as pending):", err);
+        // optimistic connect
+        setPlatforms(prev =>
+          prev.map(p =>
+            p.id === "leetcode" ? { ...p, isConnected: true, username } : p
+          )
+        );
+        closeModal();
+        const ok = await pollUntilConnected({ platformId: "leetcode" });
+        if (!ok) {
+          alert("LeetCode is still syncing in the background. You can continue and refresh later.");
+        }
+      } else {
+        if (DEBUG) console.error("❌ sync failed:", err);
+        const msg = err.response?.data?.message || "Sync failed—check console for details.";
+        alert(msg);
       }
     } finally {
       setIsConnecting(false);
@@ -114,6 +165,7 @@ export default function PlatformConnection() {
   // 5️⃣ Save & Continue
   function saveAndContinue() {
     if (platforms.some(p => p.isConnected)) {
+      sessionStorage.removeItem("dashboardCache:v1");
       navigate("/dashboard");
     } else {
       alert("Please connect at least one platform to continue.");

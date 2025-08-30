@@ -3,12 +3,6 @@ import React from "react";
 import { BrowserRouter, Routes as RouterRoutes, Route, Navigate } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
-import PrivateRoute from "./components/ui/PrivateRoute";
-
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import Profile from "./pages/profile";
-import Settings from "./pages/settings"; 
 
 import Dashboard from "./pages/dashboard";
 import PlatformConnection from "./pages/platform-connection";
@@ -16,91 +10,99 @@ import Onboarding from "./pages/onboarding";
 import TopicAnalysis from "./pages/topic-analysis";
 import Contests from "./pages/contests";
 import GeminiPage from "./pages/gemini";
+import Profile from "./pages/profile";
+import Settings from "./pages/settings";
 import NotFound from "./pages/NotFound";
+
+import ProtectedRoute from "./routes/ProtectedRoute";
+import { SignIn, SignUp } from "@clerk/clerk-react";
 
 const Routes = () => (
   <BrowserRouter>
     <ErrorBoundary>
       <ScrollToTop />
       <RouterRoutes>
-        {/* Public */}
-        <Route path="/login"    element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        {/* Clerk auth pages */}
+        <Route path="/sign-in" element={<SignIn routing="path" path="/sign-in" />} />
+        <Route path="/sign-up" element={<SignUp routing="path" path="/sign-up" />} />
 
-        {/* If someone hits “/” with no token, PrivateRoute will redirect to /login */}
+        {/* Back-compat: redirect old auth routes */}
+        <Route path="/login" element={<Navigate to="/sign-in" replace />} />
+        <Route path="/register" element={<Navigate to="/sign-up" replace />} />
+
+        {/* Protected pages */}
         <Route
           path="/"
           element={
-            <PrivateRoute>
+            <ProtectedRoute>
               <Dashboard />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/dashboard"
           element={
-            <PrivateRoute>
+            <ProtectedRoute>
               <Dashboard />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/platform-connection"
           element={
-            <PrivateRoute>
+            <ProtectedRoute>
               <PlatformConnection />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/onboarding"
           element={
-            <PrivateRoute>
+            <ProtectedRoute>
               <Onboarding />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/topic-analysis"
           element={
-            <PrivateRoute>
+            <ProtectedRoute>
               <TopicAnalysis />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
-       />
+        />
         <Route
           path="/contests"
           element={
-            <PrivateRoute>
+            <ProtectedRoute>
               <Contests />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
-            />
+        />
         <Route
           path="/gemini"
           element={
-            <PrivateRoute>
+            <ProtectedRoute>
               <GeminiPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
-         <Route
-         path="/profile"
-         element={
-           <PrivateRoute>
-             <Profile />
-           </PrivateRoute>
-         }
-       />
-       <Route
-         path="/settings"
-         element={
-           <PrivateRoute>
-             <Settings />
-           </PrivateRoute>
-         }
-       />
-
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Catch-all */}
         <Route path="*" element={<NotFound />} />

@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@clerk/clerk-react": "^5.45.0",
+    "@clerk/nextjs": "^6.31.6",
     "@dhiwise/component-tagger": "^1.0.1",
     "@google/generative-ai": "^0.24.1",
     "@reduxjs/toolkit": "^2.6.1",
