@@ -10,6 +10,7 @@ import SkeletonCard from "./components/SkeletonCard";
 
 import { fetchCode360SolvedProblems } from "../../api/code360";
 import { fetchCodeChefSolvedProblems } from "../../api/codechef";
+import { fetchLeetCodeSolvedProblems } from "../../api/leetcode";
 
 // 🚀 Lazy-load heavy widgets
 const PlatformTotalsChart = React.lazy(() =>
@@ -86,18 +87,22 @@ const Dashboard = () => {
       const { platformActivity: rawActivity, topicStrength: rawStrength } =
         analyticsRes.data || {};
 
+      const leetcodeHandle = connections.leetcode?.handle;
       const code360Handle = connections.code360?.handle;
       const codechefHandle = connections.codechef?.handle;
 
-      const [cnRes, ccRes] = await Promise.allSettled([
+      const [cnRes, ccRes, lcRes] = await Promise.allSettled([
         code360Handle
           ? fetchCode360SolvedProblems(code360Handle)
           : Promise.resolve(null),
         codechefHandle
           ? fetchCodeChefSolvedProblems(codechefHandle)
           : Promise.resolve(null),
+          leetcodeHandle
+          ? fetchLeetCodeSolvedProblems(leetcodeHandle)
+          : Promise.resolve(null),
       ]);
-
+      
       if (cnRes.status === "fulfilled" && Array.isArray(cnRes.value)) {
         const mapped = cnRes.value.map((p) => ({
           _id: p.id,
@@ -120,6 +125,18 @@ const Dashboard = () => {
           .filter((pr) => pr.platform !== "codechef")
           .concat(mapped);
       }
+       if (lcRes.status === "fulfilled" && Array.isArray(lcRes.value)) {
+        const mapped = lcRes.value.map((p) => ({
+          _id: p.id,
+          platform: "leetcode",
+          title: p.title,
+          url: p.url || "#",
+        }));
+        allProblems = allProblems
+          .filter((pr) => pr.platform !== "leetcode")
+          .concat(mapped);
+      }
+
 
       const upcomingContests = Array.isArray(contestsRes.data?.upcoming)
         ? contestsRes.data.upcoming.slice(0, 5)

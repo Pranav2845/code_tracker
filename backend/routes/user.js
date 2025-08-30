@@ -9,7 +9,9 @@ import {
   getDashboardAnalytics,
   getContributionStats,
 
- 
+  getLeetCodeTotalCount,
+  getLeetCodeSolvedProblems,
+
   getCode360TotalCount,
   getCode360SolvedProblems,
 
@@ -25,6 +27,8 @@ router.patch ('/platforms', updatePlatforms);
 router.get   ('/stats',     getUserStats);
 router.get   ('/analytics', getDashboardAnalytics);
 router.get   ('/contributions', getContributionStats);
+router.get   ('/leetcode/problems/:username', getLeetCodeSolvedProblems);
+router.get   ('/leetcode/count/:username', getLeetCodeTotalCount);
 router.post  ('/change-password', changePassword);
 router.get   ('/code360/problems/:username', getCode360SolvedProblems);
 router.get   ('/code360/count/:username', getCode360TotalCount);

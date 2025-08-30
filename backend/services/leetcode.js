@@ -123,6 +123,23 @@ export async function fetchLeetCodeProblems(username) {
   });
 }
 
+// Fetch recent accepted submissions using alfa-leetcode-api
+export async function fetchLeetCodeSolvedProblems(username) {
+  const url = `https://alfa-leetcode-api.onrender.com/${encodeURIComponent(
+    username
+  )}/acSubmission?limit=50`;
+
+  const { data } = await axios.get(url);
+  const submissions = Array.isArray(data?.submissions) ? data.submissions : [];
+
+  return submissions.map((s) => ({
+    id: s.titleSlug,
+    title: s.title,
+    url: `https://leetcode.com/problems/${s.titleSlug}/`,
+    solvedAt: s.timestamp ? new Date(s.timestamp * 1000) : undefined,
+  }));
+}
+
 export async function fetchLeetCodeSolvedCount(username) {
   const { data } = await axios.post(
     GQL_URL,

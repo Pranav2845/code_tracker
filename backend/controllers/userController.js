@@ -3,7 +3,10 @@ import User from '../models/User.js';
 import Problem from '../models/Problem.js';
 import PlatformAccount from '../models/PlatformAccount.js';
 import bcrypt from 'bcryptjs';
-import { fetchLeetCodeSolvedCount } from '../services/leetcode.js';
+import {
+  fetchLeetCodeSolvedCount,
+  fetchLeetCodeSolvedProblems,
+} from '../services/leetcode.js';
 
 import { fetchGFGSolvedCount } from '../services/gfg.js';
 import {
@@ -380,6 +383,43 @@ export const getContributionStats = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/user/leetcode/count/:username
+ * Returns the total solved count for the specified LeetCode profile.
+ */
+export const getLeetCodeTotalCount = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const count = await fetchLeetCodeSolvedCount(username);
+    res.json({ totalCount: count });
+  } catch (err) {
+    console.error('❌ getLeetCodeTotalCount error:', err);
+    res.status(500).json({ message: 'Failed to fetch LeetCode total count' });
+  }
+};
+
+/**
+ * GET /api/user/leetcode/problems/:username
+ * Fetches recently solved problems for the given LeetCode profile.
+ */
+export const getLeetCodeSolvedProblems = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const problems = await fetchLeetCodeSolvedProblems(username);
+    const list = Array.isArray(problems)
+      ? problems.map((p) => ({
+          id: p.id,
+          title: p.title,
+          url: p.url,
+          solvedAt: p.solvedAt,
+        }))
+      : [];
+    res.json({ problems: list });
+  } catch (err) {
+    console.error('❌ getLeetCodeSolvedProblems error:', err);
+    res.status(500).json({ message: 'Failed to fetch LeetCode problems' });
+  }
+};
 
 
 /**
