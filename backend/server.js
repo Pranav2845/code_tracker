@@ -9,7 +9,7 @@ import problemRoutes  from './routes/problem.js';
 import contestRoutes  from './routes/contests.js';
 
 import publicRoutes   from './routes/public.js';
-import { clerkExpressWithAuth } from '@clerk/express';
+import { clerkMiddleware } from '@clerk/express'; // ⬅️ FIX
 import geminiRoutes   from './routes/gemini.js';
 
 import { notFound, errorHandler } from './utils/errorHandler.js';
@@ -23,30 +23,25 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
-
-// 3️⃣ Health check
-app.get('/api', (req, res) => {
-  res.json({ message: 'API is running' });
-});
-
-// 3.5️⃣ Public endpoints (must be BEFORE Clerk middleware)
+// 2️⃣ Public routes (must be before Clerk)
 app.use('/api', publicRoutes);
-
-// 4️⃣ Public contests route (MUST be before authMiddleware)
 app.use('/api/contests', contestRoutes);
 app.use('/api/ai', geminiRoutes);
 
+// 3️⃣ Clerk auth middleware (attach req.auth so controllers can getAuth(req))
+app.use(clerkMiddleware()); // ⬅️ FIX
 
-// 5️⃣ Protect everything below this line
-app.use('/api', clerkExpressWithAuth());
-
-// 6️⃣ Protected resource routes
+// 4️⃣ Protected resource routes
 app.use('/api/user',     userRoutes);
 app.use('/api/platform', platformRoutes);
 app.use('/api/problems', problemRoutes);
 
-// 7️⃣ 404 + error handler
+// 5️⃣ Health check
+app.get('/api', (req, res) => {
+  res.json({ message: 'API is running' });
+});
+
+// 6️⃣ 404 + error handler
 app.use(notFound);
 app.use(errorHandler);
 
