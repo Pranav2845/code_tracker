@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from 'react';
+// src/pages/settings/index.jsx
+import React, { useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import axios from 'axios';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import useTheme from '../../hooks/useTheme';
+
 // Simple toggle switch if you don't have one in your ui
 const ToggleSwitch = ({ label, checked, onChange }) => (
   <label className="flex items-center space-x-2 mb-4 dark:text-text-primary">
@@ -19,88 +22,69 @@ const ToggleSwitch = ({ label, checked, onChange }) => (
 
 export default function Settings() {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState({ name: '', email: '' });
-  const [passForm, setPassForm] = useState({ currentPassword: '', newPassword: '', confirm: '' });
+  const { user, isLoaded } = useUser();
+  const [passForm, setPassForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirm: '',
+  });
   const [theme, setTheme] = useTheme();
-  const [status, setStatus] = useState({ profile: '', password: '' });
+  const [passwordStatus, setPasswordStatus] = useState('');
 
-  // 1️⃣ Load current profile
-  useEffect(() => {
-    axios.get('/user/profile')
-      .then(res => setProfile({ name: res.data.name || '', email: res.data.email || '' }))
-      .catch(err => setStatus(s => ({ ...s, profile: 'Failed to load profile' })));
-  }, []);
-
-  // 2️⃣ Handle profile update
-  const updateProfile = async e => {
-    e.preventDefault();
-    try {
-      await axios.patch('/user/profile', profile);
-      setStatus(s => ({ ...s, profile: 'Profile updated successfully' }));
-    } catch (err) {
-      setStatus(s => ({ ...s, profile: err.response?.data?.message || 'Update failed' }));
-    }
-  };
-
-  // 3️⃣ Handle password change
+  // Handle password change
   const changePassword = async e => {
     e.preventDefault();
     if (passForm.newPassword !== passForm.confirm) {
-      setStatus(s => ({ ...s, password: "New passwords don't match" }));
+      setPasswordStatus("New passwords don't match");
       return;
     }
     try {
       await axios.post('/user/change-password', {
         currentPassword: passForm.currentPassword,
-        newPassword: passForm.newPassword
+        newPassword: passForm.newPassword,
       });
-      setStatus(s => ({ ...s, password: 'Password changed' }));
+      setPasswordStatus('Password changed');
       setPassForm({ currentPassword: '', newPassword: '', confirm: '' });
     } catch (err) {
-      setStatus(s => ({ ...s, password: err.response?.data?.message || 'Password change failed' }));
+      setPasswordStatus(err.response?.data?.message || 'Password change failed');
     }
   };
 
-   // 4️⃣ Theme preference handled by hook
+  // Theme preference handled by hook
   const toggleTheme = isDark => {
     setTheme(isDark);
-    
   };
 
-  // 5️⃣ Sign out
+  // Sign out
   const signOut = () => {
-     sessionStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     navigate('/sign-in');
   };
 
+  if (!isLoaded) return <p className="p-4">Loading…</p>;
+  if (!user) return <p className="p-4 text-error">No user data</p>;
+
   return (
-     <div className="max-w-3xl mx-auto p-6 space-y-8 min-h-screen bg-background">
+    <div className="max-w-3xl mx-auto p-6 space-y-8 min-h-screen bg-background">
       <section>
         <h1 className="text-2xl font-bold mb-4">Profile Settings</h1>
-        <form onSubmit={updateProfile} className="space-y-4">
-          {status.profile && <p className="text-sm text-success">{status.profile}</p>}
-          <Input
-            id="name"
-            label="Full Name"
-            value={profile.name}
-            onChange={e => setProfile(p => ({ ...p, name: e.target.value }))}
-          />
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            label="Email"
-            value={profile.email}
-            onChange={e => setProfile(p => ({ ...p, email: e.target.value }))}
-          />
-          <Button type="submit">Save Profile</Button>
-        </form>
+        <div className="space-y-2">
+          <p>
+            <strong>Name:</strong> {user.fullName}
+          </p>
+          <p>
+            <strong>Email:</strong> {user.emailAddresses[0]?.emailAddress}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Profile updates are managed via Clerk&apos;s hosted pages.
+          </p>
+        </div>
       </section>
 
       <section>
         <h2 className="text-2xl font-bold mb-4">Change Password</h2>
         <form onSubmit={changePassword} className="space-y-4">
-          {status.password && <p className="text-sm text-error">{status.password}</p>}
+          {passwordStatus && <p className="text-sm text-error">{passwordStatus}</p>}
           <Input
             id="currentPassword"
             name="currentPassword"
@@ -134,15 +118,13 @@ export default function Settings() {
 
       <section>
         <h2 className="text-2xl font-bold mb-4">Preferences</h2>
-        <ToggleSwitch
-          label="Dark Mode"
-          checked={theme}
-          onChange={toggleTheme}
-        />
+        <ToggleSwitch label="Dark Mode" checked={theme} onChange={toggleTheme} />
       </section>
 
       <section>
-        <Button variant="outline" onClick={signOut}>Sign out</Button>
+        <Button variant="outline" onClick={signOut}>
+          Sign out
+        </Button>
       </section>
     </div>
   );

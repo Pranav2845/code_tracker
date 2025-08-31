@@ -2,7 +2,7 @@
 import User from '../models/User.js';
 import Problem from '../models/Problem.js';
 import PlatformAccount from '../models/PlatformAccount.js';
-import { getAuth } from '@clerk/express';
+import { getAuth, clerkClient } from '@clerk/express';
 import {
   fetchLeetCodeSolvedCount,
   fetchLeetCodeSolvedProblems,
@@ -26,12 +26,43 @@ import { refreshAllContests } from '../services/contests.js';
  * Returns the current user's profile information.
  */
 export const getUserProfile = async (req, res) => {
-  const { userId } = getAuth(req);
-  if (!userId) return res.status(401).json({ message: 'Not authenticated' });
-  const user = await User.findById(userId);
-  if (!user) return res.status(404).json({ message: 'User not found' });
-  const { name, email, createdAt, platforms } = user;
-  res.json({ name, email, createdAt, platforms });
+  try {
+    const { userId } = getAuth(req);
+    if (!userId) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const clerkUser = await clerkClient.users.getUser(userId);
+    if (!clerkUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ');
+    const email =
+      clerkUser.emailAddresses?.find(e => e.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
+      clerkUser.emailAddresses?.[0]?.emailAddress ||
+      '';
+    const createdAt = clerkUser.createdAt;
+
+    const accounts = await PlatformAccount.find({ user: userId });
+    const platforms = {
+      leetcode: { handle: '' },
+      codeforces: { handle: '' },
+      hackerrank: { handle: '' },
+      gfg: { handle: '' },
+      code360: { handle: '' },
+      codechef: { handle: '' },
+      cses: { handle: '' },
+    };
+    accounts.forEach(acc => {
+      platforms[acc.platform] = { handle: acc.handle };
+    });
+
+    res.json({ name, email, createdAt, platforms });
+  } catch (err) {
+    console.error('❌ getUserProfile error:', err);
+    res.status(500).json({ message: 'Failed to fetch profile' });
+  }
 };
 
 /**
@@ -42,7 +73,7 @@ export const updatePlatforms = async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ message: 'Not authenticated' });
   const { platforms } = req.body;
-  const user = await User.findById(userId);
+  const user = await User.findOne({ _id: userId });
   if (!user) return res.status(404).json({ message: 'User not found' });
   const disconnected = [];
 
@@ -68,42 +99,6 @@ export const updatePlatforms = async (req, res) => {
   res.json(user.platforms);
 };
 
-/**
- * PATCH /api/user/profile
- * Update the user's name and email
- */
-export const updateUserProfile = async (req, res) => {
-  const { userId } = getAuth(req);
-  if (!userId) return res.status(401).json({ message: 'Not authenticated' });
-  const { name, email } = req.body;
-  try {
-        let user = await User.findById(userId);
-    if (!user) {
-      if (!email) {
-        return res.status(400).json({ message: 'Email is required' });
-      }
-      user = new User({ _id: userId, email, name });
-    } else {
-      if (email && email !== user.email) {
-        const existing = await User.findOne({ email });
-        if (existing && existing._id.toString() !== user._id.toString()) {
-          return res.status(400).json({ message: 'Email already in use' });
-        }
-        user.email = email;
-      }
-  if (typeof name === 'string') {
-        user.name = name;
-      }
-    }
-
-    await user.save();
-    const { createdAt, platforms } = user;
-    res.json({ name: user.name, email: user.email, createdAt, platforms });
-  } catch (err) {
-    console.error('❌ updateUserProfile error:', err);
-    res.status(500).json({ message: 'Failed to update profile' });
-  }
-};
 
 /**
  * GET /api/user/stats
@@ -113,7 +108,7 @@ export const getUserStats = async (req, res) => {
   try {
     const { userId } = getAuth(req);
     if (!userId) return res.status(401).json({ message: 'Not authenticated' });
-    const user = await User.findById(userId);
+        let user = await User.findOne({ _id: userId });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     // Count solved problems per platform from DB
@@ -264,7 +259,7 @@ export const getDashboardAnalytics = async (req, res) => {
   try {
     const { userId } = getAuth(req);
     if (!userId) return res.status(401).json({ message: 'Not authenticated' });
-    const user = await User.findById(userId);
+    const user = await User.findOne({ _id: userId });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     // Fetch monthly counts, tag counts, and total solved in one go
@@ -356,7 +351,7 @@ export const getContributionStats = async (req, res) => {
   try {
     const { userId } = getAuth(req);
     if (!userId) return res.status(401).json({ message: 'Not authenticated' });
-    const user = await User.findById(userId);
+    const user = await User.findOne({ _id: userId });
     if (!user) return res.status(404).json({ message: 'User not found' });
     const handle = user?.platforms?.code360?.handle;
     if (!handle) {

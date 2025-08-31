@@ -2,7 +2,7 @@
 import mongoose from 'mongoose';
 
 const platformAccountSchema = new mongoose.Schema({
- user: { type: String, ref: 'User', required: true },
+  user: { type: String, required: true, index: true },
   platform: {
     type: String,
     enum: [

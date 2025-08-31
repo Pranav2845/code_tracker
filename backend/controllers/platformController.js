@@ -2,7 +2,6 @@
 
 import PlatformAccount from '../models/PlatformAccount.js';
 import Problem from '../models/Problem.js';
-import User from '../models/User.js';
 import { getAuth } from '@clerk/express';
 
 import { fetchLeetCodeProblems } from '../services/leetcode.js';
@@ -62,11 +61,6 @@ export const syncPlatform = async (req, res) => {
       syncedAt: new Date(),
     });
   }
-
-  // ─── Save handle in User.profile ────────────────────────────────────────
-  await User.findByIdAndUpdate(userId, {
-    $set: { [`platforms.${platform}.handle`]: handle }
-  });
 
   // ─── Fetch problems for all platforms ───────────────────────────────────
   try {
