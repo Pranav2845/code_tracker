@@ -22,18 +22,23 @@ export const addProblem = async (req, res) => {
 };
 
 export const getProblems = async (req, res) => {
-  const { platform, tags, difficulty, startDate, endDate } = req.query;
-  const { userId } = getAuth(req);
-  if (!userId) return res.status(401).json({ message: 'Not authenticated' });
-  const filter = { user: userId };
-  if (platform) filter.platform = platform;
-  if (difficulty) filter.difficulty = difficulty;
-  if (tags) filter.tags = { $in: tags.split(',') };
-  if (startDate || endDate) {
-    filter.solvedAt = {};
-    if (startDate) filter.solvedAt.$gte = new Date(startDate);
-    if (endDate) filter.solvedAt.$lte = new Date(endDate);
+  try {
+    const { platform, tags, difficulty, startDate, endDate } = req.query;
+    const { userId } = getAuth(req);
+    if (!userId) return res.status(401).json({ message: 'Not authenticated' });
+    const filter = { user: userId };
+    if (platform) filter.platform = platform;
+    if (difficulty) filter.difficulty = difficulty;
+    if (tags) filter.tags = { $in: tags.split(',') };
+    if (startDate || endDate) {
+      filter.solvedAt = {};
+      if (startDate) filter.solvedAt.$gte = new Date(startDate);
+      if (endDate) filter.solvedAt.$lte = new Date(endDate);
+    }
+    const probs = await Problem.find(filter);
+    res.json(probs);
+  } catch (error) {
+    console.error('Error fetching problems:', error);
+    return res.status(500).json({ message: 'Failed to fetch problems' });
   }
-  const probs = await Problem.find(filter);
-  res.json(probs);
 };

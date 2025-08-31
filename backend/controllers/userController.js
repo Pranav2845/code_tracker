@@ -21,6 +21,29 @@ import { fetchCFSolvedCount } from '../services/codeforces.js';
 import Contest from '../models/Contest.js';
 import { refreshAllContests } from '../services/contests.js';
 
+export const ensureUser = async (req, res, next) => {
+  try {
+    const { userId } = getAuth(req);
+    if (!userId) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    let user = await User.findById(userId);
+    if (!user) {
+      const clerkUser = await clerkClient.users.getUser(userId);
+      const emailAddress =
+        clerkUser?.emailAddresses?.find(e => e.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
+        clerkUser?.emailAddresses?.[0]?.emailAddress ||
+        '';
+      user = await User.create({ _id: userId, email: emailAddress });
+    }
+    req.user = user;
+    next();
+  } catch (err) {
+    console.error('❌ ensureUser error:', err);
+    res.status(500).json({ message: 'Failed to ensure user' });
+  }
+};
+
 /**
  * GET /api/user/profile
  * Returns the current user's profile information.

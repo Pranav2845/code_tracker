@@ -1,10 +1,7 @@
 // src/pages/settings/index.jsx
-import React, { useState } from 'react';
-import { useUser } from '@clerk/clerk-react';
-import axios from 'axios';
-import Input from '../../components/ui/Input';
+import React from 'react';
+import { useUser, useClerk, UserProfile } from '@clerk/clerk-react';
 import Button from '../../components/ui/Button';
-import { useNavigate } from 'react-router-dom';
 import useTheme from '../../hooks/useTheme';
 
 // Simple toggle switch if you don't have one in your ui
@@ -21,44 +18,18 @@ const ToggleSwitch = ({ label, checked, onChange }) => (
 );
 
 export default function Settings() {
-  const navigate = useNavigate();
   const { user, isLoaded } = useUser();
-  const [passForm, setPassForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirm: '',
-  });
+  const { signOut } = useClerk();
   const [theme, setTheme] = useTheme();
-  const [passwordStatus, setPasswordStatus] = useState('');
-
-  // Handle password change
-  const changePassword = async e => {
-    e.preventDefault();
-    if (passForm.newPassword !== passForm.confirm) {
-      setPasswordStatus("New passwords don't match");
-      return;
-    }
-    try {
-      await axios.post('/user/change-password', {
-        currentPassword: passForm.currentPassword,
-        newPassword: passForm.newPassword,
-      });
-      setPasswordStatus('Password changed');
-      setPassForm({ currentPassword: '', newPassword: '', confirm: '' });
-    } catch (err) {
-      setPasswordStatus(err.response?.data?.message || 'Password change failed');
-    }
-  };
 
   // Theme preference handled by hook
   const toggleTheme = isDark => {
     setTheme(isDark);
   };
 
-  // Sign out
-  const signOut = () => {
-    sessionStorage.removeItem('token');
-    navigate('/sign-in');
+  // Sign out via Clerk
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   if (!isLoaded) return <p className="p-4">Loading…</p>;
@@ -76,44 +47,13 @@ export default function Settings() {
             <strong>Email:</strong> {user.emailAddresses[0]?.emailAddress}
           </p>
           <p className="text-sm text-muted-foreground">
-            Profile updates are managed via Clerk&apos;s hosted pages.
+            Manage your account details and password using the profile form below.
           </p>
         </div>
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold mb-4">Change Password</h2>
-        <form onSubmit={changePassword} className="space-y-4">
-          {passwordStatus && <p className="text-sm text-error">{passwordStatus}</p>}
-          <Input
-            id="currentPassword"
-            name="currentPassword"
-            type="password"
-            label="Current Password"
-            labelClassName="dark:text-text-primary"
-            value={passForm.currentPassword}
-            onChange={e => setPassForm(f => ({ ...f, currentPassword: e.target.value }))}
-          />
-          <Input
-            id="newPassword"
-            name="newPassword"
-            type="password"
-            label="New Password"
-            labelClassName="dark:text-text-primary"
-            value={passForm.newPassword}
-            onChange={e => setPassForm(f => ({ ...f, newPassword: e.target.value }))}
-          />
-          <Input
-            id="confirm"
-            name="confirm"
-            type="password"
-            label="Confirm New Password"
-            labelClassName="dark:text-text-primary"
-            value={passForm.confirm}
-            onChange={e => setPassForm(f => ({ ...f, confirm: e.target.value }))}
-          />
-          <Button type="submit">Change Password</Button>
-        </form>
+        <UserProfile />
       </section>
 
       <section>
@@ -122,7 +62,7 @@ export default function Settings() {
       </section>
 
       <section>
-        <Button variant="outline" onClick={signOut}>
+        <Button variant="outline" onClick={handleSignOut}>
           Sign out
         </Button>
       </section>
