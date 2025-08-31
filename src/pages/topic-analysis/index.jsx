@@ -66,7 +66,8 @@ const TopicAnalysis = () => {
       const res = await axios.get("/problems", {
         params: { tags: topic },
       });
-      const probs = res.data.map((p) => ({
+      const raw = Array.isArray(res.data) ? res.data : [];
+      const probs = raw.map((p) => ({
         ...p,
         status: p.status || "Solved", // adapt to your API
       }));

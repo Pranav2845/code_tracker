@@ -82,8 +82,12 @@ const Dashboard = () => {
         ]);
 
       const connections = profileRes.data.platforms || {};
-      const { totalSolved, byPlatform } = statsRes.data;
-      let allProblems = problemsRes.data || [];
+       const statsData = statsRes.data || {};
+      const totalSolved = statsData.totalSolved || 0;
+      const byPlatform = Array.isArray(statsData.byPlatform)
+        ? statsData.byPlatform
+        : [];   
+let allProblems = Array.isArray(problemsRes.data) ? problemsRes.data : [];
       const { platformActivity: rawActivity, topicStrength: rawStrength } =
         analyticsRes.data || {};
 
