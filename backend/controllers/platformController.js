@@ -3,6 +3,7 @@
 import PlatformAccount from '../models/PlatformAccount.js';
 import Problem from '../models/Problem.js';
 import User from '../models/User.js';
+import { getAuth } from '@clerk/express';
 
 import { fetchLeetCodeProblems } from '../services/leetcode.js';
 import { fetchCFProblems } from '../services/codeforces.js';
@@ -19,20 +20,20 @@ import {
 import { fetchHackerRankProblems } from '../services/hackerrank.js';
 
 export const syncPlatform = async (req, res) => {
+  const { userId } = getAuth(req);
   console.log('📡 syncPlatform called:', {
-    user:   req.user && { id: req.user._id, email: req.user.email },
+    userId,
     params: req.params,
     body:   req.body,
   });
 
-  if (!req.user) {
-    console.warn('⚠️ syncPlatform: missing req.user');
+  if (!userId) {
+    console.warn('⚠️ syncPlatform: missing userId');
     return res.status(401).json({ message: 'Not authenticated' });
   }
 
   const { platform } = req.params;
-  const handle        = (req.body.handle || '').trim();
-  const userId        = req.user._id;
+  const handle = (req.body.handle || '').trim();
 
   // ─── Validate Code360 upfront ───────────────────────────────────────────
   if (platform === 'code360') {

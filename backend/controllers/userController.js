@@ -2,7 +2,7 @@
 import User from '../models/User.js';
 import Problem from '../models/Problem.js';
 import PlatformAccount from '../models/PlatformAccount.js';
-import bcrypt from 'bcryptjs';
+import { getAuth } from '@clerk/express';
 import {
   fetchLeetCodeSolvedCount,
   fetchLeetCodeSolvedProblems,
@@ -26,7 +26,11 @@ import { refreshAllContests } from '../services/contests.js';
  * Returns the current user's profile information.
  */
 export const getUserProfile = async (req, res) => {
-  const { name, email, createdAt, platforms } = req.user;
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ message: 'Not authenticated' });
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  const { name, email, createdAt, platforms } = user;
   res.json({ name, email, createdAt, platforms });
 };
 
@@ -35,8 +39,11 @@ export const getUserProfile = async (req, res) => {
  * Updates the user.platforms sub‐document.
  */
 export const updatePlatforms = async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ message: 'Not authenticated' });
   const { platforms } = req.body;
-  const user = req.user;
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ message: 'User not found' });
   const disconnected = [];
 
   Object.entries(platforms).forEach(([platform, handle]) => {
@@ -49,11 +56,11 @@ export const updatePlatforms = async (req, res) => {
 
   if (disconnected.length) {
     await Problem.deleteMany({
-      user: user._id,
+      user: userId,
       platform: { $in: disconnected },
     });
     await PlatformAccount.deleteMany({
-      user: user._id,
+      user: userId,
       platform: { $in: disconnected },
     });
   }
@@ -66,9 +73,11 @@ export const updatePlatforms = async (req, res) => {
  * Update the user's name and email
  */
 export const updateUserProfile = async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ message: 'Not authenticated' });
   const { name, email } = req.body;
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     if (email && email !== user.email) {
@@ -93,35 +102,15 @@ export const updateUserProfile = async (req, res) => {
 };
 
 /**
- * POST /api/user/change-password
- * Change the user's password
- */
-export const changePassword = async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-  try {
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    const match = await bcrypt.compare(currentPassword, user.password);
-    if (!match) return res.status(400).json({ message: 'Current password is incorrect' });
-
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
-
-    res.json({ message: 'Password updated' });
-  } catch (err) {
-    console.error('❌ changePassword error:', err);
-    res.status(500).json({ message: 'Failed to change password' });
-  }
-};
-
-/**
  * GET /api/user/stats
  * Returns { totalSolved, byPlatform, activeDays }.
  */
 export const getUserStats = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const { userId } = getAuth(req);
+    if (!userId) return res.status(401).json({ message: 'Not authenticated' });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     // Count solved problems per platform from DB
     const byPlatformDB = await Problem.aggregate([
@@ -135,7 +124,6 @@ export const getUserStats = async (req, res) => {
       'hackerrank',
       'gfg',
       'code360',
-      
       'codechef',
     ];
 
@@ -152,7 +140,7 @@ export const getUserStats = async (req, res) => {
     });
 
     // LeetCode
-    const leetcodeHandle = req.user.platforms?.leetcode?.handle;
+    const leetcodeHandle = user.platforms?.leetcode?.handle;
     if (leetcodeHandle) {
       const dbCount = platformMap.leetcode;
       try {
@@ -165,7 +153,7 @@ export const getUserStats = async (req, res) => {
     }
 
     // Codeforces
-    const cfHandle = req.user.platforms?.codeforces?.handle;
+    const cfHandle = user.platforms?.codeforces?.handle;
     if (cfHandle) {
       const dbCount = platformMap.codeforces;
       try {
@@ -177,10 +165,8 @@ export const getUserStats = async (req, res) => {
       }
     }
 
-  
-
     // GeeksforGeeks
-    const gfgHandle = req.user.platforms?.gfg?.handle;
+    const gfgHandle = user.platforms?.gfg?.handle;
     if (gfgHandle) {
       const dbCount = platformMap.gfg;
       try {
@@ -193,7 +179,7 @@ export const getUserStats = async (req, res) => {
     }
 
     // CodeChef
-    const ccHandle = req.user.platforms?.codechef?.handle;
+    const ccHandle = user.platforms?.codechef?.handle;
     if (ccHandle) {
       const dbCount = platformMap.codechef;
       try {
@@ -206,7 +192,7 @@ export const getUserStats = async (req, res) => {
     }
 
     // Code360
-    const cnHandle = req.user.platforms?.code360?.handle;
+    const cnHandle = user.platforms?.code360?.handle;
     if (cnHandle) {
       const dbCount = platformMap.code360;
       let count;
@@ -226,7 +212,7 @@ export const getUserStats = async (req, res) => {
     }
 
     // HackerRank
-    const hrHandle = req.user.platforms?.hackerrank?.handle;
+    const hrHandle = user.platforms?.hackerrank?.handle;
     if (hrHandle) {
       const dbCount = platformMap.hackerrank;
       try {
@@ -272,7 +258,10 @@ export const getUserStats = async (req, res) => {
  */
 export const getDashboardAnalytics = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const { userId } = getAuth(req);
+    if (!userId) return res.status(401).json({ message: 'Not authenticated' });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     // Fetch monthly counts, tag counts, and total solved in one go
     const [agg] = await Problem.aggregate([
@@ -302,7 +291,7 @@ export const getDashboardAnalytics = async (req, res) => {
 
     const { monthly = [], tagCounts = [], total = [] } = agg || {};
 
-    let connected = Object.entries(req.user.platforms || {})
+    let connected = Object.entries(user.platforms || {})
       .filter(([, p]) => p.handle)
       .map(([k]) => k);
     if (!connected.length) {
@@ -361,7 +350,11 @@ export const getDashboardAnalytics = async (req, res) => {
  */
 export const getContributionStats = async (req, res) => {
   try {
-    const handle = req.user?.platforms?.code360?.handle;
+    const { userId } = getAuth(req);
+    if (!userId) return res.status(401).json({ message: 'Not authenticated' });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const handle = user?.platforms?.code360?.handle;
     if (!handle) {
       return res.status(400).json({ message: 'Code360 handle not found' });
     }
