@@ -63,7 +63,7 @@ const TopicAnalysis = () => {
     setIsLoading(true);
     try {
       // GET /problems?tags=topic
-      const res = await axios.get("/problems", {
+      const res = await axios.get("/api/problems", {
         params: { tags: topic },
       });
       const raw = Array.isArray(res.data) ? res.data : [];

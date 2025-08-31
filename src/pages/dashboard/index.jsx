@@ -74,11 +74,11 @@ const Dashboard = () => {
     try {
       const [profileRes, statsRes, problemsRes, analyticsRes, contestsRes] =
         await Promise.all([
-          axios.get("/user/profile", { signal: controller.signal }),
-          axios.get("/user/stats", { signal: controller.signal }),
-          axios.get("/problems", { signal: controller.signal }),
-          axios.get("/user/analytics", { signal: controller.signal }),
-          axios.get("/contests", { signal: controller.signal }),
+           axios.get("/api/user/profile", { signal: controller.signal }),
+          axios.get("/api/user/stats", { signal: controller.signal }),
+          axios.get("/api/problems", { signal: controller.signal }),
+          axios.get("/api/user/analytics", { signal: controller.signal }),
+          axios.get("/api/contests", { signal: controller.signal }),
         ]);
 
       const connections = profileRes.data.platforms || {};
