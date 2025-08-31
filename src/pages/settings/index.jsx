@@ -29,7 +29,7 @@ export default function Settings() {
 
   // Sign out via Clerk
   const handleSignOut = async () => {
-    await signOut();
+    await signOut({ redirectUrl: '/sign-in' });
   };
 
   if (!isLoaded) return <p className="p-4">Loading…</p>;
