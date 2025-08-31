@@ -2,7 +2,6 @@
 import User from '../models/User.js';
 import Problem from '../models/Problem.js';
 import PlatformAccount from '../models/PlatformAccount.js';
-import { getAuth, clerkClient } from '@clerk/express';
 import {
   fetchLeetCodeSolvedCount,
   fetchLeetCodeSolvedProblems,

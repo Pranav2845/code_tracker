@@ -2,7 +2,6 @@
 
 import PlatformAccount from '../models/PlatformAccount.js';
 import Problem from '../models/Problem.js';
-import { getAuth } from '@clerk/express';
 
 import { fetchLeetCodeProblems } from '../services/leetcode.js';
 import { fetchCFProblems } from '../services/codeforces.js';

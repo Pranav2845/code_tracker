@@ -1,6 +1,5 @@
 // backend/controllers/problemController.js
 import Problem from '../models/Problem.js';
-import { getAuth } from '@clerk/express';
 
 export const addProblem = async (req, res) => {
   const { platform, problemId, title, difficulty, tags } = req.body;

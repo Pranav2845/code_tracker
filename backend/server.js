@@ -9,7 +9,6 @@ import problemRoutes  from './routes/problem.js';
 import contestRoutes  from './routes/contests.js';
 
 import publicRoutes   from './routes/public.js';
-import { clerkMiddleware } from '@clerk/express'; // ⬅️ FIX
 import geminiRoutes   from './routes/gemini.js';
 
 import { notFound, errorHandler } from './utils/errorHandler.js';
@@ -28,8 +27,6 @@ app.use('/api', publicRoutes);
 app.use('/api/contests', contestRoutes);
 app.use('/api/ai', geminiRoutes);
 
-// 3️⃣ Clerk auth middleware (attach req.auth so controllers can getAuth(req))
-app.use(clerkMiddleware()); // ⬅️ FIX
 
 // 4️⃣ Protected resource routes
 app.use('/api/user',     userRoutes);
