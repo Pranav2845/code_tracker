@@ -77,19 +77,23 @@ export const updateUserProfile = async (req, res) => {
   if (!userId) return res.status(401).json({ message: 'Not authenticated' });
   const { name, email } = req.body;
   try {
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    if (email && email !== user.email) {
-      const existing = await User.findOne({ email });
-      if (existing && existing._id.toString() !== user._id.toString()) {
-        return res.status(400).json({ message: 'Email already in use' });
+        let user = await User.findById(userId);
+    if (!user) {
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
       }
-      user.email = email;
-    }
-
-    if (typeof name === 'string') {
-      user.name = name;
+      user = new User({ _id: userId, email, name });
+    } else {
+      if (email && email !== user.email) {
+        const existing = await User.findOne({ email });
+        if (existing && existing._id.toString() !== user._id.toString()) {
+          return res.status(400).json({ message: 'Email already in use' });
+        }
+        user.email = email;
+      }
+  if (typeof name === 'string') {
+        user.name = name;
+      }
     }
 
     await user.save();

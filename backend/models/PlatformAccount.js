@@ -2,8 +2,8 @@
 import mongoose from 'mongoose';
 
 const platformAccountSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
- platform: {
+ user: { type: String, ref: 'User', required: true },
+  platform: {
     type: String,
     enum: [
       'leetcode',

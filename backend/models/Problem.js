@@ -2,7 +2,7 @@
 import mongoose from 'mongoose';
 
 const problemSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  user: { type: String, ref: 'User', required: true },
   platform: {
     type: String,
     enum: [

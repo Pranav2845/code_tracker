@@ -18,7 +18,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import { SignIn, SignUp } from "@clerk/clerk-react";
 
 const Routes = () => (
-  <BrowserRouter>
+  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
     <ErrorBoundary>
       <ScrollToTop />
       <RouterRoutes>
