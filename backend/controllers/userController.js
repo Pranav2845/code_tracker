@@ -8,7 +8,7 @@ import {
   fetchLeetCodeSolvedProblems,
 } from '../services/leetcode.js';
 
-import { fetchGFGSolvedCount } from '../services/gfg.js';
+import { fetchGFGSolvedCount, fetchGFGProblems } from '../services/gfg.js';
 import {
   fetchCode360SolvedCount,
   fetchCode360ContributionStats,
@@ -483,6 +483,39 @@ export const getCodeChefSolvedProblems = async (req, res) => {
   } catch (err) {
     console.error('❌ getCodeChefSolvedProblems error:', err);
     res.status(500).json({ message: 'Failed to fetch CodeChef problems' });
+  }
+};
+
+/**
+ * GET /api/user/gfg/count/:username
+ * Returns the total solved count for the specified GFG profile.
+ */
+export const getGFGTotalCount = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const count = await fetchGFGSolvedCount(username);
+    res.json({ totalCount: count });
+  } catch (err) {
+    console.error('❌ getGFGTotalCount error:', err);
+    res.status(500).json({ message: 'Failed to fetch GFG total count' });
+  }
+};
+
+/**
+ * GET /api/user/gfg/problems/:username
+ * Fetches solved problems for the given GFG profile.
+ */
+export const getGFGSolvedProblems = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const problems = await fetchGFGProblems(username);
+    const list = Array.isArray(problems)
+      ? problems.map((p) => ({ id: p.id, title: p.title, url: p.url }))
+      : [];
+    res.json({ problems: list });
+  } catch (err) {
+    console.error('❌ getGFGSolvedProblems error:', err);
+    res.status(500).json({ message: 'Failed to fetch GFG problems' });
   }
 };
 
