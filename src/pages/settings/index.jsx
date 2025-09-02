@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import useTheme from '../../hooks/useTheme';
 import Header from '../../components/ui/Header';
 
-
 // Simple toggle switch (uses your design tokens)
 const ToggleSwitch = ({ label, checked, onChange }) => (
   <label className="flex items-center gap-3 select-none">
@@ -23,7 +22,8 @@ const ToggleSwitch = ({ label, checked, onChange }) => (
 
 export default function Settings() {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState({ name: '', email: '' });
+  const [profile, setProfile] = useState({ name: '', email: '', photo: '' });
+  const [photoFile, setPhotoFile] = useState(null);
   const [passForm, setPassForm] = useState({ currentPassword: '', newPassword: '', confirm: '' });
   const [theme, setTheme] = useTheme();
   const [status, setStatus] = useState({ profile: '', password: '' });
@@ -32,7 +32,13 @@ export default function Settings() {
   useEffect(() => {
     axios
       .get('/user/profile')
-      .then((res) => setProfile({ name: res.data.name || '', email: res.data.email || '' }))
+      .then((res) =>
+        setProfile({
+          name: res.data.name || '',
+          email: res.data.email || '',
+          photo: res.data.photo || '',
+        })
+      )
       .catch(() => setStatus((s) => ({ ...s, profile: 'Failed to load profile' })));
   }, []);
 
@@ -47,21 +53,43 @@ export default function Settings() {
   }, [status.profile]);
 
   // 2) Update profile
-const updateProfile = async (e) => {
-  e.preventDefault();
-  try {
-    await axios.patch('/user/profile', profile);
-    setStatus((s) => ({ ...s, profile: 'Profile updated successfully' }));
+  const updateProfile = async (e) => {
+    e.preventDefault();
+    try {
+      // Update name/email first
+      await axios.patch('/user/profile', {
+        name: profile.name,
+        email: profile.email,
+      });
 
-    // 🔔 Notify the rest of the app (Header) & cache
-    const payload = { name: profile.name, email: profile.email };
-    sessionStorage.setItem('userProfile', JSON.stringify(payload));
-    window.dispatchEvent(new CustomEvent('profile:updated', { detail: payload }));
-  } catch (err) {
-    setStatus((s) => ({ ...s, profile: err.response?.data?.message || 'Update failed' }));
-  }
-};
+      // Then upload photo if selected
+      let photoUrl = profile.photo;
+      if (photoFile) {
+        const formData = new FormData();
+        formData.append('photo', photoFile);
+        const previewUrl = profile.photo; // could be a blob: URL
+        const { data } = await axios.post('/user/profile/photo', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        photoUrl = data.url;
 
+        if (previewUrl && previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(previewUrl);
+        }
+        setProfile((p) => ({ ...p, photo: photoUrl }));
+        setPhotoFile(null);
+      }
+
+      setStatus((s) => ({ ...s, profile: 'Profile updated successfully' }));
+
+      // 🔔 Notify the rest of the app (Header) & cache
+      const payload = { name: profile.name, email: profile.email, photo: photoUrl };
+      sessionStorage.setItem('userProfile', JSON.stringify(payload));
+      window.dispatchEvent(new CustomEvent('profile:updated', { detail: payload }));
+    } catch (err) {
+      setStatus((s) => ({ ...s, profile: err.response?.data?.message || 'Update failed' }));
+    }
+  };
 
   // 3) Change password
   const changePassword = async (e) => {
@@ -114,6 +142,37 @@ const updateProfile = async (e) => {
               <section className="rounded-2xl border border-border/40 bg-card p-8 shadow-md">
                 <h2 className="mb-6 text-2xl font-semibold">Profile Settings</h2>
                 <form onSubmit={updateProfile} className="space-y-5">
+                  <div className="flex items-center gap-4">
+                    {profile.photo ? (
+                      <img
+                        src={profile.photo}
+                        alt="Profile"
+                        className="w-20 h-20 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center text-primary font-medium">
+                        {profile.name?.[0]?.toUpperCase() || 'PP'}
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-text-primary mb-1">
+                        Profile Photo
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setPhotoFile(file);
+                            setProfile((p) => ({ ...p, photo: URL.createObjectURL(file) }));
+                          }
+                        }}
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+
                   <Input
                     id="name"
                     label="Full Name"

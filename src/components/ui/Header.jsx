@@ -3,12 +3,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import Icon from "../AppIcon";
 import useTheme from "../../hooks/useTheme";
-import axios from "axios"; // ⬅️ add
+import axios from "axios";
 
 function Header({ variant = "default" }) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useTheme();
-  const [user, setUser] = useState({ name: "", email: "", photo: "" }); // ⬅️ add photo
+  const [user, setUser] = useState({ name: "", email: "", photo: "" });
   const navigate = useNavigate();
   const profileRef = useRef();
 
@@ -35,21 +35,18 @@ function Header({ variant = "default" }) {
     navigate("/login", { replace: true });
   }
 
-  // Helpers
   const getInitials = (nameOrEmail = "") => {
     if (!nameOrEmail) return "PP";
     const parts = nameOrEmail.trim().split(/\s+/).filter(Boolean);
     if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
-    // If single word, try first two letters; if email, use local-part first char
     const word = nameOrEmail.includes("@")
       ? nameOrEmail.split("@")[0]
       : nameOrEmail;
     return (word[0] + (word[1] || "")).toUpperCase();
   };
 
-  // Load profile on mount (or from cache)
+  // Load profile on mount (cache -> API)
   useEffect(() => {
-    // try cache first
     const cached = sessionStorage.getItem("userProfile");
     if (cached) {
       try {
@@ -62,9 +59,9 @@ function Header({ variant = "default" }) {
       } catch {}
     }
 
-    // then try API (ignore errors silently)
     const token = sessionStorage.getItem("token");
     if (!token) return;
+
     axios
       .get("/user/profile")
       .then(({ data }) => {
@@ -79,7 +76,7 @@ function Header({ variant = "default" }) {
       .catch(() => {});
   }, []);
 
-  // Listen for Settings updates
+  // React to Settings updates
   useEffect(() => {
     const onProfileUpdated = (e) => {
       setUser((prev) => {
@@ -90,9 +87,9 @@ function Header({ variant = "default" }) {
     };
     window.addEventListener("profile:updated", onProfileUpdated);
     return () => window.removeEventListener("profile:updated", onProfileUpdated);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Close menu on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -177,6 +174,14 @@ function Header({ variant = "default" }) {
                   src={user.photo}
                   alt="Profile"
                   className="w-8 h-8 rounded-full object-cover"
+                  onError={() => {
+                    // if the absolute URL is unreachable, fall back to initials
+                    setUser((prev) => {
+                      const next = { ...prev, photo: "" };
+                      sessionStorage.setItem("userProfile", JSON.stringify(next));
+                      return next;
+                    });
+                  }}
                 />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary font-medium">

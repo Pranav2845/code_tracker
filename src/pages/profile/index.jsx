@@ -1,5 +1,5 @@
 // src/pages/profile/index.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import Header from '../../components/ui/Header';
 import Footer from '../../components/ui/Footer';
@@ -26,10 +26,18 @@ const profileUrlFor = (id, handle) => {
   }
 };
 
+function getInitials(nameOrEmail = '') {
+  if (!nameOrEmail) return 'PP';
+  const parts = nameOrEmail.trim().split(/\s+/).filter(Boolean);
+  if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
+  const word = nameOrEmail.includes('@') ? nameOrEmail.split('@')[0] : nameOrEmail;
+  return (word[0] + (word[1] || '')).toUpperCase();
+}
+
 export default function Profile() {
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
-  const [user, setUser]         = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [user, setUser] = useState(null);
   const [platforms, setPlatforms] = useState([]);
 
   useEffect(() => {
@@ -37,16 +45,27 @@ export default function Profile() {
       try {
         const { data } = await axios.get('/user/profile');
 
-        setUser({
+        const normalized = {
           name: data?.name || 'User',
           email: data?.email || '',
+          photo: data?.photo || '', // expect absolute URL from backend
           createdAt: data?.createdAt ? new Date(data.createdAt) : null,
-        });
+          platforms: data?.platforms || {},
+        };
 
-        const p = data?.platforms || {};
+        // keep header/sessionStorage in sync
+        const cachedRaw = sessionStorage.getItem('userProfile');
+        let cached = {};
+        try { cached = cachedRaw ? JSON.parse(cachedRaw) : {}; } catch {}
+        const nextCache = { ...cached, name: normalized.name, email: normalized.email, photo: normalized.photo };
+        sessionStorage.setItem('userProfile', JSON.stringify(nextCache));
+        window.dispatchEvent(new CustomEvent('profile:updated', { detail: nextCache }));
+
+        setUser(normalized);
+
         const order = ['leetcode', 'codeforces', 'hackerrank', 'gfg', 'code360', 'codechef'];
         const list = order.map((id) => {
-          const handle = p?.[id]?.handle || '';
+          const handle = normalized.platforms?.[id]?.handle || '';
           return {
             id,
             name:
@@ -69,10 +88,15 @@ export default function Profile() {
     })();
   }, []);
 
-  if (error) return <p className="p-4 text-error">{error}</p>;
-  if (loading) return <p className="p-4">Loading…</p>;
+  const connectedCount = useMemo(
+    () => platforms.filter((p) => p.isConnected).length,
+    [platforms]
+  );
 
-  const connectedCount = platforms.filter((p) => p.isConnected).length;
+  if (error) return <p className="p-4 text-error">{error}</p>;
+  if (loading || !user) return <p className="p-4">Loading…</p>;
+
+  const initials = getInitials(user.name || user.email);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -80,32 +104,62 @@ export default function Profile() {
 
       <main className="flex-1">
         <div className="max-w-5xl mx-auto px-4 py-10 space-y-8">
-          {/* Profile card */}
+
+          {/* Profile card (with photo) */}
           <section className="bg-card text-card-foreground border border-border/40 rounded-2xl p-6 shadow-sm">
-            <h1 className="text-2xl md:text-3xl font-bold mb-4">Your Profile</h1>
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <div>
-                  <span className="text-sm text-text-tertiary">Name</span>
-                  <p className="text-base font-medium">{user?.name}</p>
-                </div>
-                <div>
-                  <span className="text-sm text-text-tertiary">Email</span>
-                  <p className="text-base font-medium">{user?.email}</p>
+            <h1 className="text-2xl md:text-3xl font-bold mb-6">Your Profile</h1>
+
+            <div className="grid gap-6 md:grid-cols-[auto,1fr] items-start">
+              {/* Avatar */}
+              <div className="flex items-center md:items-start justify-center">
+                {user.photo ? (
+                  <img
+                    src={user.photo}
+                    alt="Profile"
+                    className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover ring-2 ring-border/60 shadow-sm"
+                    onError={(e) => {
+                      // if photo fails (e.g., CORS or moved file), hide image & fallback bubble
+                      e.currentTarget.style.display = 'none';
+                      const fallback = e.currentTarget.nextSibling;
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                {/* Fallback bubble (hidden if photo exists and loads) */}
+                <div
+                  className={`${
+                    user.photo ? 'hidden' : 'flex'
+                  } w-28 h-28 md:w-32 md:h-32 rounded-full bg-primary-100 text-primary font-semibold items-center justify-center ring-2 ring-border/60`}
+                >
+                  <span className="text-2xl">{initials}</span>
                 </div>
               </div>
-              <div className="space-y-2">
-                <div>
-                  <span className="text-sm text-text-tertiary">Joined</span>
-                  <p className="text-base font-medium">
-                    {user?.createdAt ? user.createdAt.toLocaleDateString() : '—'}
-                  </p>
+
+              {/* Details */}
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-sm text-text-tertiary">Name</span>
+                    <p className="text-base font-medium">{user.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-text-tertiary">Email</span>
+                    <p className="text-base font-medium">{user.email}</p>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-sm text-text-tertiary">Connections</span>
-                  <p className="text-base font-medium">
-                    {connectedCount} / {platforms.length} connected
-                  </p>
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-sm text-text-tertiary">Joined</span>
+                    <p className="text-base font-medium">
+                      {user.createdAt ? user.createdAt.toLocaleDateString() : '—'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-text-tertiary">Connections</span>
+                    <p className="text-base font-medium">
+                      {connectedCount} / {platforms.length} connected
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -155,9 +209,6 @@ export default function Profile() {
           </section>
         </div>
       </main>
-
-      {/* Professional footer */}
-      <Footer />
     </div>
   );
 }

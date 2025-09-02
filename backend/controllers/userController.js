@@ -3,11 +3,11 @@ import User from '../models/User.js';
 import Problem from '../models/Problem.js';
 import PlatformAccount from '../models/PlatformAccount.js';
 import bcrypt from 'bcryptjs';
+
 import {
   fetchLeetCodeSolvedCount,
   fetchLeetCodeSolvedProblems,
 } from '../services/leetcode.js';
-
 import { fetchGFGSolvedCount, fetchGFGProblems } from '../services/gfg.js';
 import {
   fetchCode360SolvedCount,
@@ -23,16 +23,18 @@ import { refreshAllContests } from '../services/contests.js';
 
 /**
  * GET /api/user/profile
- * Returns the current user's profile information.
  */
 export const getUserProfile = async (req, res) => {
-  const { name, email, createdAt, platforms, photo } = req.user;
+  const { name, email, createdAt, platforms } = req.user;
+  let { photo } = req.user;
+  if (photo && photo.startsWith('/')) {
+    photo = `${req.protocol}://${req.get('host')}${photo}`;
+  }
   res.json({ name, email, createdAt, platforms, photo });
 };
 
 /**
  * PATCH /api/user/platforms
- * Updates the user.platforms sub‐document.
  */
 export const updatePlatforms = async (req, res) => {
   const { platforms } = req.body;
@@ -48,14 +50,8 @@ export const updatePlatforms = async (req, res) => {
   await user.save();
 
   if (disconnected.length) {
-    await Problem.deleteMany({
-      user: user._id,
-      platform: { $in: disconnected },
-    });
-    await PlatformAccount.deleteMany({
-      user: user._id,
-      platform: { $in: disconnected },
-    });
+    await Problem.deleteMany({ user: user._id, platform: { $in: disconnected } });
+    await PlatformAccount.deleteMany({ user: user._id, platform: { $in: disconnected } });
   }
 
   res.json(user.platforms);
@@ -63,7 +59,6 @@ export const updatePlatforms = async (req, res) => {
 
 /**
  * PATCH /api/user/profile
- * Update the user's name and email
  */
 export const updateUserProfile = async (req, res) => {
   const { name, email } = req.body;
@@ -79,9 +74,7 @@ export const updateUserProfile = async (req, res) => {
       user.email = email;
     }
 
-    if (typeof name === 'string') {
-      user.name = name;
-    }
+    if (typeof name === 'string') user.name = name;
 
     await user.save();
     const { createdAt, platforms, photo } = user;
@@ -94,16 +87,16 @@ export const updateUserProfile = async (req, res) => {
 
 /**
  * POST /api/user/profile/photo
- * Uploads and sets the user's profile photo.
- * (Expect a file at req.file from multer on the route)
+ * Expects multer to provide req.file
  */
 export const uploadProfilePhoto = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-    const photoPath = `/uploads/${req.file.filename}`;
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+    const photoPath = `/uploads/${req.file.filename}`; // public URL path
     await User.findByIdAndUpdate(req.user._id, { photo: photoPath });
+
+    // Absolute URL for convenience (frontend can still store the relative)
     const url = `${req.protocol}://${req.get('host')}${photoPath}`;
     res.json({ url });
   } catch (err) {
@@ -114,7 +107,6 @@ export const uploadProfilePhoto = async (req, res) => {
 
 /**
  * POST /api/user/change-password
- * Change the user's password
  */
 export const changePassword = async (req, res) => {
   const { currentPassword, newPassword } = req.body;
@@ -137,141 +129,100 @@ export const changePassword = async (req, res) => {
 
 /**
  * GET /api/user/stats
- * Returns { totalSolved, byPlatform, activeDays }.
  */
 export const getUserStats = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Count solved problems per platform from DB
     const byPlatformDB = await Problem.aggregate([
       { $match: { user: userId } },
       { $group: { _id: '$platform', count: { $sum: 1 } } },
     ]);
 
-    const supportedPlatforms = [
-      'leetcode',
-      'codeforces',
-      'hackerrank',
-      'gfg',
-      'code360',
-      'codechef',
-    ];
-
-    const platformMap = Object.fromEntries(
-      supportedPlatforms.map((p) => [p, 0])
-    );
-
+    const supportedPlatforms = ['leetcode', 'codeforces', 'hackerrank', 'gfg', 'code360', 'codechef'];
+    const platformMap = Object.fromEntries(supportedPlatforms.map((p) => [p, 0]));
     byPlatformDB.forEach((p) => {
-      if (supportedPlatforms.includes(p._id)) {
-        platformMap[p._id] = p.count;
-      } else {
-        platformMap[p._id] = p.count;
-      }
+      platformMap[p._id] = p.count;
     });
 
-    // LeetCode
     const leetcodeHandle = req.user.platforms?.leetcode?.handle;
     if (leetcodeHandle) {
       const dbCount = platformMap.leetcode;
       try {
         const fetched = await fetchLeetCodeSolvedCount(leetcodeHandle);
         platformMap.leetcode = typeof fetched === 'number' ? fetched : dbCount;
-      } catch (err) {
-        console.error('❌ fetchLeetCodeSolvedCount error:', err);
+      } catch {
         platformMap.leetcode = dbCount;
       }
     }
 
-    // Codeforces
     const cfHandle = req.user.platforms?.codeforces?.handle;
     if (cfHandle) {
       const dbCount = platformMap.codeforces;
       try {
         const fetched = await fetchCFSolvedCount(cfHandle);
         platformMap.codeforces = typeof fetched === 'number' ? fetched : dbCount;
-      } catch (err) {
-        console.error('❌ fetchCFSolvedCount error:', err);
+      } catch {
         platformMap.codeforces = dbCount;
       }
     }
 
-    // GeeksforGeeks
     const gfgHandle = req.user.platforms?.gfg?.handle;
     if (gfgHandle) {
       const dbCount = platformMap.gfg;
       try {
         const fetched = await fetchGFGSolvedCount(gfgHandle);
         platformMap.gfg = fetched || dbCount;
-      } catch (err) {
-        console.error('❌ fetchGFGSolvedCount error:', err);
-        if (typeof dbCount === 'number') platformMap.gfg = dbCount;
+      } catch {
+        platformMap.gfg = dbCount;
       }
     }
 
-    // CodeChef
     const ccHandle = req.user.platforms?.codechef?.handle;
     if (ccHandle) {
       const dbCount = platformMap.codechef;
       try {
         const fetched = await fetchCodeChefSolvedCount(ccHandle);
         platformMap.codechef = fetched || dbCount;
-      } catch (err) {
-        console.error('❌ fetchCodeChefSolvedCount error:', err);
-        if (typeof dbCount === 'number') platformMap.codechef = dbCount;
+      } catch {
+        platformMap.codechef = dbCount;
       }
     }
 
-    // Code360
     const cnHandle = req.user.platforms?.code360?.handle;
     if (cnHandle) {
       const dbCount = platformMap.code360;
-      let count;
       try {
-        count = await fetchCode360SolvedCount(cnHandle);
-        if (!count) {
-          count = await fetchCode360ProfileTotalCount(cnHandle);
-        }
+        let count = await fetchCode360SolvedCount(cnHandle);
+        if (!count) count = await fetchCode360ProfileTotalCount(cnHandle);
+        platformMap.code360 = typeof count === 'number' ? count : dbCount;
       } catch {
         try {
-          count = await fetchCode360ProfileTotalCount(cnHandle);
+          const count = await fetchCode360ProfileTotalCount(cnHandle);
+          platformMap.code360 = typeof count === 'number' ? count : dbCount;
         } catch {
-          count = dbCount;
+          platformMap.code360 = dbCount;
         }
       }
-      platformMap.code360 = typeof count === 'number' ? count : dbCount;
     }
 
-    // HackerRank
     const hrHandle = req.user.platforms?.hackerrank?.handle;
     if (hrHandle) {
       const dbCount = platformMap.hackerrank;
       try {
         const fetched = await fetchHackerRankSolvedCount(hrHandle);
         platformMap.hackerrank = fetched || dbCount;
-      } catch (err) {
-        console.error('❌ fetchHackerRankSolvedCount error:', err);
-        if (typeof dbCount === 'number') platformMap.hackerrank = dbCount;
+      } catch {
+        platformMap.hackerrank = dbCount;
       }
     }
 
-    // Build byPlatform array
-    const byPlatform = Object.entries(platformMap).map(([platform, count]) => ({
-      _id: platform,
-      count,
-    }));
+    const byPlatform = Object.entries(platformMap).map(([platform, count]) => ({ _id: platform, count }));
+    const totalSolved = byPlatform.reduce((s, p) => s + p.count, 0);
 
-    // Total solved
-    const totalSolved = byPlatform.reduce((sum, p) => sum + p.count, 0);
-
-    // Active days
     const daysAgg = await Problem.aggregate([
       { $match: { user: userId } },
-      {
-        $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$solvedAt' } },
-        },
-      },
+      { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$solvedAt' } } } },
       { $count: 'count' },
     ]);
     const activeDays = daysAgg[0]?.count || 0;
@@ -285,13 +236,11 @@ export const getUserStats = async (req, res) => {
 
 /**
  * GET /api/user/analytics
- * Returns progress, platform activity & topic strength data for dashboard.
  */
 export const getDashboardAnalytics = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Fetch monthly counts, tag counts, and total solved in one go
     const [agg] = await Problem.aggregate([
       { $match: { user: userId } },
       {
@@ -323,43 +272,42 @@ export const getDashboardAnalytics = async (req, res) => {
       .filter(([, p]) => p.handle)
       .map(([k]) => k);
     if (!connected.length) {
-      connected = Array.from(new Set(monthly.map(m => m._id.platform)));
+      connected = Array.from(new Set(monthly.map((m) => m._id.platform)));
     }
 
     const monthSet = new Set();
     const monthCounts = {};
-    monthly.forEach(m => {
+    monthly.forEach((m) => {
       const { month, platform } = m._id;
       monthSet.add(month);
       monthCounts[month] ??= {};
-      connected.forEach(p => (monthCounts[month][p] = 0));
+      connected.forEach((p) => (monthCounts[month][p] = 0));
       if (connected.includes(platform)) {
         monthCounts[month][platform] = m.count;
       }
     });
 
     const months = Array.from(monthSet).sort();
-    const cumulative = Object.fromEntries(connected.map(p => [p, 0]));
+    const cumulative = Object.fromEntries(connected.map((p) => [p, 0]));
     const progressData = [];
     const platformActivity = [];
     const labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-    months.forEach(month => {
+    months.forEach((month) => {
       const counts = monthCounts[month];
-      connected.forEach(p => { cumulative[p] += counts[p] || 0; });
+      connected.forEach((p) => { cumulative[p] += counts[p] || 0; });
 
       const progressEntry = { date: month };
-      connected.forEach(p => { progressEntry[p] = cumulative[p]; });
+      connected.forEach((p) => { progressEntry[p] = cumulative[p]; });
       progressData.push(progressEntry);
 
       const activityEntry = { month: labels[new Date(month).getUTCMonth()] };
-      connected.forEach(p => { activityEntry[p] = counts[p] || 0; });
+      connected.forEach((p) => { activityEntry[p] = counts[p] || 0; });
       platformActivity.push(activityEntry);
     });
 
-    // Topic strength (percent per tag of total solved)
     const totalCount = total[0]?.count || 0;
-    const topicStrength = tagCounts.map(t => ({
+    const topicStrength = tagCounts.map((t) => ({
       topic: t._id,
       score: totalCount ? Math.round((t.count / totalCount) * 100) : 0,
       solved: t.count,
@@ -374,14 +322,12 @@ export const getDashboardAnalytics = async (req, res) => {
 
 /**
  * GET /api/user/contributions
- * Returns submission statistics from Code360.
  */
 export const getContributionStats = async (req, res) => {
   try {
     const handle = req.user?.platforms?.code360?.handle;
-    if (!handle) {
-      return res.status(400).json({ message: 'Code360 handle not found' });
-    }
+    if (!handle) return res.status(400).json({ message: 'Code360 handle not found' });
+
     let stats;
     try {
       stats = await fetchCode360ContributionStats(handle);
@@ -393,6 +339,7 @@ export const getContributionStats = async (req, res) => {
       stats?.total_submission_count ??
       stats?.count?.submissions ??
       0;
+
     res.json({ totalSubmissionCount });
   } catch (err) {
     console.error('❌ getContributionStats error:', err);
@@ -400,10 +347,7 @@ export const getContributionStats = async (req, res) => {
   }
 };
 
-/**
- * GET /api/user/leetcode/count/:username
- * Returns the total solved count for the specified LeetCode profile.
- */
+// LeetCode
 export const getLeetCodeTotalCount = async (req, res) => {
   try {
     const { username } = req.params;
@@ -414,11 +358,6 @@ export const getLeetCodeTotalCount = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch LeetCode total count' });
   }
 };
-
-/**
- * GET /api/user/leetcode/problems/:username
- * Fetches recently solved problems for the given LeetCode profile.
- */
 export const getLeetCodeSolvedProblems = async (req, res) => {
   try {
     const { username } = req.params;
@@ -430,11 +369,7 @@ export const getLeetCodeSolvedProblems = async (req, res) => {
   }
 };
 
-
-/**
- * GET /api/user/code360/count/:username
- * Returns the public total solved count for the specified Code360 profile.
- */
+// Code360
 export const getCode360TotalCount = async (req, res) => {
   try {
     const { username } = req.params;
@@ -445,21 +380,12 @@ export const getCode360TotalCount = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch Code360 total count' });
   }
 };
-
-/**
- * GET /api/user/code360/problems/:username
- * Fetches solved problems for the given Code360 profile.
- */
 export const getCode360SolvedProblems = async (req, res) => {
   try {
     const { username } = req.params;
     const problems = await fetchCode360Problems(username);
     const list = Array.isArray(problems)
-      ? problems.map((p) => ({
-          id: p.id,
-          title: p.title,
-          url: p.url,
-        }))
+      ? problems.map((p) => ({ id: p.id, title: p.title, url: p.url }))
       : [];
     res.json({ problems: list });
   } catch (err) {
@@ -468,10 +394,7 @@ export const getCode360SolvedProblems = async (req, res) => {
   }
 };
 
-/**
- * GET /api/user/codechef/count/:username
- * Returns the total solved count for the specified CodeChef profile.
- */
+// CodeChef
 export const getCodeChefTotalCount = async (req, res) => {
   try {
     const { username } = req.params;
@@ -482,16 +405,10 @@ export const getCodeChefTotalCount = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch CodeChef total count' });
   }
 };
-
-/**
- * GET /api/user/codechef/problems/:username
- * Fetches solved problems for the given CodeChef profile.
- */
 export const getCodeChefSolvedProblems = async (req, res) => {
   try {
     const { username } = req.params;
     const problems = await fetchCodeChefProblems(username);
-    // Add this line to debug:
     console.log('CodeChef problems for', username, problems);
     const list = Array.isArray(problems)
       ? problems.map((p) => ({ id: p.id, title: p.title, url: p.url }))
@@ -503,10 +420,7 @@ export const getCodeChefSolvedProblems = async (req, res) => {
   }
 };
 
-/**
- * GET /api/user/gfg/count/:username
- * Returns the total solved count for the specified GFG profile.
- */
+// GFG
 export const getGFGTotalCount = async (req, res) => {
   try {
     const { username } = req.params;
@@ -517,11 +431,6 @@ export const getGFGTotalCount = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch GFG total count' });
   }
 };
-
-/**
- * GET /api/user/gfg/problems/:username
- * Fetches solved problems for the given GFG profile.
- */
 export const getGFGSolvedProblems = async (req, res) => {
   try {
     const { username } = req.params;
@@ -536,17 +445,12 @@ export const getGFGSolvedProblems = async (req, res) => {
   }
 };
 
-/**
- * GET /api/contests
- * Returns lists of upcoming and past programming contests.
- */
-export const getContests = async (req, res) => {
+// Contests
+export const getContests = async (_req, res) => {
   try {
     const now = new Date();
-    const upcoming = await Contest.find({ startTime: { $gte: now } })
-      .sort({ startTime: 1 });
-    const past = await Contest.find({ startTime: { $lt: now } })
-      .sort({ startTime: -1 });
+    const upcoming = await Contest.find({ startTime: { $gte: now } }).sort({ startTime: 1 });
+    const past = await Contest.find({ startTime: { $lt: now } }).sort({ startTime: -1 });
     res.json({ upcoming, past });
   } catch (err) {
     console.error('❌ getContests error:', err);
@@ -554,7 +458,7 @@ export const getContests = async (req, res) => {
   }
 };
 
-export const refreshContests = async (req, res) => {
+export const refreshContests = async (_req, res) => {
   try {
     const list = await refreshAllContests();
     res.json({ refreshed: list.length });
