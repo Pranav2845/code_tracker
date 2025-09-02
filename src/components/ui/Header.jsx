@@ -8,7 +8,7 @@ import axios from "axios"; // ⬅️ add
 function Header({ variant = "default" }) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useTheme();
-  const [user, setUser] = useState({ name: "", email: "" }); // ⬅️ add
+  const [user, setUser] = useState({ name: "", email: "", photo: "" }); // ⬅️ add photo
   const navigate = useNavigate();
   const profileRef = useRef();
 
@@ -54,7 +54,11 @@ function Header({ variant = "default" }) {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        setUser({ name: parsed.name || "", email: parsed.email || "" });
+        setUser({
+          name: parsed.name || "",
+          email: parsed.email || "",
+          photo: parsed.photo || "",
+        });
       } catch {}
     }
 
@@ -64,7 +68,11 @@ function Header({ variant = "default" }) {
     axios
       .get("/user/profile")
       .then(({ data }) => {
-        const next = { name: data?.name || "", email: data?.email || "" };
+        const next = {
+          name: data?.name || "",
+          email: data?.email || "",
+          photo: data?.photo || "",
+        };
         setUser(next);
         sessionStorage.setItem("userProfile", JSON.stringify(next));
       })
@@ -74,9 +82,11 @@ function Header({ variant = "default" }) {
   // Listen for Settings updates
   useEffect(() => {
     const onProfileUpdated = (e) => {
-      const next = { ...user, ...e.detail };
-      setUser(next);
-      sessionStorage.setItem("userProfile", JSON.stringify(next));
+      setUser((prev) => {
+        const next = { ...prev, ...e.detail };
+        sessionStorage.setItem("userProfile", JSON.stringify(next));
+        return next;
+      });
     };
     window.addEventListener("profile:updated", onProfileUpdated);
     return () => window.removeEventListener("profile:updated", onProfileUpdated);
@@ -162,9 +172,17 @@ function Header({ variant = "default" }) {
             </button>
 
             <div className="relative ml-3 flex items-center space-x-2 p-2">
-              <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary font-medium">
-                {initials}
-              </div>
+              {user.photo ? (
+                <img
+                  src={user.photo}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary font-medium">
+                  {initials}
+                </div>
+              )}
 
               {variant !== "compact" && (
                 <button

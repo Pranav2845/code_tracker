@@ -19,15 +19,17 @@ import {
   getCode360TotalCount,
   getCode360SolvedProblems,
 
-  changePassword
+  changePassword,
+  uploadProfilePhoto
 } from '../controllers/userController.js';
-
+import upload from '../middleware/upload.js';
 const router = express.Router();
 
 // these are all mounted at /api/user — no extra “/user” prefix here
 router.get   ('/profile',   getUserProfile);
 router.patch ('/profile',   updateUserProfile);
 router.patch ('/platforms', updatePlatforms);
+router.post  ('/profile/photo', upload.single('photo'), uploadProfilePhoto);
 router.get   ('/stats',     getUserStats);
 router.get   ('/analytics', getDashboardAnalytics);
 router.get   ('/contributions', getContributionStats);

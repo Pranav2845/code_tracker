@@ -26,8 +26,8 @@ import { refreshAllContests } from '../services/contests.js';
  * Returns the current user's profile information.
  */
 export const getUserProfile = async (req, res) => {
-  const { name, email, createdAt, platforms } = req.user;
-  res.json({ name, email, createdAt, platforms });
+  const { name, email, createdAt, platforms, photo } = req.user;
+  res.json({ name, email, createdAt, platforms, photo });
 };
 
 /**
@@ -84,11 +84,31 @@ export const updateUserProfile = async (req, res) => {
     }
 
     await user.save();
-    const { createdAt, platforms } = user;
-    res.json({ name: user.name, email: user.email, createdAt, platforms });
+    const { createdAt, platforms, photo } = user;
+    res.json({ name: user.name, email: user.email, createdAt, platforms, photo });
   } catch (err) {
     console.error('❌ updateUserProfile error:', err);
     res.status(500).json({ message: 'Failed to update profile' });
+  }
+};
+
+/**
+ * POST /api/user/profile/photo
+ * Uploads and sets the user's profile photo.
+ * (Expect a file at req.file from multer on the route)
+ */
+export const uploadProfilePhoto = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    const photoPath = `/uploads/${req.file.filename}`;
+    await User.findByIdAndUpdate(req.user._id, { photo: photoPath });
+    const url = `${req.protocol}://${req.get('host')}${photoPath}`;
+    res.json({ url });
+  } catch (err) {
+    console.error('❌ uploadProfilePhoto error:', err);
+    res.status(500).json({ message: 'Failed to upload photo' });
   }
 };
 
@@ -135,7 +155,6 @@ export const getUserStats = async (req, res) => {
       'hackerrank',
       'gfg',
       'code360',
-      
       'codechef',
     ];
 
@@ -176,8 +195,6 @@ export const getUserStats = async (req, res) => {
         platformMap.codeforces = dbCount;
       }
     }
-
-  
 
     // GeeksforGeeks
     const gfgHandle = req.user.platforms?.gfg?.handle;
@@ -406,7 +423,7 @@ export const getLeetCodeSolvedProblems = async (req, res) => {
   try {
     const { username } = req.params;
     const problems = await fetchLeetCodeSolvedProblems(username);
-     res.json({ problems });
+    res.json({ problems });
   } catch (err) {
     console.error('❌ getLeetCodeSolvedProblems error:', err);
     res.status(500).json({ message: 'Failed to fetch LeetCode problems' });
