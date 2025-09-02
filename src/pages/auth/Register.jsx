@@ -63,7 +63,7 @@ const Register = () => {
 
       {/* Register Card */}
       <div className="relative z-10 w-full max-w-lg px-4 mt-16 flex justify-center">
-        <Card className="px-6 py-5 rounded-2xl shadow-2xl bg-neutral-900/85 backdrop-blur-md w-full">
+        <Card className="px-6 py-5 rounded-2xl shadow-2xl bg-neutral-900 backdrop-blur-md w-full">
           <form onSubmit={handleSubmit} className="space-y-4 flex flex-col items-center">
             <h2 className="text-3xl font-semibold text-white text-center mb-2">
               Register
