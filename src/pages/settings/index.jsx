@@ -91,6 +91,26 @@ export default function Settings() {
     }
   };
 
+  const removeProfilePhoto = async () => {
+    try {
+      if (profile.photo && !profile.photo.startsWith('blob:')) {
+        await axios.delete('/user/profile/photo');
+      } else if (profile.photo && profile.photo.startsWith('blob:')) {
+        URL.revokeObjectURL(profile.photo);
+      }
+
+      const updated = { ...profile, photo: '' };
+      setProfile(updated);
+      setPhotoFile(null);
+      setStatus((s) => ({ ...s, profile: 'Profile photo removed' }));
+
+      sessionStorage.setItem('userProfile', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('profile:updated', { detail: updated }));
+    } catch (err) {
+      setStatus((s) => ({ ...s, profile: err.response?.data?.message || 'Failed to remove photo' }));
+    }
+  };
+
   // 3) Change password
   const changePassword = async (e) => {
     e.preventDefault();
@@ -170,6 +190,17 @@ export default function Settings() {
                         }}
                         className="text-sm"
                       />
+                      {profile.photo && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          type="button"
+                          onClick={removeProfilePhoto}
+                          className="mt-2"
+                        >
+                          Remove Photo
+                        </Button>
+                      )}
                     </div>
                   </div>
 

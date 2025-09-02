@@ -3,6 +3,8 @@ import User from '../models/User.js';
 import Problem from '../models/Problem.js';
 import PlatformAccount from '../models/PlatformAccount.js';
 import bcrypt from 'bcryptjs';
+import fs from 'fs';
+import path from 'path';
 
 import {
   fetchLeetCodeSolvedCount,
@@ -102,6 +104,33 @@ export const uploadProfilePhoto = async (req, res) => {
   } catch (err) {
     console.error('❌ uploadProfilePhoto error:', err);
     res.status(500).json({ message: 'Failed to upload photo' });
+  }
+};
+
+/**
+ * DELETE /api/user/profile/photo
+ */
+export const deleteProfilePhoto = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const currentPhoto = user.photo;
+    if (currentPhoto) {
+      const filePath = path.resolve(process.cwd(), currentPhoto.replace(/^\//, ''));
+      try {
+        await fs.promises.unlink(filePath);
+      } catch {
+        // Ignore file removal errors
+      }
+      user.photo = '';
+      await user.save();
+    }
+
+    res.json({ message: 'Photo removed' });
+  } catch (err) {
+    console.error('❌ deleteProfilePhoto error:', err);
+    res.status(500).json({ message: 'Failed to remove photo' });
   }
 };
 

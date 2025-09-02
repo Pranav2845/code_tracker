@@ -16,6 +16,8 @@ import {
   getCode360SolvedProblems,
   changePassword,
   uploadProfilePhoto,
+  deleteProfilePhoto,
+
 } from '../controllers/userController.js';
 
 const router = express.Router();
@@ -24,6 +26,7 @@ const router = express.Router();
 router.get   ('/profile',                 getUserProfile);
 router.patch ('/profile',                 updateUserProfile);
 router.post  ('/profile/photo',           upload.single('photo'), uploadProfilePhoto);
+router.delete('/profile/photo',           deleteProfilePhoto);
 
 router.patch ('/platforms',               updatePlatforms);
 router.get   ('/stats',                   getUserStats);
