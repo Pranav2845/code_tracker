@@ -52,7 +52,7 @@ const Login = () => {
 
       {/* Branding */}
       <div className="relative z-10 text-center pt-16 md:pt-20 px-4">
-        <h1 className="text-5xl md:text-6xl font-extrabold text-white drop-shadow-[0_0_10px_#ffffff]">
+        <h1 className="text-5xl md:text-6xl font-extrabold text-white drop-shadow-[0_0_12px_#ffffff]">
           CODE TRACKER
         </h1>
         <p className="mt-3 text-xl md:text-2xl text-white drop-shadow-[0_0_6px_#ffffff]">
@@ -62,7 +62,11 @@ const Login = () => {
 
       {/* Login Card */}
       <div className="relative z-10 w-full max-w-lg px-4 mt-16 flex justify-center">
-        <Card className="px-6 py-5 rounded-2xl shadow-2xl bg-neutral-900 backdrop-blur-md w-full">
+        <Card
+          className="px-8 py-6 rounded-2xl shadow-2xl 
+          bg-gradient-to-br from-black via-gray-900 to-[#3b2f2f] 
+          border border-gray-800/50 backdrop-blur-md w-full"
+        >
           <form
             onSubmit={handleSubmit}
             className="space-y-4 flex flex-col items-center"
