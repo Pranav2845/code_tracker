@@ -35,6 +35,16 @@ export default function Settings() {
       .catch(() => setStatus((s) => ({ ...s, profile: 'Failed to load profile' })));
   }, []);
 
+  // ✅ Auto-hide profile success message after 3s
+  useEffect(() => {
+    if (status.profile) {
+      const timer = setTimeout(() => {
+        setStatus((s) => ({ ...s, profile: '' }));
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [status.profile]);
+
   // 2) Update profile
   const updateProfile = async (e) => {
     e.preventDefault();
@@ -80,6 +90,13 @@ export default function Settings() {
 
       <main className="flex-1">
         <div className="mx-auto w-full max-w-7xl px-8 py-12">
+          {/* ✅ Global success message at top center (auto disappears in 3s) */}
+          {status.profile && (
+            <div className="mb-6 text-center text-lg font-medium text-success">
+              {status.profile}
+            </div>
+          )}
+
           <h1 className="mb-10 text-4xl font-bold">Settings</h1>
 
           {/* Two-column responsive grid */}
@@ -90,12 +107,6 @@ export default function Settings() {
               <section className="rounded-2xl border border-border/40 bg-card p-8 shadow-md">
                 <h2 className="mb-6 text-2xl font-semibold">Profile Settings</h2>
                 <form onSubmit={updateProfile} className="space-y-5">
-                  {status.profile && (
-                    <div className="rounded-md border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
-                      {status.profile}
-                    </div>
-                  )}
-
                   <Input
                     id="name"
                     label="Full Name"
