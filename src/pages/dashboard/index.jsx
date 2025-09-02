@@ -11,8 +11,9 @@ import SkeletonCard from "./components/SkeletonCard";
 import { fetchCode360SolvedProblems } from "../../api/code360";
 import { fetchCodeChefSolvedProblems } from "../../api/codechef";
 import { fetchLeetCodeSolvedProblems } from "../../api/leetcode";
+import { fetchGFGSolvedProblems } from "../../api/gfg";
 
-// 🚀 Lazy-load heavy widgets
+// Lazy widgets
 const PlatformTotalsChart = React.lazy(() =>
   import("./components/PlatformTotalsChart")
 );
@@ -40,16 +41,37 @@ function writeCache(data) {
   } catch {}
 }
 
+/** Build external profile URL for each platform */
+function profileUrlFor(platformId, handle) {
+  if (!handle) return null;
+  switch (platformId) {
+    case "leetcode":
+      return `https://leetcode.com/${handle}/`;
+    case "codeforces":
+      return `https://codeforces.com/profile/${handle}`;
+    case "hackerrank":
+      return `https://www.hackerrank.com/profile/${handle}`;
+    case "gfg":
+      return `https://auth.geeksforgeeks.org/user/${handle}/`;
+    case "code360":
+      return `https://www.codingninjas.com/studio/profile/${handle}`;
+    case "codechef":
+      return `https://www.codechef.com/users/${handle}`;
+
+    default:
+      return null;
+  }
+}
+
 const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [dashboardData, setDashboardData] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
-  const [contests, setContests] = useState([]);
+  const [contests, setContests] = useState([]); // reserved if you display contests
   const abortRef = useRef(null);
 
-  // ✅ initial page-load flag (overlay will use this)
   const isFirstLoad = isLoading && !dashboardData;
 
   const setDataOnce = (data) => {
@@ -90,19 +112,21 @@ const Dashboard = () => {
       const leetcodeHandle = connections.leetcode?.handle;
       const code360Handle = connections.code360?.handle;
       const codechefHandle = connections.codechef?.handle;
+      const gfgHandle = connections.gfg?.handle;
 
-      const [cnRes, ccRes, lcRes] = await Promise.allSettled([
+      const [cnRes, ccRes, lcRes, gfgRes] = await Promise.allSettled([
         code360Handle
           ? fetchCode360SolvedProblems(code360Handle)
           : Promise.resolve(null),
         codechefHandle
           ? fetchCodeChefSolvedProblems(codechefHandle)
           : Promise.resolve(null),
-          leetcodeHandle
+        leetcodeHandle
           ? fetchLeetCodeSolvedProblems(leetcodeHandle)
           : Promise.resolve(null),
+        gfgHandle ? fetchGFGSolvedProblems(gfgHandle) : Promise.resolve(null),
       ]);
-      
+
       if (cnRes.status === "fulfilled" && Array.isArray(cnRes.value)) {
         const mapped = cnRes.value.map((p) => ({
           _id: p.id,
@@ -125,7 +149,18 @@ const Dashboard = () => {
           .filter((pr) => pr.platform !== "codechef")
           .concat(mapped);
       }
-       if (lcRes.status === "fulfilled" && Array.isArray(lcRes.value)) {
+      if (gfgRes.status === "fulfilled" && Array.isArray(gfgRes.value)) {
+        const mapped = gfgRes.value.map((p) => ({
+          _id: p.id,
+          platform: "gfg",
+          title: p.title,
+          url: p.url || "#",
+        }));
+        allProblems = allProblems
+          .filter((pr) => pr.platform !== "gfg")
+          .concat(mapped);
+      }
+      if (lcRes.status === "fulfilled" && Array.isArray(lcRes.value)) {
         const mapped = lcRes.value.map((p) => ({
           _id: p.id,
           platform: "leetcode",
@@ -137,34 +172,56 @@ const Dashboard = () => {
           .concat(mapped);
       }
 
-
       const upcomingContests = Array.isArray(contestsRes.data?.upcoming)
         ? contestsRes.data.upcoming.slice(0, 5)
         : [];
       setContests(upcomingContests);
 
+      // Platforms + icons
       const platformsMaster = [
-        { id: "leetcode", name: "LeetCode", color: "var(--color-leetcode)" },
+        {
+          id: "leetcode",
+          name: "LeetCode",
+          color: "var(--color-leetcode)",
+          imageSrc: "/assets/images/leetcode.png",
+        },
         {
           id: "codeforces",
           name: "Codeforces",
           color: "var(--color-codeforces)",
+          imageSrc: "/assets/images/codeforces.png",
         },
-        { id: "hackerrank", name: "HackerRank", color: "var(--color-success)" },
-        { id: "gfg", name: "GeeksforGeeks", color: "var(--color-gfg)" },
+        {
+          id: "hackerrank",
+          name: "HackerRank",
+          color: "var(--color-success)",
+          imageSrc: "/assets/images/hackerrank.webp",
+        },
+        {
+          id: "gfg",
+          name: "GeeksforGeeks",
+          color: "var(--color-gfg)",
+          imageSrc: "/assets/images/gfg.png",
+        },
         {
           id: "code360",
           name: "Code 360 by Coding Ninjas",
           color: "var(--color-code360)",
+          imageSrc: "/assets/images/codingninjas.jpeg",
         },
-        { id: "codechef", name: "CodeChef", color: "var(--color-codechef)" },
+        {
+          id: "codechef",
+          name: "CodeChef",
+          color: "var(--color-codechef)",
+          imageSrc: "/assets/images/codechef.png",
+        },
       ];
 
       const platforms = platformsMaster.map((p) => {
         const entry = byPlatform.find(({ _id }) => _id === p.id);
         const solved = entry ? entry.count : 0;
-        const handle = connections[p.id]?.handle || "";
-        return { ...p, isConnected: !!handle, problemsSolved: solved };
+        const handle = (connections[p.id]?.handle || "").trim();
+        return { ...p, isConnected: !!handle, problemsSolved: solved, handle };
       });
 
       const progressData = platforms.map((p) => ({
@@ -410,31 +467,59 @@ const Dashboard = () => {
           ) : (
             <section>
               <h2 className="text-lg font-semibold mb-4">
-                Questions Solved by Platform
+                Solved Problem Insights
               </h2>
               {connectedPlatforms.length === 0 ? (
                 <p className="text-sm text-text-secondary">
                   Connect a platform to see solved problems.
                 </p>
               ) : (
-                // ⬅️ Wider + taller cards
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {connectedPlatforms.map((p) => {
                     const problems = dashboardData?.problemsMap?.[p.id] || [];
+                    const profileUrl = profileUrlFor(p.id, p.handle);
+
                     return (
                       <div
                         key={p.id}
-                        className="bg-surface border rounded-lg p-5 shadow-sm flex flex-col h-72 md:h-80"
+                        className="bg-surface border rounded-lg p-5 shadow-sm flex flex-col h-80 md:h-96"
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-base font-medium text-text-secondary">
-                            {p.name}
+                          <span className="text-base font-medium flex items-center">
+                            <img
+                              src={p.imageSrc}
+                              alt={p.name}
+                              className="w-8 h-8 object-contain mr-2" // ⬅️ increased size
+                              onError={(e) =>
+                                (e.currentTarget.style.display = "none")
+                              }
+                            />
+
+                            {profileUrl ? (
+                              <a
+                                href={profileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-gray-800 hover:text-gray-600 
+             dark:text-white dark:hover:text-gray-200 
+             dark:drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] 
+             transition-colors text-base"
+                                title={`Open ${p.name} profile`}
+                              >
+                                {p.name}
+                              </a>
+                            ) : (
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {p.name}
+                              </span>
+                            )}
                           </span>
-                          {/* ⬅️ Bigger, bolder solved count */}
+
                           <span className="text-3xl font-extrabold text-text-primary">
                             {p.problemsSolved}
                           </span>
                         </div>
+
                         <div className="flex-1 overflow-y-auto mt-3">
                           {problems.length === 0 ? (
                             <p className="text-sm text-text-secondary">
@@ -467,7 +552,7 @@ const Dashboard = () => {
         </div>
       </main>
 
-      {/* 🔵 Full-page loading overlay on first load */}
+      {/* First-load overlay */}
       {isFirstLoad && (
         <div className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-center justify-center">
           <div
