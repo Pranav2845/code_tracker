@@ -102,7 +102,7 @@ export default function Profile() {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="flex-1">
+      <main className="flex-1 pb-24">
         <div className="max-w-5xl mx-auto px-4 py-10 space-y-8">
 
           {/* Profile card (with photo) */}
@@ -114,16 +114,15 @@ export default function Profile() {
               <div className="flex items-center md:items-start justify-center">
                 {user.photo ? (
                   <img
-                    src={user.photo}
-                    alt="Profile"
-                    className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover ring-2 ring-border/60 shadow-sm"
-                    onError={(e) => {
-                      // if photo fails (e.g., CORS or moved file), hide image & fallback bubble
-                      e.currentTarget.style.display = 'none';
-                      const fallback = e.currentTarget.nextSibling;
-                      if (fallback) fallback.style.display = 'flex';
-                    }}
-                  />
+                     src={user.photo}
+                     alt="Profile"
+                     className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover border border-border/50 shadow-md"
+                     onError={(e) => {
+                       e.currentTarget.style.display = 'none';
+                       const fallback = e.currentTarget.nextSibling;
+                       if (fallback) fallback.style.display = 'flex';
+                     }}
+                   />
                 ) : null}
                 {/* Fallback bubble (hidden if photo exists and loads) */}
                 <div

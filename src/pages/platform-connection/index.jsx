@@ -175,7 +175,7 @@ export default function PlatformConnection() {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="flex-1 py-8 px-4 max-w-7xl mx-auto">
+      <main className="flex-1 px-4 max-w-7xl mx-auto pt-8 pb-24">
         <h1 className="text-3xl font-bold mb-2">Connect Your Coding Platforms</h1>
         <p className="text-text-secondary mb-8">Link your accounts to track your progress.</p>
 

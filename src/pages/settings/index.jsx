@@ -123,7 +123,7 @@ export default function Settings() {
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
 
-      <main className="flex-1">
+      <main className="flex-1 pb-24">
         <div className="mx-auto w-full max-w-7xl px-8 py-12">
           {/* ✅ Global success message at top center (auto disappears in 3s) */}
           {status.profile && (
