@@ -4,6 +4,7 @@ import { BrowserRouter, Routes as RouterRoutes, Route, Navigate } from "react-ro
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PrivateRoute from "./components/ui/PrivateRoute";
+import Footer from "./components/ui/Footer";
 
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -105,6 +106,8 @@ const Routes = () => (
         {/* Catch-all */}
         <Route path="*" element={<NotFound />} />
       </RouterRoutes>
+      <Footer />
+
     </ErrorBoundary>
   </BrowserRouter>
 );

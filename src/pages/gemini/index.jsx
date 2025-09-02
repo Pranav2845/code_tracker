@@ -22,11 +22,11 @@ export default function GeminiPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main
         id="main-content"
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
       >
         <h1 className="text-xl mb-4">
           Ask AI: Get clear, accurate answers to your questions

@@ -302,10 +302,10 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main
-        className="max-w-7xl mx-auto px-4 py-6"
+        className="flex-1 max-w-7xl mx-auto px-4 py-6"
         aria-busy={isFirstLoad}
         aria-live="polite"
       >
