@@ -3,10 +3,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import Icon from "../AppIcon";
 import useTheme from "../../hooks/useTheme";
+import axios from "axios"; // ⬅️ add
 
 function Header({ variant = "default" }) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useTheme();
+  const [user, setUser] = useState({ name: "", email: "" }); // ⬅️ add
   const navigate = useNavigate();
   const profileRef = useRef();
 
@@ -33,6 +35,54 @@ function Header({ variant = "default" }) {
     navigate("/login", { replace: true });
   }
 
+  // Helpers
+  const getInitials = (nameOrEmail = "") => {
+    if (!nameOrEmail) return "PP";
+    const parts = nameOrEmail.trim().split(/\s+/).filter(Boolean);
+    if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
+    // If single word, try first two letters; if email, use local-part first char
+    const word = nameOrEmail.includes("@")
+      ? nameOrEmail.split("@")[0]
+      : nameOrEmail;
+    return (word[0] + (word[1] || "")).toUpperCase();
+  };
+
+  // Load profile on mount (or from cache)
+  useEffect(() => {
+    // try cache first
+    const cached = sessionStorage.getItem("userProfile");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        setUser({ name: parsed.name || "", email: parsed.email || "" });
+      } catch {}
+    }
+
+    // then try API (ignore errors silently)
+    const token = sessionStorage.getItem("token");
+    if (!token) return;
+    axios
+      .get("/user/profile")
+      .then(({ data }) => {
+        const next = { name: data?.name || "", email: data?.email || "" };
+        setUser(next);
+        sessionStorage.setItem("userProfile", JSON.stringify(next));
+      })
+      .catch(() => {});
+  }, []);
+
+  // Listen for Settings updates
+  useEffect(() => {
+    const onProfileUpdated = (e) => {
+      const next = { ...user, ...e.detail };
+      setUser(next);
+      sessionStorage.setItem("userProfile", JSON.stringify(next));
+    };
+    window.addEventListener("profile:updated", onProfileUpdated);
+    return () => window.removeEventListener("profile:updated", onProfileUpdated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -42,6 +92,9 @@ function Header({ variant = "default" }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const displayName = user.name || "User";
+  const initials = getInitials(user.name || user.email);
 
   return (
     <header className="bg-surface border-b border-border">
@@ -80,7 +133,8 @@ function Header({ variant = "default" }) {
                 key={item.name}
                 to={item.path}
                 className={({ isActive }) =>
-                  navLinkClass + (isActive ? " " + activeClass : " " + inactiveClass)
+                  navLinkClass +
+                  (isActive ? " " + activeClass : " " + inactiveClass)
                 }
               >
                 {item.name}
@@ -109,7 +163,7 @@ function Header({ variant = "default" }) {
 
             <div className="relative ml-3 flex items-center space-x-2 p-2">
               <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary font-medium">
-                PP
+                {initials}
               </div>
 
               {variant !== "compact" && (
@@ -121,7 +175,7 @@ function Header({ variant = "default" }) {
                   onClick={toggleProfileMenu}
                 >
                   <span className="text-sm font-medium text-text-primary hidden lg:block">
-                    Pranav Pandey
+                    {displayName}
                   </span>
                   <Icon name="ChevronDown" size={16} className="hidden lg:block" />
                 </button>

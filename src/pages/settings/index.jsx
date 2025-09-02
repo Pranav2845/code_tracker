@@ -46,15 +46,21 @@ export default function Settings() {
   }, [status.profile]);
 
   // 2) Update profile
-  const updateProfile = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.patch('/user/profile', profile);
-      setStatus((s) => ({ ...s, profile: 'Profile updated successfully' }));
-    } catch (err) {
-      setStatus((s) => ({ ...s, profile: err.response?.data?.message || 'Update failed' }));
-    }
-  };
+const updateProfile = async (e) => {
+  e.preventDefault();
+  try {
+    await axios.patch('/user/profile', profile);
+    setStatus((s) => ({ ...s, profile: 'Profile updated successfully' }));
+
+    // 🔔 Notify the rest of the app (Header) & cache
+    const payload = { name: profile.name, email: profile.email };
+    sessionStorage.setItem('userProfile', JSON.stringify(payload));
+    window.dispatchEvent(new CustomEvent('profile:updated', { detail: payload }));
+  } catch (err) {
+    setStatus((s) => ({ ...s, profile: err.response?.data?.message || 'Update failed' }));
+  }
+};
+
 
   // 3) Change password
   const changePassword = async (e) => {
