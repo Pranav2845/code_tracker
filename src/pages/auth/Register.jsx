@@ -1,7 +1,7 @@
 // src/pages/auth/Register.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../api/axios';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
@@ -46,7 +46,7 @@ const Register = () => {
     try {
       setIsSubmitting(true);
       const { confirmPassword, ...submitData } = formData;
-      const { data } = await axios.post('/auth/register', submitData);
+      const { data } = await api.post('/auth/register', submitData);
       sessionStorage.setItem('token', data.token);
       navigate('/dashboard');
     } catch (err) {

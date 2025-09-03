@@ -1,7 +1,7 @@
 // src/pages/auth/Login.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../api/axios';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
@@ -34,7 +34,7 @@ const Login = () => {
 
     try {
       setIsSubmitting(true);
-      const { data } = await axios.post('/auth/login', formData);
+      const { data } = await api.post('/auth/login', formData);
       sessionStorage.setItem('token', data.token);
       navigate('/dashboard');
     } catch (err) {

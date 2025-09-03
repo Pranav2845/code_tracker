@@ -3,8 +3,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import Icon from "../AppIcon";
 import useTheme from "../../hooks/useTheme";
-import axios from "axios";
-
+import api from "../../api/axios";
 const NOTIF_READ_KEY = "ct_notif_read_ids";
 
 const getReadIds = () => {
@@ -80,7 +79,7 @@ function Header({ variant = "default" }) {
     const token = sessionStorage.getItem("token");
     if (!token) return;
 
-    axios
+      api
       .get("/user/profile")
       .then(({ data }) => {
         const next = {
@@ -97,8 +96,7 @@ function Header({ variant = "default" }) {
   // Fetch notifications and merge with persisted "read" state
   const fetchNotifications = useCallback(async () => {
     try {
-      const { data } = await axios.get("/user/notifications").catch(() => ({
-        data: null,
+const { data } = await api.get("/user/notifications").catch(() => ({
       }));
 
       // Fallback demo items if API not implemented
@@ -190,7 +188,7 @@ function Header({ variant = "default" }) {
 
     // Best-effort server call
     try {
-      await axios.post("/user/notifications/mark-all-read").catch(() => {});
+      await api.post("/user/notifications/mark-all-read").catch(() => {});
     } catch {}
   };
 

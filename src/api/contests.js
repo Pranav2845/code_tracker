@@ -1,5 +1,5 @@
 // src/api/contests.js
-import axios from 'axios';
+import api from "./axios";
 
 /*
  * * Fetch contests from the backend. The backend may either return
@@ -11,7 +11,7 @@ import axios from 'axios';
  * about the specific API shape.
  */
 export async function fetchContests() {
-    const { data } = await axios.get('/contests/all');
+    const { data } = await api.get('/contests/all');
 
   // Old API: '/contests' returned only an array of upcoming contests
   if (Array.isArray(data)) {

@@ -1,5 +1,6 @@
 // src/pages/platform-connection/index.jsx
 import React, { useState, useEffect } from "react";
+import api from "../../api/axios";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/ui/Header";
@@ -20,7 +21,7 @@ export default function PlatformConnection() {
   // 1️⃣ Fetch the user’s current handles
   async function fetchPlatforms() {
     try {
-      const { data } = await axios.get("/user/profile");
+      const { data } = await api.get("/user/profile");
       const model = [
         { id: "leetcode",   name: "LeetCode",      icon: "Code",     color: "#F0C02D" },
         { id: "codeforces", name: "Codeforces",    icon: "Terminal", color: "#339AF0" },
@@ -56,7 +57,7 @@ export default function PlatformConnection() {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       try {
-        const { data } = await axios.get("/user/profile");
+              const { data } = await api.get("/user/profile");
         const handle = data.platforms?.[platformId]?.handle || "";
         if (handle) {
           // sync completed — refresh full list for counts, etc.
@@ -76,7 +77,7 @@ export default function PlatformConnection() {
   async function handleConnect(platformId, { username }) {
     setIsConnecting(true);
     try {
-      const { data } = await axios.post(`/platform/sync/${platformId}`, { handle: username });
+      const { data } = await api.post(`/platform/sync/${platformId}`, { handle: username });
 
       // only warn on other platforms—Code360 uses the total-count API fallback
       // 🔧 IMPORTANT CHANGE: do NOT warn for LeetCode when importedCount is 0 (sync is often delayed)
@@ -154,7 +155,7 @@ export default function PlatformConnection() {
   // 4️⃣ Disconnect a platform
   async function handleDisconnect(platformId) {
     try {
-      await axios.patch("/user/platforms", { platforms: { [platformId]: "" } });
+      await api.patch("/user/platforms", { platforms: { [platformId]: "" } });
       await fetchPlatforms();
     } catch (err) {
       if (DEBUG) console.error("❌ disconnect failed:", err);

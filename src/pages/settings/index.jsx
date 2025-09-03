@@ -1,5 +1,6 @@
 // src/pages/settings/index.jsx
 import React, { useEffect, useState } from 'react';
+import api from '../../api/axios';
 import axios from 'axios';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
@@ -35,7 +36,7 @@ export default function Settings() {
 
   // 1) Load current profile
   useEffect(() => {
-    axios
+    api
       .get('/user/profile')
       .then((res) =>
         setProfile({
@@ -62,7 +63,7 @@ export default function Settings() {
     e.preventDefault();
     try {
       // Update name/email first
-      await axios.patch('/user/profile', {
+      await api.patch('/user/profile', {
         name: profile.name,
         email: profile.email,
       });
@@ -73,7 +74,7 @@ export default function Settings() {
         const formData = new FormData();
         formData.append('photo', photoFile);
         const previewUrl = profile.photo; // could be a blob: URL
-        const { data } = await axios.post('/user/profile/photo', formData, {
+        const { data } = await api.post('/user/profile/photo', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         photoUrl = data.url;
@@ -99,7 +100,7 @@ export default function Settings() {
   const removeProfilePhoto = async () => {
     try {
       if (profile.photo && !profile.photo.startsWith('blob:')) {
-        await axios.delete('/user/profile/photo');
+        await api.delete('/user/profile/photo');
       } else if (profile.photo && profile.photo.startsWith('blob:')) {
         URL.revokeObjectURL(profile.photo);
       }
@@ -124,7 +125,7 @@ export default function Settings() {
       return;
     }
     try {
-      await axios.post('/user/change-password', {
+       await api.post('/user/change-password', {
         currentPassword: passForm.currentPassword,
         newPassword: passForm.newPassword,
       });

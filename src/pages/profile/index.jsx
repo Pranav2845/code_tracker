@@ -1,6 +1,7 @@
 // src/pages/profile/index.jsx
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
+import api from '../../api/axios';
 import Header from '../../components/ui/Header';
 import Footer from '../../components/ui/Footer';
 
@@ -43,7 +44,7 @@ export default function Profile() {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await axios.get('/user/profile');
+        const { data } = await api.get('/user/profile');
 
         const normalized = {
           name: data?.name || 'User',

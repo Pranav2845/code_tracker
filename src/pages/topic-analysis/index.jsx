@@ -1,5 +1,6 @@
 // File: src/pages/topic-analysis/index.jsx
 import React, { useState, useEffect } from "react";
+import api from "../../api/axios";
 import axios from "axios";
 import Header from "../../components/ui/Header";
 import TopicSelector from "./components/TopicSelector";
@@ -63,7 +64,7 @@ const TopicAnalysis = () => {
     setIsLoading(true);
     try {
       // GET /problems?tags=topic
-      const res = await axios.get("/problems", {
+        const res = await api.get("/problems", {
         params: { tags: topic },
       });
       const probs = res.data.map((p) => ({

@@ -1,5 +1,6 @@
 // File: src/pages/dashboard/index.jsx
 import React, { useEffect, useMemo, useRef, useState, Suspense } from "react";
+import api from "../../api/axios";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import Header from "../../components/ui/Header";
@@ -96,6 +97,11 @@ const Dashboard = () => {
     try {
       const [profileRes, statsRes, problemsRes, analyticsRes, contestsRes] =
         await Promise.all([
+          api.get("/user/profile", { signal: controller.signal }),
+          api.get("/user/stats", { signal: controller.signal }),
+          api.get("/problems", { signal: controller.signal }),
+          api.get("/user/analytics", { signal: controller.signal }),
+          api.get("/contests", { signal: controller.signal }),
           axios.get("/user/profile", { signal: controller.signal }),
           axios.get("/user/stats", { signal: controller.signal }),
           axios.get("/problems", { signal: controller.signal }),
