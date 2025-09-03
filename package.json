@@ -38,8 +38,8 @@
     "start": "npm run dev",
     "build": "vite build --sourcemap",
     "serve": "vite preview",
-    "test": "vitest",
-    "cses-solved": "node scripts/csesSolved.js"
+    "test": "vitest"
+ 
   },
   "eslintConfig": {
     "extends": [

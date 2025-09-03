@@ -8,7 +8,12 @@ import Card from '../../components/ui/Card';
 
 const Register = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,6 +32,12 @@ const Register = () => {
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.email) newErrors.email = 'Email is required';
     if (!formData.password) newErrors.password = 'Password is required';
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Confirm Password is required';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
     if (Object.keys(newErrors).length) {
       setErrors(newErrors);
       return;
@@ -34,7 +45,8 @@ const Register = () => {
 
     try {
       setIsSubmitting(true);
-      const { data } = await axios.post('/auth/register', formData);
+      const { confirmPassword, ...submitData } = formData;
+      const { data } = await axios.post('/auth/register', submitData);
       sessionStorage.setItem('token', data.token);
       navigate('/dashboard');
     } catch (err) {
@@ -111,6 +123,22 @@ const Register = () => {
                 value={formData.password}
                 onChange={handleChange}
                 error={errors.password}
+                className="text-base h-12 w-full"
+                icon={showPassword ? 'EyeOff' : 'Eye'}
+                iconPosition="right"
+                variant="with-icon"
+                onIconClick={() => setShowPassword(!showPassword)}
+              />
+
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showPassword ? 'text' : 'password'}
+                label="Confirm Password"
+                placeholder="••••••••"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                error={errors.confirmPassword}
                 className="text-base h-12 w-full"
                 icon={showPassword ? 'EyeOff' : 'Eye'}
                 iconPosition="right"

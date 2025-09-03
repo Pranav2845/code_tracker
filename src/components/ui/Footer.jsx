@@ -55,7 +55,9 @@ function Footer() {
             <Icon name="Code" size={18} />
           </div>
           <div className="max-w-md">
-            <div className="font-semibold text-text-primary leading-none">CodeTracker</div>
+            <div className="font-semibold text-text-primary leading-none">
+              CodeTracker
+            </div>
             <p className="text-xs md:text-sm text-text-secondary mt-1">
               Track progress across platforms, analyze strengths, and grow with actionable
               insights.
@@ -63,21 +65,54 @@ function Footer() {
           </div>
         </div>
 
-        {/* Middle: navigation links */}
-        <nav
-          className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm"
-          aria-label="Footer navigation"
-        >
-          {footerLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.path}
-              className="text-text-secondary hover:text-text-primary hover:underline underline-offset-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-sm px-1"
+        {/* Middle: navigation links + tagline */}
+        <div className="flex flex-col items-center justify-center gap-2">
+          <nav
+            className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm"
+            aria-label="Footer navigation"
+          >
+            {footerLinks.map((link) => (
+              <Link
+                key={link.name}
+                to={link.path}
+                className="text-text-secondary hover:text-text-primary hover:underline underline-offset-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-sm px-1"
+              >
+                {link.name}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Professional tagline */}
+          <div className="text-xs text-text-tertiary text-center">
+            Stay updated with new features and coding insights — follow us on{' '}
+            <a
+              href="https://github.com/Pranav2845"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
             >
-              {link.name}
-            </Link>
-          ))}
-        </nav>
+              GitHub
+            </a>
+            ,{' '}
+            <a
+              href="https://twitter.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Twitter
+            </a>{' '}
+            &{' '}
+            <a
+              href="https://www.linkedin.com/in/pranav-pandey001/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              LinkedIn
+            </a>.
+          </div>
+        </div>
 
         {/* Right: socials + meta */}
         <div className="flex flex-col items-center md:items-end gap-2">
@@ -102,7 +137,8 @@ function Footer() {
           </div>
 
           <div className="text-[11px] md:text-xs text-text-tertiary">
-            © {currentYear} <span className="text-text-secondary">CodeTracker</span>. All
+            © {currentYear}{' '}
+            <span className="text-text-secondary">CodeTracker</span>. All
             rights reserved.
           </div>
           <div className="text-[11px] md:text-xs text-text-tertiary">

@@ -28,6 +28,11 @@ export default function Settings() {
   const [theme, setTheme] = useTheme();
   const [status, setStatus] = useState({ profile: '', password: '' });
 
+  // 👁️ Show/hide toggles for password fields
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   // 1) Load current profile
   useEffect(() => {
     axios
@@ -266,27 +271,39 @@ export default function Settings() {
 
                   <Input
                     id="currentPassword"
-                    type="password"
+                    type={showCurrent ? 'text' : 'password'}
                     label="Current Password"
                     className="text-base"
                     value={passForm.currentPassword}
                     onChange={(e) => setPassForm((f) => ({ ...f, currentPassword: e.target.value }))}
+                    icon={showCurrent ? 'EyeOff' : 'Eye'}
+                    iconPosition="right"
+                    variant="with-icon"
+                    onIconClick={() => setShowCurrent((prev) => !prev)}
                   />
                   <Input
                     id="newPassword"
-                    type="password"
+                    type={showNew ? 'text' : 'password'}
                     label="New Password"
                     className="text-base"
                     value={passForm.newPassword}
                     onChange={(e) => setPassForm((f) => ({ ...f, newPassword: e.target.value }))}
+                    icon={showNew ? 'EyeOff' : 'Eye'}
+                    iconPosition="right"
+                    variant="with-icon"
+                    onIconClick={() => setShowNew((prev) => !prev)}
                   />
                   <Input
                     id="confirm"
-                    type="password"
+                    type={showConfirm ? 'text' : 'password'}
                     label="Confirm New Password"
                     className="text-base"
                     value={passForm.confirm}
                     onChange={(e) => setPassForm((f) => ({ ...f, confirm: e.target.value }))}
+                    icon={showConfirm ? 'EyeOff' : 'Eye'}
+                    iconPosition="right"
+                    variant="with-icon"
+                    onIconClick={() => setShowConfirm((prev) => !prev)}
                   />
 
                   <Button type="submit" className="w-full py-3 text-base">
