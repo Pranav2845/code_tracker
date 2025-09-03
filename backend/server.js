@@ -31,9 +31,16 @@ const isProd = process.env.NODE_ENV === "production";
 const FRONTEND_ORIGIN =
   process.env.FRONTEND_ORIGIN || "https://code-tracker-7o7s.vercel.app";
 
-const allowedOrigins = isProd
-  ? [FRONTEND_ORIGIN] // Set FRONTEND_ORIGIN in Render env to avoid hardcoding
-  : ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"];
+const allowedOrigins = [
+  FRONTEND_ORIGIN,
+  ...(isProd
+    ? []
+    : [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+      ]),
+];
 
 const corsOptions = {
   origin: (origin, cb) => {
