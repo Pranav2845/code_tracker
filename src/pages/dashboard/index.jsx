@@ -1,7 +1,6 @@
 // File: src/pages/dashboard/index.jsx
 import React, { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import api from "../../api/axios";
-import axios from "axios";
 import { Link } from "react-router-dom";
 import Header from "../../components/ui/Header";
 import Icon from "../../components/AppIcon";
@@ -102,11 +101,6 @@ const Dashboard = () => {
           api.get("/problems", { signal: controller.signal }),
           api.get("/user/analytics", { signal: controller.signal }),
           api.get("/contests", { signal: controller.signal }),
-          axios.get("/user/profile", { signal: controller.signal }),
-          axios.get("/user/stats", { signal: controller.signal }),
-          axios.get("/problems", { signal: controller.signal }),
-          axios.get("/user/analytics", { signal: controller.signal }),
-          axios.get("/contests", { signal: controller.signal }),
         ]);
 
       const connections = profileRes.data.platforms || {};

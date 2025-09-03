@@ -94,41 +94,34 @@ function Header({ variant = "default" }) {
   }, []);
 
   // Fetch notifications and merge with persisted "read" state
-  const fetchNotifications = useCallback(async () => {
-    try {
-const { data } = await api.get("/user/notifications").catch(() => ({
-      }));
+  const fetchNotifications = useCallback(() => {
+    // Stubbed notifications – API not implemented
+    const items = [
+      {
+        id: "n1",
+        title: "Contest reminder: Weekly #345 starts in 2h",
+        href: "/contests",
+        unread: true,
+        time: "2h",
+      },
+      {
+        id: "n2",
+        title: "Your Codeforces handle synced successfully",
+        href: "/platform-connection",
+        unread: false,
+        time: "yesterday",
+      },
+    ];
 
-      // Fallback demo items if API not implemented
-      const items = data?.notifications ?? [
-        {
-          id: "n1",
-          title: "Contest reminder: Weekly #345 starts in 2h",
-          href: "/contests",
-          unread: true,
-          time: "2h",
-        },
-        {
-          id: "n2",
-          title: "Your Codeforces handle synced successfully",
-          href: "/platform-connection",
-          unread: false,
-          time: "yesterday",
-        },
-      ];
+    // Apply persisted read state
+    const readIds = getReadIds();
+    const normalized = items.map((n) => ({
+      ...n,
+      // If we've marked it read before, force unread=false
+      unread: !readIds.has(n.id) && (n.unread ?? true),
+    }));
 
-      // Apply persisted read state
-      const readIds = getReadIds();
-      const normalized = items.map((n) => ({
-        ...n,
-        // If we've marked it read before, force unread=false
-        unread: !readIds.has(n.id) && (n.unread ?? true),
-      }));
-
-      setNotifications(normalized);
-    } catch {
-      setNotifications([]);
-    }
+    setNotifications(normalized);
   }, []);
 
   useEffect(() => {
@@ -177,7 +170,7 @@ const { data } = await api.get("/user/notifications").catch(() => ({
   const initials = getInitials(user.name || user.email);
   const unreadCount = notifications.filter((n) => n.unread).length;
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = () => {
     // Persist all current IDs as read
     const ids = new Set(getReadIds());
     notifications.forEach((n) => ids.add(n.id));
@@ -186,10 +179,7 @@ const { data } = await api.get("/user/notifications").catch(() => ({
     // Update UI immediately
     setNotifications((list) => list.map((n) => ({ ...n, unread: false })));
 
-    // Best-effort server call
-    try {
-      await api.post("/user/notifications/mark-all-read").catch(() => {});
-    } catch {}
+     // Notifications API not implemented; skipping server call
   };
 
   const markOneAsRead = (id) => {
