@@ -12,6 +12,8 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -95,13 +97,17 @@ const Login = () => {
               <Input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 label="Password"
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
                 error={errors.password}
                 className="text-base h-12 w-full"
+                icon={showPassword ? 'EyeOff' : 'Eye'}
+                iconPosition="right"
+                variant="with-icon"
+                onIconClick={() => setShowPassword(!showPassword)}
               />
             </div>
 

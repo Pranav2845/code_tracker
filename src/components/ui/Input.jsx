@@ -19,10 +19,11 @@ const Input = forwardRef(({
   required = false,
   disabled = false,
   variant = 'default',
+  onIconClick,
   ...props
 }, ref) => {
   const inputId = id || `input-${Math.random().toString(36).substring(2, 9)}`;
-  
+
   const baseInputClasses = 'input';
   const variantClasses = {
     default: '',
@@ -30,9 +31,9 @@ const Input = forwardRef(({
     'with-validation': error ? 'border-error focus:ring-error' : '',
     'search': 'pl-10 rounded-full',
   };
-  
+
   const inputClasses = `${baseInputClasses} ${variantClasses[variant]} ${className}`;
-  
+
   return (
     <div className="w-full">
       {label && (
@@ -44,18 +45,30 @@ const Input = forwardRef(({
           {required && <span className="text-error ml-1">*</span>}
         </label>
       )}
-      
+
       <div className="relative">
-        {(icon && iconPosition === 'left' || variant === 'search') && (
+        {/* Left custom icon */}
+        {(icon && iconPosition === 'left') && (
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <Icon 
-              name={variant === 'search' ? 'Search' : icon} 
-              size={18} 
-              className="text-text-tertiary" 
+            <Icon
+              name={icon}
+              size={18}
+              className="text-text-tertiary"
             />
           </div>
         )}
-        
+
+        {/* Left search icon for search variant */}
+        {variant === 'search' && (
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <Icon
+              name="Search"
+              size={18}
+              className="text-text-tertiary"
+            />
+          </div>
+        )}
+
         <input
           ref={ref}
           id={inputId}
@@ -71,20 +84,27 @@ const Input = forwardRef(({
           aria-invalid={error ? 'true' : 'false'}
           {...props}
         />
-        
+
+        {/* Right icon (clickable if onIconClick is provided) */}
         {icon && iconPosition === 'right' && (
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <Icon name={icon} size={18} className="text-text-tertiary" />
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+            <Icon
+              name={icon}
+              size={18}
+              className={`text-text-tertiary ${onIconClick ? 'cursor-pointer' : 'pointer-events-none'}`}
+              onClick={onIconClick}
+            />
           </div>
         )}
-        
+
+        {/* Validation icon */}
         {error && variant === 'with-validation' && (
           <div className="absolute inset-y-0 right-0 flex items-center pr-3">
             <Icon name="AlertCircle" size={18} className="text-error" />
           </div>
         )}
       </div>
-      
+
       {error && (
         <p className="mt-1 text-sm text-error">{error}</p>
       )}
