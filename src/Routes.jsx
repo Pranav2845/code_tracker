@@ -9,7 +9,12 @@ import Footer from "./components/ui/Footer";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Profile from "./pages/profile";
-import Settings from "./pages/settings"; 
+import Settings from "./pages/settings";
+
+import TermsOfService from "./pages/terms";
+import PrivacyPolicy from "./pages/privacy";
+import Support from "./pages/support";
+import Contact from "./pages/contact";
 
 import Dashboard from "./pages/dashboard";
 import PlatformConnection from "./pages/platform-connection";
@@ -27,6 +32,11 @@ const Routes = () => (
         {/* Public */}
         <Route path="/login"    element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/terms"    element={<TermsOfService />} />
+        <Route path="/privacy"  element={<PrivacyPolicy />} />
+        <Route path="/support"  element={<Support />} />
+        <Route path="/contact"  element={<Contact />} />
+
 
         {/* If someone hits “/” with no token, PrivateRoute will redirect to /login */}
         <Route
