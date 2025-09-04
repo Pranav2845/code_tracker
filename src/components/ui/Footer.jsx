@@ -9,7 +9,16 @@ function Footer() {
 
   // Pages where footer should be fixed
   const fixedRoutes = ['/platform-connection', '/gemini', '/profile', '/settings'];
+
+  // Pages where footer should be hidden
+  const hiddenRoutes = ['/login', '/register', '/signin', '/signup'];
+
   const isFixed = fixedRoutes.includes(location.pathname);
+  const isHidden = hiddenRoutes.includes(location.pathname);
+
+  if (isHidden) {
+    return null; // 🚫 Don't render footer on login/signup
+  }
 
   const footerLinks = [
     { name: 'Terms of Service', path: '/terms' },
@@ -24,7 +33,6 @@ function Footer() {
     { name: 'LinkedIn', icon: 'Linkedin', url: 'https://www.linkedin.com/in/pranav-pandey001/' },
   ];
 
-  // Full width inner container
   const inner = 'w-full px-6 lg:px-12';
 
   return (
@@ -34,7 +42,6 @@ function Footer() {
       }`}
       role="contentinfo"
     >
-      {/* Top gradient divider */}
       <div className="h-px w-full bg-gradient-to-r from-transparent via-border/70 to-transparent" />
 
       <div
@@ -82,7 +89,6 @@ function Footer() {
             ))}
           </nav>
 
-          {/* Professional tagline */}
           <div className="text-xs text-text-tertiary text-center">
             Stay updated with new features and coding insights — follow us on{' '}
             <a
@@ -138,8 +144,7 @@ function Footer() {
 
           <div className="text-[11px] md:text-xs text-text-tertiary">
             © {currentYear}{' '}
-            <span className="text-text-secondary">CodeTracker</span>. All
-            rights reserved.
+            <span className="text-text-secondary">CodeTracker</span>. All rights reserved.
           </div>
           <div className="text-[11px] md:text-xs text-text-tertiary">
             Made with <span className="text-error" aria-hidden>❤</span> for developers
