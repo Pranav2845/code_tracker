@@ -10,3 +10,4 @@ backend/node_modules
 backend/uploads/*
 # Build output
 dist
+/backend/.env
